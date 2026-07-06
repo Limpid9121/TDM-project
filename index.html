@@ -91,6 +91,8 @@
     .custom-input.tau{width:56px;}
     .entry-row input[type="datetime-local"]{font-size:16px;flex-basis:100%;}
     .entry-row .num-field input{font-size:16px;width:74px;}
+    .prune-tool{margin-left:0;width:100%;}
+    .prune-tool input[type="datetime-local"]{font-size:16px;flex:1 1 auto;}
     .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
     .param-cell .value{font-size:16px;}
     .results-head{padding:14px 14px;}
@@ -163,7 +165,7 @@
     min-width:16px;text-align:center;
   }
   .entry-row input[type="datetime-local"]{
-    flex:1 1 200px;min-width:190px;font-family:var(--mono);font-size:13px;color:var(--ink);
+    flex:1 1 200px;min-width:190px;max-width:250px;font-family:var(--mono);font-size:13px;color:var(--ink);
     background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:6px 7px;
   }
   .entry-row .num-field{display:flex;align-items:center;gap:5px;flex:0 0 auto;}
@@ -191,6 +193,14 @@
   .btn.primary:hover{background:var(--trace-strong);border-color:var(--trace-strong);color:#fff;}
   .btn.small{font-size:11.5px;padding:5px 9px;}
   .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+  .prune-tool{
+    display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);
+    margin-left:auto;flex-wrap:wrap;
+  }
+  .prune-tool input[type="datetime-local"]{
+    font-family:var(--mono);font-size:12px;border:1px solid var(--line-strong);border-radius:6px;
+    padding:5px 6px;background:#FBFBF9;color:var(--ink);
+  }
 
   /* ---------- Results panel ---------- */
   .results-head{
@@ -309,6 +319,27 @@
     <!-- ============ LEFT: INPUT PANEL ============ -->
     <section class="stack" id="inputPanel">
 
+      <!-- 0. 病人資料存檔 -->
+      <div class="card" id="patientManagerCard">
+        <h2><span class="idx">⟳</span>病人資料存檔</h2>
+        <p class="hint">依病歷號分別儲存與載入，長期追蹤同一位病人時不用每次重新輸入。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</p>
+        <div class="field-row">
+          <div class="field"><label>病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
+          <div class="field"><label>選擇已儲存的病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary small" id="savePatientBtn" type="button">儲存／更新此病人</button>
+          <button class="btn small" id="loadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn small" id="exportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
+          <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+        </div>
+        <div class="hint" id="patientMeta" style="margin-top:8px;min-height:14px;"></div>
+      </div>
+
       <!-- 1. 病人與腎功能 -->
       <div class="card">
         <h2><span class="idx">01</span>病人與腎功能</h2>
@@ -332,6 +363,11 @@
             </select>
           </div>
         </div>
+        <div class="field-row">
+          <div class="field"><label>乾／平常體重（kg，選填）</label><input type="number" id="dryWeight" step="0.1" placeholder="與TBW明顯不同才填"></div>
+          <div class="field"></div>
+        </div>
+        <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
         <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）</label></div>
 
         <div class="entry-rows" id="scrTable"></div>
@@ -362,9 +398,9 @@
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。</p>
+        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，不必展開兩週前的舊記錄——只要往前保留的給藥紀錄，涵蓋時間長度達你懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</p>
         <div class="field-row stacked">
-          <div class="field"><label>本療程起始（首劑）時間</label><input type="datetime-local" id="therapyStart"></div>
+          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
         </div>
         <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
@@ -382,7 +418,14 @@
         </div>
 
         <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
-        <div class="btn-row"><button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button></div>
+        <div class="btn-row" style="align-items:center;">
+          <button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button>
+          <span class="prune-tool">
+            移除此時間之前的紀錄
+            <input type="datetime-local" id="pruneBeforeInput">
+            <button class="btn small" id="pruneBeforeBtn" type="button">套用</button>
+          </span>
+        </div>
       </div>
 
       <!-- 4. 血中濃度量測 -->
@@ -393,7 +436,6 @@
         <div class="btn-row"><button class="btn small" id="addLevelRow" type="button">+ 新增一筆濃度</button></div>
       </div>
 
-      <!-- 5. 目標與情境設定 -->
       <div class="card">
         <h2><span class="idx">05</span>目標與情境設定</h2>
         <div class="field-row">
@@ -413,7 +455,6 @@
         </div>
       </div>
 
-      <!-- 6. 併用藥物與備註 -->
       <div class="card">
         <h2><span class="idx">06</span>併用藥物與其他備註</h2>
         <div class="field">
@@ -491,7 +532,7 @@
   </main>
 
   <footer class="disclaimer">
-    <strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，不會上傳任何病人資料。
+    <strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。
   </footer>
 
 </div>
@@ -505,6 +546,10 @@
 // ==================================================================
 (function(){
   'use strict';
+
+  // ---------------- patient records (this browser only, via localStorage) ----------------
+  const PATIENTS_KEY = 'vanco_tdm_patients_v1';
+  let currentPatientId = null;
 
   // ---------------- formatting helpers ----------------
   const fmt = (x,d)=> (x!==null && x!==undefined && isFinite(x)) ? Number(x).toFixed(d) : '—';
@@ -742,7 +787,7 @@
     const maintInf = parseFloat(document.getElementById('maintInf').value);
     const useLoading = document.getElementById('useLoading').checked;
     if(!isFinite(startMs)||!isFinite(toMs)||!isFinite(maintDose)||!isFinite(tauHr)||!isFinite(maintInf)||tauHr<=0){
-      alert('請先完整填寫本療程起始時間、展開至時間、維持劑量、間隔與輸注時間。');
+      alert('請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
       return;
     }
     clearTbody('#doseTable');
@@ -761,15 +806,39 @@
     render();
   }
 
+  function pruneDosesBeforeFn(){
+    const cutoff = parseLocal(document.getElementById('pruneBeforeInput').value);
+    if(!isFinite(cutoff)){
+      alert('請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
+      return;
+    }
+    const rows = Array.from(document.querySelectorAll('#doseTable .entry-row'));
+    let removed = 0;
+    rows.forEach(row=>{
+      const t = parseLocal(row.querySelector('.dose-date').value);
+      if(isFinite(t) && t < cutoff){ row.remove(); removed++; }
+    });
+    renumberDoseRows();
+    render();
+    if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
+  }
+
   function clearAllFn(){
     const ok = confirm('確定要清除所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
     if(!ok) return;
+
+    // 病人存檔狀態(不影響已儲存的紀錄本身,只是離開目前這位病人)
+    document.getElementById('patientLabel').value='';
+    document.getElementById('patientSelect').value='';
+    document.getElementById('patientMeta').textContent='';
+    currentPatientId = null;
 
     // 01 病人與腎功能
     document.getElementById('age').value='';
     document.getElementById('sex').value='M';
     document.getElementById('height').value='';
     document.getElementById('tbw').value='';
+    document.getElementById('dryWeight').value='';
     document.getElementById('dialysis').value='none';
     document.getElementById('arcSuspect').checked=false;
     clearTbody('#scrTable');
@@ -792,6 +861,7 @@
     document.getElementById('maintDose').value='';
     document.getElementById('maintInterval').value='';
     document.getElementById('maintInf').value='';
+    document.getElementById('pruneBeforeInput').value='';
     clearTbody('#doseTable');
 
     // 04 血中濃度
@@ -815,6 +885,174 @@
     document.getElementById('customTau').value='';
 
     render();
+  }
+
+  // ---------------- patient state collection / restoration ----------------
+  function collectState(){
+    const v = id => document.getElementById(id).value;
+    const c = id => document.getElementById(id).checked;
+    return {
+      age:v('age'), sex:v('sex'), height:v('height'), tbw:v('tbw'), dryWeight:v('dryWeight'),
+      dialysis:v('dialysis'), arcSuspect:c('arcSuspect'),
+      scrRows: Array.from(document.querySelectorAll('#scrTable .entry-row')).map(row=>({
+        date: row.querySelector('.scr-date').value, val: row.querySelector('.scr-val').value
+      })),
+      indication:v('indication'), severity:v('severity'), site:v('site'), organism:v('organism'),
+      deepInfection:c('deepInfection'), sourceControlDone:c('sourceControlDone'),
+      therapyStart:v('therapyStart'), expandTo:v('expandTo'),
+      useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'),
+      maintDose:v('maintDose'), maintInterval:v('maintInterval'), maintInf:v('maintInf'),
+      doseRows: Array.from(document.querySelectorAll('#doseTable .entry-row')).map(row=>({
+        date: row.querySelector('.dose-date').value, doseMg: row.querySelector('.dose-mg').value, infMin: row.querySelector('.dose-inf').value
+      })),
+      levelRows: Array.from(document.querySelectorAll('#levelTable .entry-row')).map(row=>({
+        date: row.querySelector('.level-date').value, conc: row.querySelector('.level-val').value
+      })),
+      mic:v('mic'), targetAuc:v('targetAuc'), altTroughStrategy:c('altTroughStrategy'),
+      cand8:c('cand8'), cand12:c('cand12'), cand24:c('cand24'),
+      concomitant:v('concomitant'), otherNotes:v('otherNotes'),
+      customDose:v('customDose'), customInf:v('customInf'), customTau:v('customTau')
+    };
+  }
+
+  function applyState(s){
+    const setVal=(id,val)=>{ document.getElementById(id).value = (val!==undefined&&val!==null)?val:''; };
+    const setChecked=(id,val)=>{ document.getElementById(id).checked = !!val; };
+
+    setVal('age', s.age); setVal('sex', s.sex||'M'); setVal('height', s.height); setVal('tbw', s.tbw); setVal('dryWeight', s.dryWeight);
+    setVal('dialysis', s.dialysis||'none'); setChecked('arcSuspect', s.arcSuspect);
+    clearTbody('#scrTable');
+    (s.scrRows||[]).forEach(r=>addScrRow(r.date, r.val));
+
+    setVal('indication', s.indication); setVal('severity', s.severity); setVal('site', s.site); setVal('organism', s.organism);
+    setChecked('deepInfection', s.deepInfection); setChecked('sourceControlDone', s.sourceControlDone);
+
+    setVal('therapyStart', s.therapyStart); setVal('expandTo', s.expandTo);
+    setChecked('useLoading', s.useLoading);
+    document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
+    setVal('loadingDose', s.loadingDose); setVal('loadingInf', s.loadingInf);
+    setVal('maintDose', s.maintDose); setVal('maintInterval', s.maintInterval); setVal('maintInf', s.maintInf);
+    clearTbody('#doseTable');
+    (s.doseRows||[]).forEach(r=>addDoseRow(r.date, r.doseMg, r.infMin));
+    renumberDoseRows();
+
+    clearTbody('#levelTable');
+    (s.levelRows||[]).forEach(r=>addLevelRow(r.date, r.conc));
+
+    setVal('mic', s.mic); setVal('targetAuc', s.targetAuc); setChecked('altTroughStrategy', s.altTroughStrategy);
+    setChecked('cand8', s.cand8===undefined?true:s.cand8);
+    setChecked('cand12', s.cand12===undefined?true:s.cand12);
+    setChecked('cand24', s.cand24===undefined?true:s.cand24);
+
+    setVal('concomitant', s.concomitant); setVal('otherNotes', s.otherNotes);
+    setVal('customDose', s.customDose); setVal('customInf', s.customInf); setVal('customTau', s.customTau);
+
+    render();
+  }
+
+  function loadPatientsList(){
+    try{ const raw = localStorage.getItem(PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function savePatientsList(list){
+    try{ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); return true; }
+    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
+  }
+  function genId(){ return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+
+  function refreshPatientSelect(selectAfter){
+    const list = loadPatientsList();
+    const sel = document.getElementById('patientSelect');
+    const keep = selectAfter!==undefined ? selectAfter : sel.value;
+    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
+    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
+      const d = new Date(p.savedAt);
+      const pad=n=>String(n).padStart(2,'0');
+      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
+      return `<option value="${p.id}">${label}</option>`;
+    }).join('');
+    if(keep) sel.value = keep;
+  }
+
+  function savePatientFn(){
+    const label = document.getElementById('patientLabel').value.trim();
+    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+    const list = loadPatientsList();
+    const data = collectState();
+    const now = Date.now();
+    if(currentPatientId && list.some(p=>p.id===currentPatientId)){
+      const idx = list.findIndex(p=>p.id===currentPatientId);
+      list[idx] = {id:currentPatientId, label, savedAt:now, data};
+    } else {
+      const id = genId();
+      list.push({id, label, savedAt:now, data});
+      currentPatientId = id;
+    }
+    if(!savePatientsList(list)) return;
+    refreshPatientSelect(currentPatientId);
+    document.getElementById('patientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
+  }
+
+  function loadPatientFn(){
+    const id = document.getElementById('patientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
+    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
+    if(!ok) return;
+    const list = loadPatientsList();
+    const rec = list.find(p=>p.id===id);
+    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshPatientSelect(''); return; }
+    document.getElementById('patientLabel').value = rec.label;
+    applyState(rec.data);
+    currentPatientId = rec.id;
+    document.getElementById('patientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
+  }
+
+  function deletePatientFn(){
+    const id = document.getElementById('patientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇要刪除的病人。'); return; }
+    const list = loadPatientsList();
+    const rec = list.find(p=>p.id===id);
+    if(!rec) return;
+    const ok = confirm(`確定要刪除「${rec.label}」的儲存資料嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
+    if(!ok) return;
+    savePatientsList(list.filter(p=>p.id!==id));
+    if(currentPatientId===id) currentPatientId=null;
+    refreshPatientSelect('');
+    document.getElementById('patientMeta').textContent = `已刪除：${rec.label}`;
+  }
+
+  function exportPatientsFn(){
+    const list = loadPatientsList();
+    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
+    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    a.href = url;
+    a.download = `vancomycin_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function importPatientsFn(file){
+    const reader = new FileReader();
+    reader.onload = function(){
+      let imported;
+      try{ imported = JSON.parse(reader.result); }
+      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
+      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
+      const existing = loadPatientsList();
+      const map = new Map(existing.map(p=>[p.id,p]));
+      let count=0;
+      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
+      savePatientsList(Array.from(map.values()));
+      refreshPatientSelect();
+      document.getElementById('patientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
+    };
+    reader.readAsText(file);
   }
 
   function updateCustomRow(CL, ke, mic){
@@ -936,6 +1174,174 @@
     svg.innerHTML = svgParts.join('\n');
   }
 
+  // ---------------- prospective (pre-dose) population-PK prediction ----------------
+  // Used when no actual doses have been administered yet, but a planned regimen is
+  // specified: shows expected steady-state PK/Cmax/Cmin/AUC from population estimates
+  // alone, mirroring the standard workflow of predicting before the first dose is given.
+  function renderProspective(ctx){
+    const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr} = ctx;
+    const ke = CLpop/Vpop, tHalf = 0.693/ke;
+
+    const useLoading = document.getElementById('useLoading').checked;
+    const loadingDose = parseFloat(document.getElementById('loadingDose').value);
+    const loadingInfHr = parseFloat(document.getElementById('loadingInf').value)/60;
+
+    const R = maintDose/maintInfHr;
+    const CmaxSS = (R/CLpop)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
+    const CminSS = CmaxSS*Math.exp(-ke*(tau-maintInfHr));
+    const dailyDose = maintDose*(24/tau);
+    const AUC24ss = dailyDose/CLpop;
+    const mic = parseFloat(document.getElementById('mic').value)||1;
+    const AUCoverMIC = AUC24ss/mic;
+    const targetAUC = parseFloat(document.getElementById('targetAuc').value)||500;
+
+    flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
+    if(CminSS>20) flags.push({level:'danger', text:`計畫處方預測穩態 Cmin ${CminSS.toFixed(1)} µg/mL > 20，起始劑量可能偏高，建議重新評估間隔或劑量。`});
+    else if(CminSS>15) flags.push({level:'warn', text:`計畫處方預測穩態 Cmin ${CminSS.toFixed(1)} µg/mL 落在 15–20，腎毒性風險略升，建議留意。`});
+    if(AUC24ss>600) flags.push({level:'danger', text:`計畫處方預測 AUC₂₄ ${AUC24ss.toFixed(0)} 超過 600，起始劑量可能偏高。`});
+    else if(AUC24ss<400) flags.push({level:'warn', text:`計畫處方預測 AUC₂₄ ${AUC24ss.toFixed(0)} 低於 400，起始劑量可能偏低，達穩態前療效可能不足。`});
+
+    document.getElementById('fitModeBadge').textContent = '起始劑量預測（純族群 PK，尚未給藥）';
+    document.getElementById('headerMeta').textContent = `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${CLpop.toFixed(2)} L/hr ・ 預測 AUC₂₄ ${AUC24ss.toFixed(0)}`;
+
+    // param grid (subset relevant to a pre-dose prediction)
+    const cells = [
+      ['ke（族群估算）', fmt3(ke), 'hr⁻¹', ''],
+      ['t½（族群估算）', fmt1(tHalf), 'hr', `約需 ${(4*tHalf).toFixed(0)}–${(5*tHalf).toFixed(0)} 小時達穩態`],
+      ['Vd（族群估算）', fmt1(Vpop), 'L', useDryWeight?`${(Vpop/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(Vpop/tbw).toFixed(2)} L/kg`],
+      ['CL（族群估算）', fmt2(CLpop), 'L/hr', ''],
+      ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
+      ['預測 Cmax,ss', fmt1(CmaxSS), 'µg/mL', ''],
+      ['預測 Cmin,ss', fmt1(CminSS), 'µg/mL', CminSS>20?'>20 腎毒性關切':(CminSS>15?'15–20 略升':'')],
+      ['預測 AUC₂₄,ss', fmt0(AUC24ss), 'mg·hr/L', ''],
+      ['預測 AUC/MIC', fmt0(AUCoverMIC), '', `MIC 假設 ${mic}`]
+    ];
+    const flagClassFor = (label, val)=>{
+      if(label.startsWith('預測 Cmin')){ if(val>20) return 'flag-danger'; if(val>15) return 'flag-warn'; return 'flag-ok'; }
+      if(label.startsWith('預測 AUC₂₄')){ if(val>600||val<350) return 'flag-danger'; if(val>580||val<400) return 'flag-warn'; return 'flag-ok'; }
+      return '';
+    };
+    document.getElementById('paramGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
+      const cls = flagClassFor(label, parseFloat(val));
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+    }).join('');
+
+    document.getElementById('flagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    // candidate regimens, computed the same way as the post-level pipeline, just driven by CLpop
+    const targetDailyDose = dailyDose*(targetAUC/AUC24ss);
+    const candTaus=[];
+    if(document.getElementById('cand8').checked) candTaus.push(8);
+    if(document.getElementById('cand12').checked) candTaus.push(12);
+    if(document.getElementById('cand24').checked) candTaus.push(24);
+    const regimenRows = candTaus.map(candTau=>{
+      const rawDose = targetDailyDose*(candTau/24);
+      const roundedDose = roundDoseTo250(rawDose);
+      const infMinC = inferInfusionMinutes(roundedDose);
+      const infHrC = infMinC/60;
+      const Rc = roundedDose/infHrC;
+      const cmaxC = (Rc/CLpop)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
+      const cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
+      const auc24C = (roundedDose*(24/candTau))/CLpop;
+      const {tag, tagText} = regimenTag(cminC, auc24C);
+      return {candTau, roundedDose, infMinC, cmaxC, cminC, auc24C, tag, tagText, isCurrent: candTau===tau};
+    });
+    let recommended=null;
+    const okRows = regimenRows.filter(r=>r.tag==='ok');
+    const pool = okRows.length?okRows:regimenRows;
+    if(pool.length) recommended = pool.reduce((best,r)=> Math.abs(r.auc24C-targetAUC) < Math.abs(best.auc24C-targetAUC) ? r : best, pool[0]);
+    document.querySelector('#regimenTable tbody').innerHTML = regimenRows.map(r=>`
+      <tr class="${r===recommended?'recommended':''}">
+        <td>q${r.candTau}h${r===recommended?' <span class="tag ok">建議</span>':''}${r.isCurrent?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">計畫間隔</span>':''}</td>
+        <td>${fmt0(r.roundedDose)} mg／${r.infMinC} min輸注</td>
+        <td>q${r.candTau}h</td>
+        <td>${fmt1(r.cmaxC)}</td>
+        <td>${fmt1(r.cminC)}</td>
+        <td>${fmt0(r.auc24C)}</td>
+        <td class="reason">${r.tagText}<span class="tag ${r.tag}">${r.tag==='ok'?'OK':(r.tag==='warn'?'留意':'風險')}</span></td>
+      </tr>`).join('') || '<tr><td colspan="7" class="reason">未勾選任何候選間隔。</td></tr>';
+
+    // loading suggestion (independent of dose history, same as main pipeline)
+    const deepInfection = document.getElementById('deepInfection').checked;
+    const loadingBox = document.getElementById('loadingSuggestion');
+    const lf = deepInfection?25:20;
+    const loadSuggest = Math.min(roundDoseTo250(lf*tbw), 3000);
+    const loadInfMin = inferInfusionMinutes(loadSuggest);
+    if(deepInfection){
+      loadingBox.innerHTML = `<div class="flag-item warn" style="margin-bottom:12px;"><span class="dot"></span><span>深部／難清除感染，建議評估 loading dose：<strong>${fmt0(loadSuggest)} mg</strong>（以 ${lf} mg/kg TBW 估算，上限 3000 mg），輸注 ${loadInfMin} 分鐘以上以降低 infusion reaction 風險。</span></div>`;
+    } else {
+      loadingBox.innerHTML = `<div class="empty-note">未勾選「深部／難清除感染」。若需評估 loading dose，於左側區塊 02 勾選後將顯示建議。</div>`;
+    }
+
+    // monitoring guidance tailored to the pre-dose scenario
+    document.getElementById('monitorGrid').innerHTML = `
+      <div>
+        <h4>首次 TDM 時機</h4>
+        <p>建議於此計畫處方開始後，約 ${(4*tHalf).toFixed(0)}–${(5*tHalf).toFixed(0)} 小時（4–5 個族群估算半衰期）達穩態附近再安排第一次抽血，理想為同一區間 trough（給藥前）搭配 peak（輸注後 1–2 小時），本工具支援任意時點自由輸入。</p>
+        <h4 style="margin-top:12px;">開始給藥後</h4>
+        <p>請回到左側「給藥處方與紀錄」輸入實際給藥時間，並於「血中濃度量測」輸入抽血結果——引擎會自動改用實測資料擬合校正 Vd／CL，取代這裡的純族群估算。</p>
+      </div>
+      <div>
+        <h4>基礎 Lab 監測</h4>
+        <ul><li>SCr／腎功能：治療期間至少每 2–3 天追蹤一次，腎功能不穩定者更頻繁</li><li>治療起始前建議已有近期 SCr 作為基礎值</li></ul>
+        <h4 style="margin-top:12px;">臨床 Sign 監測</h4>
+        <ul><li>腎毒性徵象：尿量、SCr 較基礎上升 ≥0.5 mg/dL 或 ≥50%</li><li>療效：發燒、培養結果、發炎指標趨勢</li></ul>
+      </div>`;
+
+    // prospective curve: simulate the planned regimen forward from "now" using drawCurve()
+    const virtualDoses = [];
+    let cursor = 0;
+    if(useLoading && isFinite(loadingDose) && loadingDose>0 && isFinite(loadingInfHr) && loadingInfHr>0){
+      virtualDoses.push({t_rel:0, doseMg:loadingDose, infHr:loadingInfHr});
+      cursor = tau;
+    }
+    const numDoses = Math.min(40, Math.ceil((5*tHalf)/tau) + 2);
+    for(let i=0;i<numDoses;i++){ virtualDoses.push({t_rel:cursor, doseMg:maintDose, infHr:maintInfHr}); cursor += tau; }
+    const cMaxDomain = Math.max(22, CmaxSS*1.15, (virtualDoses[0] && useLoading ? (loadingDose/loadingInfHr/CLpop)*1.15 : 0));
+    drawCurve({
+      doses: virtualDoses, levels: [], CL: CLpop, V: Vpop, ke, tau, maintDose, maintInf: maintInfHr,
+      isFutureRel: cursor, cMaxDomain,
+      altTrough: document.getElementById('altTroughStrategy').checked
+    });
+
+    updateCustomRow(CLpop, ke, mic);
+
+    // simplified AI prompt for the pre-dose scenario
+    const indication = document.getElementById('indication').value;
+    const severity = document.getElementById('severity').value;
+    const site = document.getElementById('site').value.trim() || '（未填寫）';
+    const organism = document.getElementById('organism').value.trim() || '（未填寫）';
+    const concomitant = document.getElementById('concomitant').value.trim() || '（未填寫）';
+    const otherNotes = document.getElementById('otherNotes').value.trim() || '（未填寫）';
+    const regimenText = regimenRows.map(r=>`q${r.candTau}h → ${r.roundedDose} mg（輸注 ${r.infMinC} 分）：預測 Cmax,ss ${r.cmaxC.toFixed(1)}／Cmin,ss ${r.cminC.toFixed(1)}／AUC₂₄ ${r.auc24C.toFixed(0)}${r===recommended?'　←本工具建議':''}`).join('\n');
+    document.getElementById('aiPromptOut').value = `你是一位資深臨床藥師顧問。病人尚未開始 vancomycin，以下是根據族群藥動學（Cockcroft-Gault CrCl → 族群 CL、TBW → 族群 Vd）對計畫處方所做的起始劑量預測，請協助評估這組起始劑量是否合理。
+
+## 一、病人與腎功能
+- CrCl：約 ${crcl.toFixed(0)} mL/min（${cgMethod}）
+- 族群估算：ke ${ke.toFixed(4)} hr⁻¹，t½ ${tHalf.toFixed(1)} hr，Vd ${Vpop.toFixed(1)} L，CL ${CLpop.toFixed(2)} L/hr
+${useDryWeight?`- Vd 估算採乾／平常體重 ${dryWeight} kg（而非 TBW ${tbw} kg）\n`:''}
+## 二、感染／臨床脈絡
+- 適應症：${indication}；嚴重度：${severity}；感染部位：${site}；菌種／MIC：${organism}
+
+## 三、計畫處方
+- 維持劑量：${maintDose} mg q${tau}h（輸注 ${(maintInfHr*60).toFixed(0)} 分）
+${useLoading?`- Loading：${loadingDose} mg（輸注 ${(loadingInfHr*60).toFixed(0)} 分）\n`:''}- 預測穩態：Cmax,ss ${CmaxSS.toFixed(1)} µg/mL／Cmin,ss ${CminSS.toFixed(1)} µg/mL／AUC₂₄ ${AUC24ss.toFixed(0)} mg·hr/L（MIC 假設 ${mic}，AUC/MIC ${AUCoverMIC.toFixed(0)}，目標 ${targetAUC}）
+${deepInfection?`- 建議評估 loading dose：約 ${loadSuggest} mg\n`:''}
+## 四、候選方案
+${regimenText}
+
+## 五、併用藥物與備註
+- 併用藥物／交互作用相關：${concomitant}
+- 其他備註：${otherNotes}
+
+## 六、請你協助評估
+1. 這組起始劑量（含是否需要 loading）依此病人的腎功能與感染脈絡是否合理？
+2. 是否有本工具未捕捉到的個別狀況（如預期腎功能將變化、特殊分布體積族群等）值得調整起始劑量？
+3. 首次 TDM 時機的建議是否需要調整？
+
+請保持透明：清楚區分「本工具已算出的族群預測值」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。`;
+  }
+
   // ---------------- main render pipeline ----------------
   function render(){
     // --- 1. gather patient / renal ---
@@ -968,7 +1374,13 @@
     }
 
     const CLpop = dialysis==='none' ? 0.7*crcl*0.06 : Math.max(0.5, 0.7*crcl*0.06);
-    const Vpop = 0.7*tbw;
+    const dryWeight = parseFloat(document.getElementById('dryWeight').value);
+    const useDryWeight = isFinite(dryWeight) && dryWeight>0;
+    const weightForVd = useDryWeight ? dryWeight : tbw;
+    const Vpop = 0.7*weightForVd;
+    if(useDryWeight && Math.abs(dryWeight-tbw) > tbw*0.05){
+      flags.push({level:'ok', text:`Vd 之族群先驗改用你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg），以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。若濃度資料足夠（≥2 點），Vd 仍會依實測資料擬合校正，此設定主要影響單點或無濃度時的族群估算。`});
+    }
     const omegaCL = dialysis==='none' ? 0.30 : 0.9;
     const prior = {CLpop, Vpop, sigma:0.12, omegaCL, omegaV:0.25};
 
@@ -982,7 +1394,15 @@
     const headerMeta = document.getElementById('headerMeta');
 
     if(doseRowsMs.length===0){
-      paramGrid.innerHTML = '<div class="empty-note" style="padding:16px 20px;">請先在左側「給藥處方與紀錄」輸入至少一劑給藥資料。</div>';
+      const maintDoseP = parseFloat(document.getElementById('maintDose').value);
+      const tauP = parseFloat(document.getElementById('maintInterval').value);
+      const maintInfHrP = parseFloat(document.getElementById('maintInf').value)/60;
+      const hasPlannedRegimen = isFinite(maintDoseP)&&isFinite(tauP)&&isFinite(maintInfHrP)&&maintDoseP>0&&tauP>0&&maintInfHrP>0;
+      if(hasPlannedRegimen){
+        renderProspective({crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose:maintDoseP, tau:tauP, maintInfHr:maintInfHrP});
+        return;
+      }
+      paramGrid.innerHTML = '<div class="empty-note" style="padding:16px 20px;">請先在下方「給藥處方與紀錄」填妥計畫處方（維持劑量／間隔／輸注時間），即可看到起始劑量的族群 PK 預測；輸入實際給藥紀錄後則會改用資料擬合。</div>';
       fitBadge.textContent = '尚無給藥資料';
       document.getElementById('curveSvg').innerHTML='';
       flagList.innerHTML='';
@@ -1025,7 +1445,7 @@
         else if(dt>=prevDose.infHr && dt < prevDose.infHr+1) earlyPhaseFlag=true;
       }
     });
-    if(anyNotSS) flags.push({level:'warn', text:`至少一筆濃度量測時，距治療起始未滿 4 個半衰期（現估 t½ ≈ ${tHalf.toFixed(1)} 小時），可能尚未達穩態，解讀需保留。`});
+    if(anyNotSS) flags.push({level:'warn', text:`至少一筆濃度量測時，距你設定的分析起點未滿 4 個半衰期（現估 t½ ≈ ${tHalf.toFixed(1)} 小時），可能尚未達穩態，解讀需保留——若這個起點是重新錨定的近期時間點（如腎功能變化後），也請確認回溯的給藥紀錄涵蓋範圍是否足夠。`});
     if(duringInfusionFlag) flags.push({level:'danger', text:'至少一筆濃度的抽血時間落在該劑輸注「進行中」，數值恐反映不完全分布，強烈建議確認實際抽血時間。'});
     if(earlyPhaseFlag) flags.push({level:'warn', text:'至少一筆濃度距其對應劑量輸注結束不足 1 小時，可能落在分布相未完成階段，peak 估算建議保留。'});
 
@@ -1070,7 +1490,7 @@
     const cellsHtml = [
       ['ke（消除速率常數）', fmt3(ke), 'hr⁻¹', ''],
       ['t½（半衰期）', fmt1(tHalf), 'hr', anyNotSS?'尚未達穩態，保留解讀':''],
-      ['Vd（分布體積）', fmt1(V), 'L', `${(V/tbw).toFixed(2)} L/kg`],
+      ['Vd（分布體積）', fmt1(V), 'L', useDryWeight?`${(V/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(V/tbw).toFixed(2)} L/kg`],
       ['CL（清除率）', fmt2(CL), 'L/hr', ''],
       ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
       ['Cmax,ss（現行處方推算）', fmt1(CmaxSS), 'µg/mL', ''],
@@ -1176,7 +1596,7 @@
 
     // --- 12. AI prompt ---
     buildAiPrompt({
-      age, sex, height, tbw, ibw, cgMethod, crcl, dialysis, scrRows,
+      age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, ibw, cgMethod, crcl, dialysis, scrRows,
       doseRowsMs, levelRowsMs, maintDose, tau, maintInfHr, mic, targetAUC,
       CL, V, ke, tHalf, CmaxSS, CminSS, AUC24ss, AUCoverMIC, auc24Actual, fit,
       recommended, regimenRows, loadSuggest: deepInfection?loadSuggest:null,
@@ -1211,7 +1631,7 @@
 
 ## 一、病人與腎功能
 - 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg（IBW ${d.ibw.toFixed(1)} kg，CrCl 計算採 ${d.cgMethod}）
-- SCr 數列：${scrText}
+${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg（與 TBW 不同，Vd 族群先驗採此體重估算，懷疑水腫／第三腔隙影響）\n`:''}- SCr 數列：${scrText}
 - Cockcroft-Gault CrCl：約 ${d.crcl.toFixed(0)} mL/min
 - 透析狀態：${d.dialysis==='none'?'否':d.dialysis}
 
@@ -1289,7 +1709,7 @@ ${flagText || '（無特別旗標）'}
 
   document.addEventListener('DOMContentLoaded', function(){
     // static field listeners
-    ['age','sex','height','tbw','dialysis','arcSuspect','therapyStart','expandTo',
+    ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
      'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
@@ -1306,7 +1726,21 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('addDoseRow').addEventListener('click', ()=>{ addDoseRow('', '', ''); renumberDoseRows(); render(); });
     document.getElementById('addLevelRow').addEventListener('click', ()=>{ addLevelRow('', ''); render(); });
     document.getElementById('expandDoses').addEventListener('click', expandDosesFn);
+    document.getElementById('pruneBeforeBtn').addEventListener('click', pruneDosesBeforeFn);
     document.getElementById('clearAllBtn').addEventListener('click', clearAllFn);
+
+    document.getElementById('savePatientBtn').addEventListener('click', savePatientFn);
+    document.getElementById('loadPatientBtn').addEventListener('click', loadPatientFn);
+    document.getElementById('deletePatientBtn').addEventListener('click', deletePatientFn);
+    document.getElementById('exportPatientsBtn').addEventListener('click', exportPatientsFn);
+    document.getElementById('importPatientsBtn').addEventListener('click', ()=>{
+      document.getElementById('importFileInput').click();
+    });
+    document.getElementById('importFileInput').addEventListener('change', function(){
+      if(this.files && this.files[0]) importPatientsFn(this.files[0]);
+      this.value = '';
+    });
+    refreshPatientSelect();
 
     document.getElementById('copyPromptBtn').addEventListener('click', ()=>{
       const ta = document.getElementById('aiPromptOut');
