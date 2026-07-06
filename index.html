@@ -75,6 +75,27 @@
   @media (max-width:980px){
     main.grid{grid-template-columns:1fr;}
   }
+  @media (max-width:640px){
+    .app{padding:16px 14px 60px;}
+    header.top{flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:14px;margin-bottom:16px;}
+    header.top .meta-line{text-align:left;}
+    .card{padding:14px 14px 16px;}
+    .field-row, .field-row.three{grid-template-columns:1fr;gap:8px;}
+    /* iOS Safari auto-zooms on focus if inputs are under 16px */
+    .field input, .field select, .field textarea{font-size:16px;padding:9px 8px;}
+    table.rows td input{font-size:14px;padding:7px 6px;}
+    .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px;}
+    .table-scroll table.rows{min-width:460px;}
+    .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
+    .param-cell .value{font-size:16px;}
+    .results-head{padding:14px 14px;}
+    .curve-wrap{padding:12px 14px 2px;}
+    .section-block{padding:14px 14px;}
+    .regimen-table{font-size:11.5px;}
+    .table-scroll .regimen-table{min-width:560px;}
+    .btn{padding:9px 12px;} /* keep tap targets comfortable */
+    .row-del{padding:6px 10px;font-size:17px;}
+  }
 
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
   .stack{display:flex;flex-direction:column;gap:18px;}
@@ -265,10 +286,10 @@
         </div>
         <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）</label></div>
 
-        <table class="rows" id="scrTable">
+        <div class="table-scroll"><table class="rows" id="scrTable">
           <thead><tr><th style="width:40%">SCr 量測日期時間</th><th>SCr (mg/dL)</th><th></th></tr></thead>
           <tbody></tbody>
-        </table>
+        </table></div>
         <div class="btn-row"><button class="btn small" id="addScrRow" type="button">+ 新增一筆 SCr</button></div>
       </div>
 
@@ -315,10 +336,10 @@
           <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
         </div>
 
-        <table class="rows" id="doseTable" style="margin-top:14px;">
+        <div class="table-scroll"><table class="rows" id="doseTable" style="margin-top:14px;">
           <thead><tr><th style="width:8%">劑次</th><th style="width:38%">給藥時間</th><th>劑量(mg)</th><th>輸注(分)</th><th></th></tr></thead>
           <tbody></tbody>
-        </table>
+        </table></div>
         <div class="btn-row"><button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button></div>
       </div>
 
@@ -326,10 +347,10 @@
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
         <p class="hint">不限同一給藥區間——給藥前 trough、任一劑後 peak、隔天單點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算。</p>
-        <table class="rows" id="levelTable">
+        <div class="table-scroll"><table class="rows" id="levelTable">
           <thead><tr><th style="width:55%">抽血日期時間</th><th>濃度 (µg/mL)</th><th></th></tr></thead>
           <tbody></tbody>
-        </table>
+        </table></div>
         <div class="btn-row"><button class="btn small" id="addLevelRow" type="button">+ 新增一筆濃度</button></div>
       </div>
 
@@ -392,10 +413,10 @@
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
         <div id="loadingSuggestion"></div>
-        <table class="regimen-table" id="regimenTable">
+        <div class="table-scroll"><table class="regimen-table" id="regimenTable">
           <thead><tr><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
-        </table>
+        </table></div>
       </div>
 
       <div class="section-block">
