@@ -64,6 +64,7 @@
   header.top .meta-line{
     font-family:var(--mono);font-size:12px;color:var(--ink-faint);text-align:right;
   }
+  header.top .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
 
   /* ---------- Layout ---------- */
   main.grid{
@@ -79,6 +80,7 @@
     .app{padding:16px 14px 60px;}
     header.top{flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:14px;margin-bottom:16px;}
     header.top .meta-line{text-align:left;}
+    header.top .header-right{align-items:flex-start;width:100%;}
     .card{padding:14px 14px 16px;}
     .field-row, .field-row.three{grid-template-columns:1fr;gap:8px;}
     /* iOS Safari auto-zooms on focus if inputs are under 16px */
@@ -87,16 +89,14 @@
     .custom-input.dose{width:78px;}
     .custom-input.inf{width:64px;}
     .custom-input.tau{width:56px;}
-    table.rows td input{font-size:14px;padding:7px 6px;}
-    .table-scroll{margin:0 -14px;padding:0 14px;}
-    .table-scroll table.rows{min-width:460px;}
+    table.rows td input{font-size:14px;padding:7px 5px;}
     .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
     .param-cell .value{font-size:16px;}
     .results-head{padding:14px 14px;}
     .curve-wrap{padding:12px 14px 2px;}
     .section-block{padding:14px 14px;}
     .regimen-table{font-size:11.5px;}
-    .table-scroll .regimen-table{min-width:560px;}
+    .table-scroll{margin:0 -14px;padding:0 14px;}
     .btn{padding:9px 12px;} /* keep tap targets comfortable */
     .row-del{padding:6px 10px;font-size:17px;}
   }
@@ -141,13 +141,21 @@
   .checkline input{width:14px;height:14px;}
 
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  #scrTable{min-width:360px;}
+  #levelTable{min-width:360px;}
+  #doseTable{min-width:600px;}
+  #regimenTable{min-width:640px;}
   table.rows{width:100%;border-collapse:collapse;margin-top:6px;font-family:var(--mono);font-size:12.5px;}
   table.rows th{
     text-align:left;font-family:var(--sans);font-size:11px;color:var(--ink-faint);font-weight:500;
     padding:4px 6px;border-bottom:1px solid var(--line);
   }
-  table.rows td{padding:3px 4px;border-bottom:1px solid var(--line);vertical-align:middle;}
-  table.rows td input{width:100%;padding:5px 6px;font-size:12.5px;}
+  table.rows td{padding:3px 3px;border-bottom:1px solid var(--line);vertical-align:middle;}
+  table.rows td input{width:100%;padding:5px 4px;font-size:12.5px;text-align:left;}
+  /* reclaim horizontal space in narrow table cells: native number spinners aren't needed for typed clinical entry */
+  input[type="number"]::-webkit-outer-spin-button,
+  input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+  input[type="number"]{-moz-appearance:textfield;}
   table.rows tr:last-child td{border-bottom:none;}
   .row-del{
     background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;line-height:1;
@@ -273,7 +281,10 @@
       </div>
       <div class="subtitle">任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議</div>
     </div>
-    <div class="meta-line" id="headerMeta">尚未輸入資料</div>
+    <div class="header-right">
+      <div class="meta-line" id="headerMeta">尚未輸入資料</div>
+      <button class="btn small" id="clearAllBtn" type="button" title="清空所有已輸入的病人與給藥資料，重新開始">重置所有資料</button>
+    </div>
   </header>
 
   <main class="grid">
@@ -735,6 +746,62 @@
       cursor += tauHr*3600000;
     }
     renumberDoseRows();
+    render();
+  }
+
+  function clearAllFn(){
+    const ok = confirm('確定要清除所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    if(!ok) return;
+
+    // 01 病人與腎功能
+    document.getElementById('age').value='';
+    document.getElementById('sex').value='M';
+    document.getElementById('height').value='';
+    document.getElementById('tbw').value='';
+    document.getElementById('dialysis').value='none';
+    document.getElementById('arcSuspect').checked=false;
+    clearTbody('#scrTable tbody');
+
+    // 02 感染／臨床脈絡
+    document.getElementById('indication').selectedIndex=0;
+    document.getElementById('severity').selectedIndex=0;
+    document.getElementById('site').value='';
+    document.getElementById('organism').value='';
+    document.getElementById('deepInfection').checked=false;
+    document.getElementById('sourceControlDone').checked=false;
+
+    // 03 給藥處方與紀錄
+    document.getElementById('therapyStart').value='';
+    document.getElementById('expandTo').value='';
+    document.getElementById('useLoading').checked=false;
+    document.getElementById('loadingFields').style.display='none';
+    document.getElementById('loadingDose').value='2000';
+    document.getElementById('loadingInf').value='120';
+    document.getElementById('maintDose').value='';
+    document.getElementById('maintInterval').value='';
+    document.getElementById('maintInf').value='';
+    clearTbody('#doseTable tbody');
+
+    // 04 血中濃度
+    clearTbody('#levelTable tbody');
+
+    // 05 目標與情境設定
+    document.getElementById('mic').value='1';
+    document.getElementById('targetAuc').value='500';
+    document.getElementById('altTroughStrategy').checked=false;
+    document.getElementById('cand8').checked=true;
+    document.getElementById('cand12').checked=true;
+    document.getElementById('cand24').checked=true;
+
+    // 06 併用藥物與備註
+    document.getElementById('concomitant').value='';
+    document.getElementById('otherNotes').value='';
+
+    // B 自訂方案列
+    document.getElementById('customDose').value='';
+    document.getElementById('customInf').value='';
+    document.getElementById('customTau').value='';
+
     render();
   }
 
@@ -1227,6 +1294,7 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('addDoseRow').addEventListener('click', ()=>{ addDoseRow('', '', ''); renumberDoseRows(); render(); });
     document.getElementById('addLevelRow').addEventListener('click', ()=>{ addLevelRow('', ''); render(); });
     document.getElementById('expandDoses').addEventListener('click', expandDosesFn);
+    document.getElementById('clearAllBtn').addEventListener('click', clearAllFn);
 
     document.getElementById('copyPromptBtn').addEventListener('click', ()=>{
       const ta = document.getElementById('aiPromptOut');
