@@ -89,7 +89,8 @@
     .custom-input.dose{width:78px;}
     .custom-input.inf{width:64px;}
     .custom-input.tau{width:56px;}
-    table.rows td input{font-size:14px;padding:7px 5px;}
+    .entry-row input[type="datetime-local"]{font-size:16px;flex-basis:100%;}
+    .entry-row .num-field input{font-size:16px;width:74px;}
     .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
     .param-cell .value{font-size:16px;}
     .results-head{padding:14px 14px;}
@@ -140,23 +141,40 @@
   .checkline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin:6px 0;}
   .checkline input{width:14px;height:14px;}
 
-  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
-  #scrTable{min-width:360px;}
-  #levelTable{min-width:360px;}
-  #doseTable{min-width:600px;}
   #regimenTable{min-width:640px;}
-  table.rows{width:100%;border-collapse:collapse;margin-top:6px;font-family:var(--mono);font-size:12.5px;}
-  table.rows th{
-    text-align:left;font-family:var(--sans);font-size:11px;color:var(--ink-faint);font-weight:500;
-    padding:4px 6px;border-bottom:1px solid var(--line);
-  }
-  table.rows td{padding:3px 3px;border-bottom:1px solid var(--line);vertical-align:middle;}
-  table.rows td input{width:100%;padding:5px 4px;font-size:12.5px;text-align:left;}
-  /* reclaim horizontal space in narrow table cells: native number spinners aren't needed for typed clinical entry */
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+
+  /* reclaim horizontal space: native number spinners aren't needed for typed clinical entry */
   input[type="number"]::-webkit-outer-spin-button,
   input[type="number"]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
   input[type="number"]{-moz-appearance:textfield;}
-  table.rows tr:last-child td{border-bottom:none;}
+
+  /* ---- free-form entry rows (SCr / doses / levels) ----
+     flexbox with wrap: the datetime field grows to fill the line, and the
+     numeric fields wrap onto their own line when the row runs out of room —
+     so nothing ever gets clipped and nothing ever needs horizontal scroll. */
+  .entry-rows{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
+  .entry-row{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;
+    padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#FBFBF9;
+  }
+  .entry-row .idx-badge{
+    flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+    min-width:16px;text-align:center;
+  }
+  .entry-row input[type="datetime-local"]{
+    flex:1 1 200px;min-width:190px;font-family:var(--mono);font-size:13px;color:var(--ink);
+    background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:6px 7px;
+  }
+  .entry-row .num-field{display:flex;align-items:center;gap:5px;flex:0 0 auto;}
+  .entry-row .num-field input{
+    width:72px;flex:0 0 auto;font-family:var(--mono);font-size:13px;color:var(--ink);
+    background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:6px 7px;
+  }
+  .entry-row .num-field .unit{font-size:11px;color:var(--ink-faint);white-space:nowrap;}
+  .entry-row input:focus{outline:2px solid var(--trace-dim);outline-offset:0;border-color:var(--trace);}
+  .entry-row .row-del{flex:0 0 auto;margin-left:auto;}
+
   .row-del{
     background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;line-height:1;
     padding:2px 6px;border-radius:4px;
@@ -316,10 +334,7 @@
         </div>
         <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）</label></div>
 
-        <div class="table-scroll"><table class="rows" id="scrTable">
-          <thead><tr><th style="width:40%">SCr 量測日期時間</th><th>SCr (mg/dL)</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+        <div class="entry-rows" id="scrTable"></div>
         <div class="btn-row"><button class="btn small" id="addScrRow" type="button">+ 新增一筆 SCr</button></div>
       </div>
 
@@ -366,10 +381,7 @@
           <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
         </div>
 
-        <div class="table-scroll"><table class="rows" id="doseTable" style="margin-top:14px;">
-          <thead><tr><th style="width:8%">劑次</th><th style="width:38%">給藥時間</th><th>劑量(mg)</th><th>輸注(分)</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+        <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
         <div class="btn-row"><button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button></div>
       </div>
 
@@ -377,10 +389,7 @@
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
         <p class="hint">不限同一給藥區間——給藥前 trough、任一劑後 peak、隔天單點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算。</p>
-        <div class="table-scroll"><table class="rows" id="levelTable">
-          <thead><tr><th style="width:55%">抽血日期時間</th><th>濃度 (µg/mL)</th><th></th></tr></thead>
-          <tbody></tbody>
-        </table></div>
+        <div class="entry-rows" id="levelTable"></div>
         <div class="btn-row"><button class="btn small" id="addLevelRow" type="button">+ 新增一筆濃度</button></div>
       </div>
 
@@ -657,68 +666,71 @@
   }
 
   function addScrRow(dateVal, val){
-    const tbody = document.querySelector('#scrTable tbody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="datetime-local" class="scr-date" value="${dateVal||''}"></td>
-      <td><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"></td>
-      <td><button class="row-del" type="button">×</button></td>`;
-    tbody.appendChild(tr);
-    tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
-    wireDelete(tr.querySelector('.row-del'), tr, render);
+    const container = document.getElementById('scrTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<input type="datetime-local" class="scr-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
+    wireDelete(row.querySelector('.row-del'), row, render);
   }
   function addDoseRow(dateVal, doseMg, infMin){
-    const tbody = document.querySelector('#doseTable tbody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td class="dose-idx" style="font-family:var(--mono);color:var(--ink-faint);">—</td>
-      <td><input type="datetime-local" class="dose-date" value="${dateVal||''}"></td>
-      <td><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"></td>
-      <td><input type="number" step="5" class="dose-inf" value="${infMin!=null?infMin:''}"></td>
-      <td><button class="row-del" type="button">×</button></td>`;
-    tbody.appendChild(tr);
-    tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
-    wireDelete(tr.querySelector('.row-del'), tr, render);
+    const container = document.getElementById('doseTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<span class="idx-badge dose-idx">—</span>
+      <input type="datetime-local" class="dose-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
+      <div class="num-field"><input type="number" step="5" class="dose-inf" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
+    wireDelete(row.querySelector('.row-del'), row, render);
   }
   function addLevelRow(dateVal, conc){
-    const tbody = document.querySelector('#levelTable tbody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="datetime-local" class="level-date" value="${dateVal||''}"></td>
-      <td><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"></td>
-      <td><button class="row-del" type="button">×</button></td>`;
-    tbody.appendChild(tr);
-    tr.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
-    wireDelete(tr.querySelector('.row-del'), tr, render);
+    const container = document.getElementById('levelTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
+    wireDelete(row.querySelector('.row-del'), row, render);
   }
 
   function clearTbody(sel){ document.querySelector(sel).innerHTML=''; }
 
   function readScrRows(){
-    return Array.from(document.querySelectorAll('#scrTable tbody tr')).map(tr=>({
-      t: parseLocal(tr.querySelector('.scr-date').value),
-      v: parseFloat(tr.querySelector('.scr-val').value)
+    return Array.from(document.querySelectorAll('#scrTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.scr-date').value),
+      v: parseFloat(row.querySelector('.scr-val').value)
     })).filter(r=>isFinite(r.t)&&isFinite(r.v)).sort((a,b)=>a.t-b.t);
   }
   function readDoseRows(){
-    return Array.from(document.querySelectorAll('#doseTable tbody tr')).map(tr=>({
-      t: parseLocal(tr.querySelector('.dose-date').value),
-      doseMg: parseFloat(tr.querySelector('.dose-mg').value),
-      infMin: parseFloat(tr.querySelector('.dose-inf').value)
+    return Array.from(document.querySelectorAll('#doseTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.dose-date').value),
+      doseMg: parseFloat(row.querySelector('.dose-mg').value),
+      infMin: parseFloat(row.querySelector('.dose-inf').value)
     })).filter(r=>isFinite(r.t)&&isFinite(r.doseMg)&&isFinite(r.infMin)&&r.infMin>0).sort((a,b)=>a.t-b.t);
   }
   function readLevelRows(){
-    return Array.from(document.querySelectorAll('#levelTable tbody tr')).map(tr=>({
-      t: parseLocal(tr.querySelector('.level-date').value),
-      conc: parseFloat(tr.querySelector('.level-val').value)
+    return Array.from(document.querySelectorAll('#levelTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.level-date').value),
+      conc: parseFloat(row.querySelector('.level-val').value)
     })).filter(r=>isFinite(r.t)&&isFinite(r.conc)&&r.conc>0).sort((a,b)=>a.t-b.t);
   }
 
   function renumberDoseRows(){
-    const rows = Array.from(document.querySelectorAll('#doseTable tbody tr'));
-    const withT = rows.map(tr=>({tr, t:parseLocal(tr.querySelector('.dose-date').value)}));
+    const rows = Array.from(document.querySelectorAll('#doseTable .entry-row'));
+    const withT = rows.map(row=>({row, t:parseLocal(row.querySelector('.dose-date').value)}));
     withT.sort((a,b)=>{
       if(!isFinite(a.t)) return 1; if(!isFinite(b.t)) return -1;
       return a.t-b.t;
     });
-    withT.forEach((o,i)=>{ o.tr.querySelector('.dose-idx').textContent = isFinite(o.t) ? (i+1) : '—'; });
+    withT.forEach((o,i)=>{ o.row.querySelector('.dose-idx').textContent = isFinite(o.t) ? (i+1) : '—'; });
   }
 
   // ---------------- auto-expand dosing history ----------------
@@ -733,7 +745,7 @@
       alert('請先完整填寫本療程起始時間、展開至時間、維持劑量、間隔與輸注時間。');
       return;
     }
-    clearTbody('#doseTable tbody');
+    clearTbody('#doseTable');
     let cursor = startMs;
     if(useLoading){
       const lDose = parseFloat(document.getElementById('loadingDose').value);
@@ -760,7 +772,7 @@
     document.getElementById('tbw').value='';
     document.getElementById('dialysis').value='none';
     document.getElementById('arcSuspect').checked=false;
-    clearTbody('#scrTable tbody');
+    clearTbody('#scrTable');
 
     // 02 感染／臨床脈絡
     document.getElementById('indication').selectedIndex=0;
@@ -780,10 +792,10 @@
     document.getElementById('maintDose').value='';
     document.getElementById('maintInterval').value='';
     document.getElementById('maintInf').value='';
-    clearTbody('#doseTable tbody');
+    clearTbody('#doseTable');
 
     // 04 血中濃度
-    clearTbody('#levelTable tbody');
+    clearTbody('#levelTable');
 
     // 05 目標與情境設定
     document.getElementById('mic').value='1';
@@ -1265,7 +1277,7 @@ ${flagText || '（無特別旗標）'}
     expandDosesFn();
 
     // demonstrate FREE sampling: a pre-dose trough + a later post-dose peak
-    const doseRows = Array.from(document.querySelectorAll('#doseTable tbody tr'));
+    const doseRows = Array.from(document.querySelectorAll('#doseTable .entry-row'));
     if(doseRows.length>=2){
       const secondLastDoseTime = new Date(doseRows[doseRows.length-2].querySelector('.dose-date').value);
       const lastDoseTime = new Date(doseRows[doseRows.length-1].querySelector('.dose-date').value);
