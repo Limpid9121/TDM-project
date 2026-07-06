@@ -83,8 +83,12 @@
     .field-row, .field-row.three{grid-template-columns:1fr;gap:8px;}
     /* iOS Safari auto-zooms on focus if inputs are under 16px */
     .field input, .field select, .field textarea{font-size:16px;padding:9px 8px;}
+    .custom-input{font-size:16px;}
+    .custom-input.dose{width:78px;}
+    .custom-input.inf{width:64px;}
+    .custom-input.tau{width:56px;}
     table.rows td input{font-size:14px;padding:7px 6px;}
-    .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -14px;padding:0 14px;}
+    .table-scroll{margin:0 -14px;padding:0 14px;}
     .table-scroll table.rows{min-width:460px;}
     .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
     .param-cell .value{font-size:16px;}
@@ -118,7 +122,9 @@
 
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
   .field-row.three{grid-template-columns:1fr 1fr 1fr;}
-  .field{display:flex;flex-direction:column;gap:4px;}
+  .field-row.stacked{grid-template-columns:1fr;gap:10px;}
+  .field{display:flex;flex-direction:column;gap:4px;min-width:0;}
+  .field input[type="datetime-local"]{min-width:210px;}
   .field label{font-size:11.5px;color:var(--ink-soft);font-weight:500;}
   .field input, .field select, .field textarea{
     font-family:var(--mono);font-size:13.5px;color:var(--ink);
@@ -134,6 +140,7 @@
   .checkline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin:6px 0;}
   .checkline input{width:14px;height:14px;}
 
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
   table.rows{width:100%;border-collapse:collapse;margin-top:6px;font-family:var(--mono);font-size:12.5px;}
   table.rows th{
     text-align:left;font-family:var(--sans);font-size:11px;color:var(--ink-faint);font-weight:500;
@@ -220,6 +227,18 @@
   .tag.ok{background:var(--trace-soft);color:var(--trace-strong);}
   .tag.warn{background:var(--amber-soft);color:#6B4610;}
   .tag.danger{background:var(--crimson-soft);color:#6E2626;}
+
+  .regimen-table tfoot tr{background:#FAFAF8;}
+  .regimen-table tfoot td{border-top:2px dashed var(--line-strong);padding-top:10px;font-family:var(--sans);}
+  .custom-input{
+    font-family:var(--mono);font-size:12.5px;border:1px solid var(--line-strong);border-radius:5px;
+    padding:5px 6px;background:#fff;color:var(--ink);
+  }
+  .custom-input.dose{width:64px;}
+  .custom-input.inf{width:52px;}
+  .custom-input.tau{width:44px;}
+  .custom-input:focus{outline:2px solid var(--trace-dim);outline-offset:0;border-color:var(--trace);}
+  #customCmax, #customCmin, #customAuc{font-family:var(--mono);}
 
   .monitor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
@@ -318,7 +337,7 @@
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
         <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。</p>
-        <div class="field-row">
+        <div class="field-row stacked">
           <div class="field"><label>本療程起始（首劑）時間</label><input type="datetime-local" id="therapyStart"></div>
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
         </div>
@@ -416,6 +435,20 @@
         <div class="table-scroll"><table class="regimen-table" id="regimenTable">
           <thead><tr><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
+          <tfoot>
+            <tr class="custom-row">
+              <td><span class="tag" style="background:var(--trace-soft);color:var(--trace-strong);">自訂</span></td>
+              <td>
+                <input type="number" id="customDose" class="custom-input dose" placeholder="劑量" step="50" title="劑量 mg">&nbsp;mg／
+                <input type="number" id="customInf" class="custom-input inf" placeholder="輸注" step="5" title="輸注時間 分">&nbsp;min
+              </td>
+              <td>q<input type="number" id="customTau" class="custom-input tau" placeholder="8" step="1" title="間隔 小時">h</td>
+              <td id="customCmax">—</td>
+              <td id="customCmin">—</td>
+              <td id="customAuc">—</td>
+              <td class="reason" id="customReason">輸入劑量／輸注／間隔，即時套用目前擬合參數計算</td>
+            </tr>
+          </tfoot>
         </table></div>
       </div>
 
@@ -601,6 +634,11 @@
 
   function roundDoseTo250(mg){ return Math.max(250, Math.round(mg/250)*250); }
   function inferInfusionMinutes(mg){ if(mg<=1000) return 60; if(mg<=1500) return 90; return 120; }
+  function regimenTag(cminC, auc24C){
+    if(cminC>20 || auc24C>600) return {tag:'danger', tagText:'腎毒性疑慮升高'};
+    if(cminC>15 || auc24C>580 || auc24C<420) return {tag:'warn', tagText:'略接近邊界'};
+    return {tag:'ok', tagText:'符合目標'};
+  }
 
   // ---------------- DOM: dynamic row tables ----------------
   function wireDelete(btn, row, onChange){
@@ -698,6 +736,30 @@
     }
     renumberDoseRows();
     render();
+  }
+
+  function updateCustomRow(CL, ke, mic){
+    const dose = parseFloat(document.getElementById('customDose').value);
+    const infMin = parseFloat(document.getElementById('customInf').value);
+    const tauC = parseFloat(document.getElementById('customTau').value);
+    const cmaxEl=document.getElementById('customCmax'), cminEl=document.getElementById('customCmin'),
+          aucEl=document.getElementById('customAuc'), reasonEl=document.getElementById('customReason');
+    if(!isFinite(dose)||!isFinite(infMin)||!isFinite(tauC)||dose<=0||infMin<=0||tauC<=0){
+      cmaxEl.textContent='—'; cminEl.textContent='—'; aucEl.textContent='—';
+      reasonEl.innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
+      return null;
+    }
+    const infHr = infMin/60;
+    const R = dose/infHr;
+    const cmax = (R/CL)*(1-Math.exp(-ke*infHr))/(1-Math.exp(-ke*tauC));
+    const cmin = cmax*Math.exp(-ke*(tauC-infHr));
+    const auc24 = (dose*(24/tauC))/CL;
+    const {tag, tagText} = regimenTag(cmin, auc24);
+    cmaxEl.textContent = cmax.toFixed(1);
+    cminEl.textContent = cmin.toFixed(1);
+    aucEl.textContent = auc24.toFixed(0);
+    reasonEl.innerHTML = `${tagText}（AUC/MIC≈${(auc24/mic).toFixed(0)}）<span class="tag ${tag}">${tag==='ok'?'OK':(tag==='warn'?'留意':'風險')}</span>`;
+    return {dose, infMin, tauC, cmax, cmin, auc24, tag, tagText};
   }
 
   // ---------------- SVG curve ----------------
@@ -849,6 +911,8 @@
       document.getElementById('loadingSuggestion').innerHTML='';
       document.getElementById('monitorGrid').innerHTML='';
       document.getElementById('aiPromptOut').value='';
+      ['customCmax','customCmin','customAuc'].forEach(id=>document.getElementById(id).textContent='—');
+      document.getElementById('customReason').innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
       headerMeta.textContent='尚未輸入資料';
       return;
     }
@@ -965,9 +1029,7 @@
       const cmaxC = (Rc/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
       const cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
       const auc24C = (roundedDose*(24/candTau))/CL;
-      let tag='ok', tagText='符合目標';
-      if(cminC>20 || auc24C>600){ tag='danger'; tagText='腎毒性疑慮升高'; }
-      else if(cminC>15 || auc24C>580 || auc24C<420){ tag='warn'; tagText='略接近邊界'; }
+      const {tag, tagText} = regimenTag(cminC, auc24C);
       return {candTau, roundedDose, infMinC, cmaxC, cminC, auc24C, tag, tagText, isCurrent: candTau===tau};
     });
     // pick recommended: prefer ok-tag row closest to target AUC; else closest overall
@@ -988,6 +1050,8 @@
         <td>${fmt0(r.auc24C)}</td>
         <td class="reason">${r.tagText}<span class="tag ${r.tag}">${r.tag==='ok'?'OK':(r.tag==='warn'?'留意':'風險')}</span></td>
       </tr>`).join('') || '<tr><td colspan="7" class="reason">未勾選任何候選間隔。</td></tr>';
+
+    const customResult = updateCustomRow(CL, ke, mic);
 
     // loading suggestion
     const deepInfection = document.getElementById('deepInfection').checked;
@@ -1037,7 +1101,7 @@
       doseRowsMs, levelRowsMs, maintDose, tau, maintInfHr, mic, targetAUC,
       CL, V, ke, tHalf, CmaxSS, CminSS, AUC24ss, AUCoverMIC, auc24Actual, fit,
       recommended, regimenRows, loadSuggest: deepInfection?loadSuggest:null,
-      flags
+      flags, customResult
     });
   }
 
@@ -1095,6 +1159,7 @@ ${levelText}
 ## 六、本工具候選劑量方案
 ${regimenText}
 ${d.loadSuggest?`\n本工具建議評估 loading dose：約 ${d.loadSuggest} mg`:''}
+${d.customResult?`\n藥師手動測試方案：${d.customResult.dose} mg／輸注 ${d.customResult.infMin} 分／q${d.customResult.tauC}h → Cmax,ss ${d.customResult.cmax.toFixed(1)}／Cmin,ss ${d.customResult.cmin.toFixed(1)}／AUC₂₄ ${d.customResult.auc24.toFixed(0)}（${d.customResult.tagText}）`:''}
 
 ## 七、本工具健全性旗標
 ${flagText || '（無特別旗標）'}
@@ -1149,7 +1214,7 @@ ${flagText || '（無特別旗標）'}
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
      'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
-     'concomitant','otherNotes'].forEach(id=>{
+     'concomitant','otherNotes','customDose','customInf','customTau'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.addEventListener('input', render), el.addEventListener('change', render);
     });
