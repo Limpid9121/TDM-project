@@ -1,15 +1,23 @@
-# Vancomycin TDM 擬合引擎
+# TDM 擬合引擎（Vancomycin／Aminoglycoside）
 
-任意抽血時點的 vancomycin TDM 計算工具——一室模型、貝氏 MAP 擬合，不需要 peak/trough 落在同一給藥區間。純前端（單一 `index.html`，無後端、無需安裝），所有計算在瀏覽器本機完成。
+任意抽血時點的 TDM 計算工具——一室模型、貝氏 MAP 擬合，不需要 peak/trough 落在同一給藥區間。純前端（單一 `index.html`，無後端、無需安裝），所有計算在瀏覽器本機完成。左上角切換器可在 **Vancomycin** 與 **Aminoglycoside**（gentamicin／tobramycin／amikacin）兩個模組間切換；Azole、抗癲癇藥物在切換器中標示「即將推出」。
 
 ## 功能
 
-- 自由抽血時點擬合 ke／Vd／CL（2 點還原 Sawchuk-Zaske、1 點貝氏校正、≥3 點更穩健）
-- AUC₂₄ 導向的劑量建議，候選給藥間隔（q8h/q12h/q24h）比較表
+**共用（兩個模組皆有）**
+- 自由抽血時點擬合 ke／Vd／CL（2 點還原經典藥動學公式、1 點貝氏校正、≥3 點更穩健）
 - 尚未給藥時的族群 PK 起始劑量預測（population PK，無需等待濃度資料）
 - 長期療程可重新錨定「分析起點」，不必展開整段給藥史
-- 依病歷號存檔／載入（僅存在瀏覽器本機 localStorage，不上傳）
+- 依病歷號存檔／載入（僅存在瀏覽器本機 localStorage，不上傳；兩個藥物模組各自獨立存放）
 - 一鍵產生可貼給任一 AI 的整合評估 Prompt
+
+**Vancomycin 模組**
+- AUC₂₄ 導向的劑量建議，候選給藥間隔（q8h/q12h/q24h）比較表
+
+**Aminoglycoside 模組**（gentamicin／tobramycin／amikacin）
+- 依「藥物 × 給藥策略（傳統／ODD）× 適應症」自動帶出院內 peak／trough 目標
+- 候選給藥間隔涵蓋 q8h–q48h，個體化 ke／Vd 直接反解達標劑量（不依賴 Hartford nomogram 圖表判讀）
+- Cmax/MIC 輔助顯示（選填 MIC 時）
 
 ## 使用方式
 
@@ -32,7 +40,7 @@
 ```bash
 git init
 git add index.html README.md
-git commit -m "vancomycin TDM engine"
+git commit -m "TDM engine: vancomycin + aminoglycoside"
 git branch -M main
 git remote add origin https://github.com/你的帳號/repo名稱.git
 git push -u origin main
@@ -57,4 +65,4 @@ git push -u origin main
 
 ## 定位聲明
 
-本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導。族群先驗、目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入。最終劑量處方判斷屬使用者之專業責任。
+本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導。Vancomycin 模組之族群先驗、目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識；Aminoglycoside 模組之目標值反映院內 TDM protocol 與當代主流實務，且不自動判讀 Hartford nomogram 圖表（改採個體化 ke／Vd 直接反解劑量）。兩者皆可能與特定院內 protocol 有出入。最終劑量處方判斷屬使用者之專業責任。

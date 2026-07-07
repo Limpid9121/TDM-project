@@ -296,6 +296,21 @@
   footer.disclaimer strong{color:var(--ink);}
 
   .empty-note{font-size:12px;color:var(--ink-faint);padding:6px 2px;}
+
+  /* ---------- Drug switcher ---------- */
+  .drug-switch{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+  .drug-switch-btn{position:relative;}
+  .drug-switch-btn.coming-soon{opacity:.55;cursor:default;}
+  .drug-switch-btn.coming-soon:hover{border-color:var(--line-strong);color:var(--ink);}
+  .drug-switch-btn .soon-tag{
+    font-family:var(--mono);font-size:9.5px;margin-left:5px;color:var(--ink-faint);
+  }
+  .drug-module{display:none;}
+  .drug-module.active{display:block;}
+  @media (max-width:640px){
+    .drug-switch{margin-top:8px;width:100%;}
+    .drug-switch-btn{flex:1 1 auto;}
+  }
 </style>
 </head>
 <body>
@@ -304,17 +319,24 @@
   <header class="top">
     <div>
       <div class="brand-mark">
-        <h1>Vancomycin TDM 擬合引擎</h1>
-        <span class="eyebrow">Free-Sampling PK</span>
+        <h1 id="appTitle">Vancomycin TDM 擬合引擎</h1>
+        <span class="eyebrow" id="appEyebrow">Free-Sampling PK</span>
       </div>
-      <div class="subtitle">任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議</div>
+      <div class="subtitle" id="appSubtitle">任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議</div>
+      <div class="drug-switch" id="drugSwitch">
+        <button class="btn small primary drug-switch-btn" type="button" data-drug="vancomycin">Vancomycin</button>
+        <button class="btn small drug-switch-btn" type="button" data-drug="aminoglycoside">Aminoglycoside</button>
+        <button class="btn small drug-switch-btn coming-soon" type="button" disabled title="尚未建置">Azole<span class="soon-tag">即將推出</span></button>
+        <button class="btn small drug-switch-btn coming-soon" type="button" disabled title="尚未建置">抗癲癇藥物<span class="soon-tag">即將推出</span></button>
+      </div>
     </div>
     <div class="header-right">
       <div class="meta-line" id="headerMeta">尚未輸入資料</div>
-      <button class="btn small" id="clearAllBtn" type="button" title="清空所有已輸入的病人與給藥資料，重新開始">重置所有資料</button>
+      <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始">重置目前藥物資料</button>
     </div>
   </header>
 
+  <div id="drug-vancomycin" class="drug-module active">
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL ============ -->
     <section class="stack" id="inputPanel">
@@ -398,7 +420,7 @@
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，不必展開兩週前的舊記錄——只要往前保留的給藥紀錄，涵蓋時間長度達你懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</p>
+        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</p>
         <div class="field-row stacked">
           <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
@@ -530,8 +552,237 @@
 
     </section>
   </main>
+  </div>
+  <!-- ============ AMINOGLYCOSIDE DRUG MODULE (injected below, mirrors structure above) ============ -->
+  <div id="drug-aminoglycoside" class="drug-module">
+  <main class="grid">
+    <!-- ============ LEFT: INPUT PANEL (AMINOGLYCOSIDE) ============ -->
+    <section class="stack" id="amgInputPanel">
 
-  <footer class="disclaimer">
+      <!-- 0. 病人資料存檔 -->
+      <div class="card" id="amgPatientManagerCard">
+        <h2><span class="idx">⟳</span>病人資料存檔</h2>
+        <p class="hint">依病歷號分別儲存與載入，長期追蹤同一位病人時不用每次重新輸入。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
+        <div class="field-row">
+          <div class="field"><label>病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
+          <div class="field"><label>選擇已儲存的病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary small" id="amgSavePatientBtn" type="button">儲存／更新此病人</button>
+          <button class="btn small" id="amgLoadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn small" id="amgExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
+          <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
+        </div>
+        <div class="hint" id="amgPatientMeta" style="margin-top:8px;min-height:14px;"></div>
+      </div>
+
+      <!-- 1. 病人與腎功能 -->
+      <div class="card">
+        <h2><span class="idx">01</span>病人與腎功能</h2>
+        <p class="hint">SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。Aminoglycoside 清除率與腎功能高度相關，CrCl 估算的準確性直接影響起始劑量。</p>
+        <div class="field-row three">
+          <div class="field"><label>年齡（歲）</label><input type="number" id="amgAge" value="60" min="0" max="120"></div>
+          <div class="field"><label>生理性別</label>
+            <select id="amgSex"><option value="M">男</option><option value="F">女</option></select>
+          </div>
+          <div class="field"><label>身高（cm）</label><input type="number" id="amgHeight" value="165" min="100" max="230"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>實際體重 TBW（kg）</label><input type="number" id="amgTbw" value="60" min="20" max="250" step="0.1"></div>
+          <div class="field"><label>是否透析</label>
+            <select id="amgDialysis">
+              <option value="none">否</option>
+              <option value="HD">血液透析 HD</option>
+              <option value="CRRT">CRRT</option>
+              <option value="SLED">SLED</option>
+              <option value="PD">腹膜透析 PD</option>
+            </select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>乾／平常體重（kg，選填）</label><input type="number" id="amgDryWeight" step="0.1" placeholder="與TBW明顯不同才填"></div>
+          <div class="field"></div>
+        </div>
+        <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
+        <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）— 清除快，標準劑量常 underdose</label></div>
+        <div class="checkline"><input type="checkbox" id="amgVdHigh"><label for="amgVdHigh">臨床懷疑 Vd 偏高（水腫／腹水／重症／敗血症）— 族群 Vd 先驗上修至 0.35 L/kg</label></div>
+
+        <div class="entry-rows" id="amgScrTable"></div>
+        <div class="btn-row"><button class="btn small" id="amgAddScrRow" type="button">+ 新增一筆 SCr</button></div>
+      </div>
+
+      <!-- 2. 藥物、策略與感染脈絡 -->
+      <div class="card">
+        <h2><span class="idx">02</span>藥物、給藥策略與感染脈絡</h2>
+        <p class="hint">目標 peak／trough 隨「藥物 × 給藥策略 × 適應症」三維變動，請先鎖定三者，下方會自動帶出對應的院內目標範圍。</p>
+        <div class="field-row three">
+          <div class="field"><label>目標藥物</label>
+            <select id="amgDrug">
+              <option value="gentamicin">Gentamicin</option>
+              <option value="tobramycin">Tobramycin</option>
+              <option value="amikacin">Amikacin</option>
+            </select>
+          </div>
+          <div class="field"><label>給藥策略</label>
+            <select id="amgStrategy">
+              <option value="conventional">傳統多次給藥（conventional）</option>
+              <option value="odd">延長間隔高劑量（ODD / HDEI）</option>
+            </select>
+          </div>
+          <div class="field"><label>適應症（決定目標值）</label>
+            <select id="amgIndication"></select>
+          </div>
+        </div>
+        <div class="hint" id="amgTargetDisplay" style="margin-top:-4px;"></div>
+        <p class="hint" id="amgTobraNote" style="display:none;">Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例）；若貴院有 tobramycin 專屬 protocol，請自行對照調整。</p>
+        <div class="field-row">
+          <div class="field"><label>感染部位</label><input type="text" id="amgSite" placeholder="如：菌血症、肺炎、骨髓炎、UTI…"></div>
+          <div class="field"><label>菌種／MIC（選填）</label><input type="text" id="amgOrganism" placeholder="如：Pseudomonas, MIC 未知"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>嚴重度</label>
+            <select id="amgSeverity"><option>穩定</option><option>sepsis</option><option>septic shock</option></select>
+          </div>
+          <div class="field"><label>MIC 假設（µg/mL，選填）</label><input type="number" id="amgMic" step="0.1" placeholder="用於 Cmax/MIC 顯示"></div>
+        </div>
+        <div class="checkline"><input type="checkbox" id="amgSourceControlDone"><label for="amgSourceControlDone">感染源已控制（引流／移除導管等）</label></div>
+      </div>
+
+      <!-- 3. 給藥處方與紀錄 -->
+      <div class="card">
+        <h2><span class="idx">03</span>給藥處方與紀錄</h2>
+        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。「分析起點」不必是整個療程最早的一劑：長期療程中若腎功能改變需重新評估，直接把起點設成想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度建議達懷疑的目前半衰期的 4–5 倍。</p>
+        <div class="field-row stacked">
+          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="amgTherapyStart"></div>
+          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
+        </div>
+        <div class="field-row three">
+          <div class="field"><label>維持劑量（mg）</label><input type="number" id="amgMaintDose" value="420" step="10"></div>
+          <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="amgMaintInterval" value="24" step="1"></div>
+          <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="amgMaintInf" value="30" step="5"></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary small" id="amgExpandDoses" type="button">依上述處方自動展開給藥紀錄</button>
+        </div>
+
+        <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
+        <div class="btn-row" style="align-items:center;">
+          <button class="btn small" id="amgAddDoseRow" type="button">+ 手動新增一劑</button>
+          <span class="prune-tool">
+            移除此時間之前的紀錄
+            <input type="datetime-local" id="amgPruneBeforeInput">
+            <button class="btn small" id="amgPruneBeforeBtn" type="button">套用</button>
+          </span>
+        </div>
+      </div>
+
+      <!-- 4. 血中濃度量測 -->
+      <div class="card">
+        <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
+        <p class="hint">不限傳統時點慣例——傳統法 peak（輸注結束後 30 分）＋trough（下一劑前）、ODD 兩點法（輸注結束後 2h 與 6h）、或任意其他時點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算，不要求兩點落在同一給藥區間。</p>
+        <div class="entry-rows" id="amgLevelTable"></div>
+        <div class="btn-row"><button class="btn small" id="amgAddLevelRow" type="button">+ 新增一筆濃度</button></div>
+      </div>
+
+      <div class="card">
+        <h2><span class="idx">05</span>候選給藥間隔</h2>
+        <div class="field-row">
+          <div class="field"><label>候選給藥間隔（劑量調整方案）</label>
+            <div style="display:flex;gap:10px;padding-top:6px;flex-wrap:wrap;">
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand8"><label for="amgCand8">q8h</label></span>
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand12"><label for="amgCand12">q12h</label></span>
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand24" checked><label for="amgCand24">q24h</label></span>
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand36" checked><label for="amgCand36">q36h</label></span>
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand48"><label for="amgCand48">q48h</label></span>
+            </div>
+          </div>
+        </div>
+        <p class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。本工具不自動判讀 Hartford nomogram（該圖表邊界為特定已發表迴歸式，需查證原始文獻，本工具寧可不猜）；候選方案改用個體化 ke／Vd 直接反解達標劑量，效果等價甚至更精確，隨機點也能用。</p>
+      </div>
+
+      <div class="card">
+        <h2><span class="idx">06</span>併用藥物與其他備註</h2>
+        <div class="field">
+          <label>腎／耳毒性相關併用藥物</label>
+          <textarea id="amgConcomitant" placeholder="如：vancomycin, amphotericin B, NSAID, 顯影劑, loop diuretics（加乘耳毒性）…"></textarea>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>其他備註</label>
+          <textarea id="amgOtherNotes" placeholder="如：耳鳴／聽損／眩暈等耳毒性徵象，其他你認為與本次判讀相關的資訊"></textarea>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- ============ RIGHT: RESULTS PANEL (AMINOGLYCOSIDE) ============ -->
+    <section class="panel" id="amgResultsPanel">
+
+      <div class="results-head">
+        <h2>擬合結果</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="mode-badge" id="amgFitModeBadge">尚無資料</span>
+        </div>
+      </div>
+
+      <div class="curve-wrap">
+        <svg class="curve" id="amgCurveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
+      <div class="param-grid" id="amgParamGrid"></div>
+
+      <div class="section-block">
+        <h3><span class="idx">A</span>健全性檢查與假設</h3>
+        <div class="flag-list" id="amgFlagList"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">B</span>劑量調整建議</h3>
+        <p class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。</p>
+        <div class="table-scroll"><table class="regimen-table" id="amgRegimenTable">
+          <thead><tr><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
+          <tbody></tbody>
+          <tfoot>
+            <tr class="custom-row">
+              <td><span class="tag" style="background:var(--trace-soft);color:var(--trace-strong);">自訂</span></td>
+              <td>
+                <input type="number" id="amgCustomDose" class="custom-input dose" placeholder="劑量" step="10" title="劑量 mg">&nbsp;mg／
+                <input type="number" id="amgCustomInf" class="custom-input inf" placeholder="輸注" step="5" title="輸注時間 分">&nbsp;min
+              </td>
+              <td>q<input type="number" id="amgCustomTau" class="custom-input tau" placeholder="24" step="1" title="間隔 小時">h</td>
+              <td id="amgCustomCmax">—</td>
+              <td id="amgCustomCmin">—</td>
+              <td id="amgCustomRatio">—</td>
+              <td class="reason" id="amgCustomReason">輸入劑量／輸注／間隔，即時套用目前擬合參數計算</td>
+            </tr>
+          </tfoot>
+        </table></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">C</span>未來監測建議</h3>
+        <div class="monitor-grid" id="amgMonitorGrid"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）</h3>
+        <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
+        <textarea id="amgAiPromptOut" readonly></textarea>
+        <div class="btn-row">
+          <button class="btn primary small" id="amgCopyPromptBtn" type="button">複製 Prompt</button>
+          <span class="copy-status" id="amgCopyStatus"></span>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  </div>
+
+  <footer class="disclaimer" id="footerDisclaimer">
     <strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。
   </footer>
 
@@ -554,6 +805,16 @@
   // ---------------- formatting helpers ----------------
   const fmt = (x,d)=> (x!==null && x!==undefined && isFinite(x)) ? Number(x).toFixed(d) : '—';
   const fmt0 = x=>fmt(x,0), fmt1=x=>fmt(x,1), fmt2=x=>fmt(x,2), fmt3=x=>fmt(x,3);
+
+  // headerMeta is shared across drug modules; only the currently-visible module
+  // may write to it, otherwise the last module to run its init on page load
+  // would silently overwrite the summary shown for the active tab.
+  function setHeaderMeta(moduleId, text){
+    const mod = document.getElementById(moduleId);
+    if(mod && mod.classList.contains('active')){
+      document.getElementById('headerMeta').textContent = text;
+    }
+  }
 
   function toLocalInputValue(date){
     const p = n=>String(n).padStart(2,'0');
@@ -1094,10 +1355,13 @@
   // ---------------- SVG curve ----------------
   const SVG_NS = 'http://www.w3.org/2000/svg';
   function drawCurve(ctx){
-    const svg = document.getElementById('curveSvg');
+    const svg = document.getElementById(ctx.svgId || 'curveSvg');
     const W=920, H=340, ML=52, MR=18, MT=18, MB=34;
     const plotW = W-ML-MR, plotH = H-MT-MB;
     const {doses, levels, CL, V, ke, tHrNow, tau, cMaxDomain, target, altTrough} = ctx;
+    const toxLine = (ctx.toxLine!==undefined && ctx.toxLine!==null) ? ctx.toxLine : 20;
+    const toxLabel = ctx.toxLabel || ('腎毒性關切 ' + toxLine);
+    const band = ctx.band || (altTrough ? {lo:10, hi:15, label:'替代 trough 目標 10–15'} : null);
 
     const dosesForPlot = doses.slice();
     if(doses.length){
@@ -1130,16 +1394,16 @@
       svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="middle">+${t}h</text>`);
     }
 
-    // toxicity reference line at 20
-    if(20<=cMaxDomain){
-      const y20 = yScale(20);
-      svgParts.push(`<line x1="${ML}" y1="${y20}" x2="${W-MR}" y2="${y20}" stroke="var(--crimson)" stroke-width="1.3" stroke-dasharray="5,4"/>`);
-      svgParts.push(`<text x="${W-MR}" y="${y20-5}" font-family="var(--sans)" font-size="10.5" fill="var(--crimson)" text-anchor="end">腎毒性關切 20</text>`);
+    // toxicity reference line (drug-specific threshold, default 20 for vancomycin)
+    if(toxLine!==null && toxLine<=cMaxDomain){
+      const yTox = yScale(toxLine);
+      svgParts.push(`<line x1="${ML}" y1="${yTox}" x2="${W-MR}" y2="${yTox}" stroke="var(--crimson)" stroke-width="1.3" stroke-dasharray="5,4"/>`);
+      svgParts.push(`<text x="${W-MR}" y="${yTox-5}" font-family="var(--sans)" font-size="10.5" fill="var(--crimson)" text-anchor="end">${toxLabel}</text>`);
     }
-    if(altTrough){
-      const y10=yScale(10), y15=yScale(15);
-      svgParts.push(`<rect x="${ML}" y="${y15}" width="${plotW}" height="${y10-y15}" fill="var(--amber-soft)" opacity="0.5"/>`);
-      svgParts.push(`<text x="${ML+6}" y="${y15-4}" font-family="var(--sans)" font-size="10" fill="var(--amber)">替代 trough 目標 10–15</text>`);
+    if(band){
+      const yLo=yScale(band.lo), yHi=yScale(band.hi);
+      svgParts.push(`<rect x="${ML}" y="${yHi}" width="${plotW}" height="${yLo-yHi}" fill="var(--amber-soft)" opacity="0.5"/>`);
+      svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="10" fill="var(--amber)">${band.label}</text>`);
     }
 
     // dose infusion bars
@@ -1214,7 +1478,7 @@
     else if(AUC24ss<400) flags.push({level:'warn', text:`計畫處方預測 AUC₂₄ ${AUC24ss.toFixed(0)} 低於 400，起始劑量可能偏低，達穩態前療效可能不足。`});
 
     document.getElementById('fitModeBadge').textContent = '起始劑量預測（純族群 PK，尚未給藥）';
-    document.getElementById('headerMeta').textContent = `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${CLpop.toFixed(2)} L/hr ・ 預測 AUC₂₄ ${AUC24ss.toFixed(0)}`;
+    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${CLpop.toFixed(2)} L/hr ・ 預測 AUC₂₄ ${AUC24ss.toFixed(0)}`);
 
     // param grid (subset relevant to a pre-dose prediction)
     const cells = [
@@ -1424,7 +1688,7 @@ ${regimenText}
       document.getElementById('aiPromptOut').value='';
       ['customCmax','customCmin','customAuc'].forEach(id=>document.getElementById(id).textContent='—');
       document.getElementById('customReason').innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
-      headerMeta.textContent='尚未輸入資料';
+      setHeaderMeta('drug-vancomycin', '尚未輸入資料');
       return;
     }
 
@@ -1604,7 +1868,7 @@ ${regimenText}
     });
 
     // --- 11. header meta ---
-    headerMeta.textContent = `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ AUC₂₄ ${AUC24ss.toFixed(0)}`;
+    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ AUC₂₄ ${AUC24ss.toFixed(0)}`);
 
     // --- 12. AI prompt ---
     buildAiPrompt({
@@ -1696,6 +1960,909 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('aiPromptOut').value = prompt;
   }
 
+  // ==================================================================
+  // AMINOGLYCOSIDE MODULE (gentamicin / tobramycin / amikacin)
+  // Shares the drug-agnostic engine above (predictConc / nelderMead /
+  // fitCLV / integrateTrapz / ibwDevine / weightForCG / cockcroftGault /
+  // drawCurve / parseLocal / toLocalInputValue / fmt* / wireDelete).
+  // Population Vd/CL, target tables, dose-rounding and regimen scoring
+  // are aminoglycoside-specific and defined fresh below.
+  // ==================================================================
+
+  const AMINO_PATIENTS_KEY = 'amino_tdm_patients_v1';
+  let currentAmgPatientId = null;
+
+  // ---------------- target lookup (µg/mL) — from references/aminoglycoside.md ----------------
+  // Gentamicin and tobramycin share the same table (tobramycin has no separately
+  // published institutional target in the source reference; this is a documented
+  // clinical-convention assumption, flagged to the user in the UI, not a fabricated number).
+  const GENT_CONVENTIONAL = [
+    {id:'synergy', label:'革蘭氏陽性菌（synergy）', peak:[3,4], troughHi:1},
+    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[4,6], troughHi:2},
+    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[6,10], troughHi:2},
+    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[8,10], troughHi:2}
+  ];
+  const GENT_ODD = [
+    {id:'gpc', label:'革蘭氏陽性菌', peak:[10,12], troughHi:1},
+    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[12,16], troughHi:1},
+    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[16,20], troughHi:1},
+    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[18,20], troughHi:1}
+  ];
+  const AMINO_TARGETS = {
+    gentamicin: {conventional: GENT_CONVENTIONAL, odd: GENT_ODD},
+    tobramycin: {conventional: GENT_CONVENTIONAL, odd: GENT_ODD},
+    amikacin: {
+      conventional: [
+        {id:'gnr_general', label:'革蘭氏陰性菌（一般）', peak:[20,30], troughHi:8},
+        {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[25,35], troughHi:8},
+        {id:'ntm', label:'NTM', peak:[20,35], troughHi:8}
+      ],
+      odd: [
+        {id:'gnr', label:'革蘭氏陰性菌', peak:null, troughHi:2},
+        {id:'tb_ntm', label:'TB／NTM（15 mg/kg qd）', peak:[40,60], troughHi:4},
+        {id:'ntm_alt', label:'NTM（10–15 mg/kg qd 或 10–25 mg/kg tiw）', peak:[25,40], troughHi:4}
+      ]
+    }
+  };
+
+  const AMINO_DRUG_LABELS = {gentamicin:'Gentamicin', tobramycin:'Tobramycin', amikacin:'Amikacin'};
+  function getAminoTargetList(){
+    const drug = document.getElementById('amgDrug').value;
+    const strategy = document.getElementById('amgStrategy').value;
+    return (AMINO_TARGETS[drug] && AMINO_TARGETS[drug][strategy]) || [];
+  }
+  function getAminoTarget(){
+    const list = getAminoTargetList();
+    const indId = document.getElementById('amgIndication').value;
+    return list.find(t=>t.id===indId) || list[0] || null;
+  }
+  function populateAminoIndicationOptions(){
+    const sel = document.getElementById('amgIndication');
+    const keep = sel.value;
+    const list = getAminoTargetList();
+    sel.innerHTML = list.map(t=>`<option value="${t.id}">${t.label}</option>`).join('');
+    if(list.some(t=>t.id===keep)) sel.value = keep;
+    updateAminoTargetDisplay();
+    document.getElementById('amgTobraNote').style.display = (document.getElementById('amgDrug').value==='tobramycin') ? 'block' : 'none';
+  }
+  function updateAminoTargetDisplay(){
+    const t = getAminoTarget();
+    const drug = AMINO_DRUG_LABELS[document.getElementById('amgDrug').value] || document.getElementById('amgDrug').value;
+    const strategy = document.getElementById('amgStrategy').value==='odd' ? 'ODD' : '傳統多次給藥';
+    const el = document.getElementById('amgTargetDisplay');
+    if(!t){ el.textContent = '請選擇藥物／策略／適應症以帶出目標範圍。'; return; }
+    const peakText = t.peak ? `Peak ${t.peak[0]}–${t.peak[1]} µg/mL` : 'Peak 無明訂目標（僅監測 trough）';
+    el.innerHTML = `目前目標：<strong>${drug} ${strategy}，${t.label}</strong> → ${peakText}／Trough &lt;${t.troughHi} µg/mL`;
+  }
+
+  // ---------------- dose rounding & tag scoring (aminoglycoside-specific) ----------------
+  function roundDoseAmino(mg){ return Math.max(20, Math.round(mg/10)*10); }
+
+  function regimenTagAmino(peak, trough, target){
+    if(!target) return {tag:'ok', tagText:'尚未鎖定目標'};
+    const troughHi = target.troughHi;
+    const peakLo = target.peak ? target.peak[0] : null;
+    const peakHi = target.peak ? target.peak[1] : null;
+    let tag='ok';
+    const reasons = [];
+    if(troughHi!=null && isFinite(trough)){
+      if(trough > troughHi*1.5){ tag='danger'; reasons.push(`Trough ${trough.toFixed(1)} 明顯超過目標上限 ${troughHi}，腎／耳毒性風險高`); }
+      else if(trough > troughHi){ if(tag!=='danger') tag='warn'; reasons.push(`Trough ${trough.toFixed(1)} 超過目標上限 ${troughHi}`); }
+    }
+    if(peakLo!=null && peakHi!=null && isFinite(peak)){
+      if(peak < peakLo*0.85){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 低於目標下限 ${peakLo}，可能療效不足`); }
+      else if(peak > peakHi*1.25){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 高於目標上限 ${peakHi}`); }
+    }
+    if(reasons.length===0) reasons.push('符合目標範圍');
+    return {tag, tagText:reasons.join('；')};
+  }
+
+  // ---------------- dynamic row tables (amg-prefixed containers, same entry-row markup) ----------------
+  function addScrRowAmg(dateVal, val){
+    const container = document.getElementById('amgScrTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<input type="date" class="scr-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
+    wireDelete(row.querySelector('.row-del'), row, renderAmino);
+  }
+  function addDoseRowAmg(dateVal, doseMg, infMin){
+    const container = document.getElementById('amgDoseTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<span class="idx-badge dose-idx">—</span>
+      <input type="datetime-local" class="dose-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
+      <div class="num-field"><input type="number" step="5" class="dose-inf" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
+    wireDelete(row.querySelector('.row-del'), row, renderAmino);
+  }
+  function addLevelRowAmg(dateVal, conc){
+    const container = document.getElementById('amgLevelTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
+    wireDelete(row.querySelector('.row-del'), row, renderAmino);
+  }
+
+  function readScrRowsAmg(){
+    return Array.from(document.querySelectorAll('#amgScrTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.scr-date').value),
+      v: parseFloat(row.querySelector('.scr-val').value)
+    })).filter(r=>isFinite(r.t)&&isFinite(r.v)).sort((a,b)=>a.t-b.t);
+  }
+  function readDoseRowsAmg(){
+    return Array.from(document.querySelectorAll('#amgDoseTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.dose-date').value),
+      doseMg: parseFloat(row.querySelector('.dose-mg').value),
+      infMin: parseFloat(row.querySelector('.dose-inf').value)
+    })).filter(r=>isFinite(r.t)&&isFinite(r.doseMg)&&isFinite(r.infMin)&&r.infMin>0).sort((a,b)=>a.t-b.t);
+  }
+  function readLevelRowsAmg(){
+    return Array.from(document.querySelectorAll('#amgLevelTable .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.level-date').value),
+      conc: parseFloat(row.querySelector('.level-val').value)
+    })).filter(r=>isFinite(r.t)&&isFinite(r.conc)&&r.conc>0).sort((a,b)=>a.t-b.t);
+  }
+  function renumberDoseRowsAmg(){
+    const rows = Array.from(document.querySelectorAll('#amgDoseTable .entry-row'));
+    const withT = rows.map(row=>({row, t:parseLocal(row.querySelector('.dose-date').value)}));
+    withT.sort((a,b)=>{ if(!isFinite(a.t)) return 1; if(!isFinite(b.t)) return -1; return a.t-b.t; });
+    withT.forEach((o,i)=>{ o.row.querySelector('.dose-idx').textContent = isFinite(o.t) ? (i+1) : '—'; });
+  }
+
+  function expandDosesFnAmg(){
+    const startMs = parseLocal(document.getElementById('amgTherapyStart').value);
+    const toMs = parseLocal(document.getElementById('amgExpandTo').value);
+    const maintDose = parseFloat(document.getElementById('amgMaintDose').value);
+    const tauHr = parseFloat(document.getElementById('amgMaintInterval').value);
+    const maintInf = parseFloat(document.getElementById('amgMaintInf').value);
+    if(!isFinite(startMs)||!isFinite(toMs)||!isFinite(maintDose)||!isFinite(tauHr)||!isFinite(maintInf)||tauHr<=0){
+      alert('請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
+      return;
+    }
+    clearTbody('#amgDoseTable');
+    let cursor = startMs;
+    while(cursor <= toMs + 1){
+      addDoseRowAmg(toLocalInputValue(new Date(cursor)), maintDose, maintInf);
+      cursor += tauHr*3600000;
+    }
+    renumberDoseRowsAmg();
+    renderAmino();
+  }
+  function pruneDosesBeforeFnAmg(){
+    const cutoff = parseLocal(document.getElementById('amgPruneBeforeInput').value);
+    if(!isFinite(cutoff)){
+      alert('請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
+      return;
+    }
+    const rows = Array.from(document.querySelectorAll('#amgDoseTable .entry-row'));
+    let removed = 0;
+    rows.forEach(row=>{
+      const t = parseLocal(row.querySelector('.dose-date').value);
+      if(isFinite(t) && t < cutoff){ row.remove(); removed++; }
+    });
+    renumberDoseRowsAmg();
+    renderAmino();
+    if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
+  }
+
+  function clearAllFnAmg(){
+    const ok = confirm('確定要清除 Aminoglycoside 模組所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    if(!ok) return;
+
+    document.getElementById('amgPatientLabel').value='';
+    document.getElementById('amgPatientSelect').value='';
+    document.getElementById('amgPatientMeta').textContent='';
+    currentAmgPatientId = null;
+
+    document.getElementById('amgAge').value='';
+    document.getElementById('amgSex').value='M';
+    document.getElementById('amgHeight').value='';
+    document.getElementById('amgTbw').value='';
+    document.getElementById('amgDryWeight').value='';
+    document.getElementById('amgDialysis').value='none';
+    document.getElementById('amgArcSuspect').checked=false;
+    document.getElementById('amgVdHigh').checked=false;
+    clearTbody('#amgScrTable');
+
+    document.getElementById('amgDrug').value='gentamicin';
+    document.getElementById('amgStrategy').value='conventional';
+    populateAminoIndicationOptions();
+    document.getElementById('amgSite').value='';
+    document.getElementById('amgOrganism').value='';
+    document.getElementById('amgSeverity').selectedIndex=0;
+    document.getElementById('amgMic').value='';
+    document.getElementById('amgSourceControlDone').checked=false;
+
+    document.getElementById('amgTherapyStart').value='';
+    document.getElementById('amgExpandTo').value='';
+    document.getElementById('amgMaintDose').value='';
+    document.getElementById('amgMaintInterval').value='';
+    document.getElementById('amgMaintInf').value='';
+    document.getElementById('amgPruneBeforeInput').value='';
+    clearTbody('#amgDoseTable');
+
+    clearTbody('#amgLevelTable');
+
+    document.getElementById('amgCand8').checked=false;
+    document.getElementById('amgCand12').checked=false;
+    document.getElementById('amgCand24').checked=true;
+    document.getElementById('amgCand36').checked=true;
+    document.getElementById('amgCand48').checked=false;
+
+    document.getElementById('amgConcomitant').value='';
+    document.getElementById('amgOtherNotes').value='';
+
+    document.getElementById('amgCustomDose').value='';
+    document.getElementById('amgCustomInf').value='';
+    document.getElementById('amgCustomTau').value='';
+
+    renderAmino();
+  }
+
+  // ---------------- patient state (localStorage, separate namespace from vancomycin) ----------------
+  function collectStateAmg(){
+    const v = id => document.getElementById(id).value;
+    const c = id => document.getElementById(id).checked;
+    return {
+      age:v('amgAge'), sex:v('amgSex'), height:v('amgHeight'), tbw:v('amgTbw'), dryWeight:v('amgDryWeight'),
+      dialysis:v('amgDialysis'), arcSuspect:c('amgArcSuspect'), vdHigh:c('amgVdHigh'),
+      scrRows: Array.from(document.querySelectorAll('#amgScrTable .entry-row')).map(row=>({
+        date: row.querySelector('.scr-date').value, val: row.querySelector('.scr-val').value
+      })),
+      drug:v('amgDrug'), strategy:v('amgStrategy'), indication:v('amgIndication'),
+      site:v('amgSite'), organism:v('amgOrganism'), severity:v('amgSeverity'), mic:v('amgMic'),
+      sourceControlDone:c('amgSourceControlDone'),
+      therapyStart:v('amgTherapyStart'), expandTo:v('amgExpandTo'),
+      maintDose:v('amgMaintDose'), maintInterval:v('amgMaintInterval'), maintInf:v('amgMaintInf'),
+      doseRows: Array.from(document.querySelectorAll('#amgDoseTable .entry-row')).map(row=>({
+        date: row.querySelector('.dose-date').value, doseMg: row.querySelector('.dose-mg').value, infMin: row.querySelector('.dose-inf').value
+      })),
+      levelRows: Array.from(document.querySelectorAll('#amgLevelTable .entry-row')).map(row=>({
+        date: row.querySelector('.level-date').value, conc: row.querySelector('.level-val').value
+      })),
+      cand8:c('amgCand8'), cand12:c('amgCand12'), cand24:c('amgCand24'), cand36:c('amgCand36'), cand48:c('amgCand48'),
+      concomitant:v('amgConcomitant'), otherNotes:v('amgOtherNotes'),
+      customDose:v('amgCustomDose'), customInf:v('amgCustomInf'), customTau:v('amgCustomTau')
+    };
+  }
+  function applyStateAmg(s){
+    const setVal=(id,val)=>{ document.getElementById(id).value = (val!==undefined&&val!==null)?val:''; };
+    const setChecked=(id,val)=>{ document.getElementById(id).checked = !!val; };
+
+    setVal('amgAge', s.age); setVal('amgSex', s.sex||'M'); setVal('amgHeight', s.height); setVal('amgTbw', s.tbw); setVal('amgDryWeight', s.dryWeight);
+    setVal('amgDialysis', s.dialysis||'none'); setChecked('amgArcSuspect', s.arcSuspect); setChecked('amgVdHigh', s.vdHigh);
+    clearTbody('#amgScrTable');
+    (s.scrRows||[]).forEach(r=>addScrRowAmg(r.date, r.val));
+
+    setVal('amgDrug', s.drug||'gentamicin'); setVal('amgStrategy', s.strategy||'conventional');
+    populateAminoIndicationOptions();
+    if(s.indication) setVal('amgIndication', s.indication);
+    updateAminoTargetDisplay();
+    setVal('amgSite', s.site); setVal('amgOrganism', s.organism); setVal('amgSeverity', s.severity); setVal('amgMic', s.mic);
+    setChecked('amgSourceControlDone', s.sourceControlDone);
+
+    setVal('amgTherapyStart', s.therapyStart); setVal('amgExpandTo', s.expandTo);
+    setVal('amgMaintDose', s.maintDose); setVal('amgMaintInterval', s.maintInterval); setVal('amgMaintInf', s.maintInf);
+    clearTbody('#amgDoseTable');
+    (s.doseRows||[]).forEach(r=>addDoseRowAmg(r.date, r.doseMg, r.infMin));
+    renumberDoseRowsAmg();
+
+    clearTbody('#amgLevelTable');
+    (s.levelRows||[]).forEach(r=>addLevelRowAmg(r.date, r.conc));
+
+    setChecked('amgCand8', s.cand8); setChecked('amgCand12', s.cand12);
+    setChecked('amgCand24', s.cand24===undefined?true:s.cand24);
+    setChecked('amgCand36', s.cand36===undefined?true:s.cand36);
+    setChecked('amgCand48', s.cand48);
+
+    setVal('amgConcomitant', s.concomitant); setVal('amgOtherNotes', s.otherNotes);
+    setVal('amgCustomDose', s.customDose); setVal('amgCustomInf', s.customInf); setVal('amgCustomTau', s.customTau);
+
+    renderAmino();
+  }
+  function loadAmgPatientsList(){
+    try{ const raw = localStorage.getItem(AMINO_PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveAmgPatientsList(list){
+    try{ localStorage.setItem(AMINO_PATIENTS_KEY, JSON.stringify(list)); return true; }
+    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
+  }
+  function refreshAmgPatientSelect(selectAfter){
+    const list = loadAmgPatientsList();
+    const sel = document.getElementById('amgPatientSelect');
+    const keep = selectAfter!==undefined ? selectAfter : sel.value;
+    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
+    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
+      const d = new Date(p.savedAt);
+      const pad=n=>String(n).padStart(2,'0');
+      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
+      return `<option value="${p.id}">${label}</option>`;
+    }).join('');
+    if(keep) sel.value = keep;
+  }
+  function savePatientFnAmg(){
+    const label = document.getElementById('amgPatientLabel').value.trim();
+    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+    const list = loadAmgPatientsList();
+    const data = collectStateAmg();
+    const now = Date.now();
+    if(currentAmgPatientId && list.some(p=>p.id===currentAmgPatientId)){
+      const idx = list.findIndex(p=>p.id===currentAmgPatientId);
+      list[idx] = {id:currentAmgPatientId, label, savedAt:now, data};
+    } else {
+      const id = 'amg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      list.push({id, label, savedAt:now, data});
+      currentAmgPatientId = id;
+    }
+    if(!saveAmgPatientsList(list)) return;
+    refreshAmgPatientSelect(currentAmgPatientId);
+    document.getElementById('amgPatientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
+  }
+  function loadPatientFnAmg(){
+    const id = document.getElementById('amgPatientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
+    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
+    if(!ok) return;
+    const list = loadAmgPatientsList();
+    const rec = list.find(p=>p.id===id);
+    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshAmgPatientSelect(''); return; }
+    document.getElementById('amgPatientLabel').value = rec.label;
+    applyStateAmg(rec.data);
+    currentAmgPatientId = rec.id;
+    document.getElementById('amgPatientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
+  }
+  function deletePatientFnAmg(){
+    const id = document.getElementById('amgPatientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇要刪除的病人。'); return; }
+    const list = loadAmgPatientsList();
+    const rec = list.find(p=>p.id===id);
+    if(!rec) return;
+    const ok = confirm(`確定要刪除「${rec.label}」的儲存資料嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
+    if(!ok) return;
+    saveAmgPatientsList(list.filter(p=>p.id!==id));
+    if(currentAmgPatientId===id) currentAmgPatientId=null;
+    refreshAmgPatientSelect('');
+    document.getElementById('amgPatientMeta').textContent = `已刪除：${rec.label}`;
+  }
+  function exportPatientsFnAmg(){
+    const list = loadAmgPatientsList();
+    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
+    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    a.href = url;
+    a.download = `aminoglycoside_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function importPatientsFnAmg(file){
+    const reader = new FileReader();
+    reader.onload = function(){
+      let imported;
+      try{ imported = JSON.parse(reader.result); }
+      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
+      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
+      const existing = loadAmgPatientsList();
+      const map = new Map(existing.map(p=>[p.id,p]));
+      let count=0;
+      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
+      saveAmgPatientsList(Array.from(map.values()));
+      refreshAmgPatientSelect();
+      document.getElementById('amgPatientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
+    };
+    reader.readAsText(file);
+  }
+
+  function updateCustomRowAmg(CL, ke, target, mic){
+    const dose = parseFloat(document.getElementById('amgCustomDose').value);
+    const infMin = parseFloat(document.getElementById('amgCustomInf').value);
+    const tauC = parseFloat(document.getElementById('amgCustomTau').value);
+    const cmaxEl=document.getElementById('amgCustomCmax'), cminEl=document.getElementById('amgCustomCmin'),
+          ratioEl=document.getElementById('amgCustomRatio'), reasonEl=document.getElementById('amgCustomReason');
+    if(!isFinite(dose)||!isFinite(infMin)||!isFinite(tauC)||dose<=0||infMin<=0||tauC<=0){
+      cmaxEl.textContent='—'; cminEl.textContent='—'; ratioEl.textContent='—';
+      reasonEl.innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
+      return null;
+    }
+    const infHr = infMin/60;
+    const R = dose/infHr;
+    const cmax = (R/CL)*(1-Math.exp(-ke*infHr))/(1-Math.exp(-ke*tauC));
+    const cmin = cmax*Math.exp(-ke*(tauC-infHr));
+    const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
+    cmaxEl.textContent = cmax.toFixed(1);
+    cminEl.textContent = cmin.toFixed(1);
+    ratioEl.textContent = (isFinite(mic)&&mic>0) ? (cmax/mic).toFixed(1) : '—';
+    reasonEl.innerHTML = `${tagText}<span class="tag ${tag}">${tag==='ok'?'OK':(tag==='warn'?'留意':'風險')}</span>`;
+    return {dose, infMin, tauC, cmax, cmin, tag, tagText};
+  }
+
+  function computeCandidateAmino(candTau, CL, ke, infHrCurrent, target, dailyDoseNow, mic){
+    let doseRaw;
+    if(target && target.peak){
+      const targetPeak = (target.peak[0]+target.peak[1])/2;
+      doseRaw = targetPeak * CL * infHrCurrent * (1-Math.exp(-ke*candTau)) / (1-Math.exp(-ke*infHrCurrent));
+    } else {
+      doseRaw = dailyDoseNow * (candTau/24);
+    }
+    const roundedDose = roundDoseAmino(doseRaw);
+    const infHrC = infHrCurrent;
+    const R = roundedDose/infHrC;
+    const cmax = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
+    const cmin = cmax*Math.exp(-ke*(candTau-infHrC));
+    const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
+    const ratio = (isFinite(mic)&&mic>0) ? cmax/mic : null;
+    return {candTau, roundedDose, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText};
+  }
+
+  function renderRegimenTableAmino(regimenRows, recommended, currentTau){
+    document.querySelector('#amgRegimenTable tbody').innerHTML = regimenRows.map(r=>`
+      <tr class="${r===recommended?'recommended':''}">
+        <td>q${r.candTau}h${r===recommended?' <span class="tag ok">建議</span>':''}${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}</td>
+        <td>${fmt0(r.roundedDose)} mg／${r.infMinC} min輸注</td>
+        <td>q${r.candTau}h</td>
+        <td>${fmt1(r.cmax)}</td>
+        <td>${fmt1(r.cmin)}</td>
+        <td>${r.ratio!=null?fmt1(r.ratio):'—'}</td>
+        <td class="reason">${r.tagText}<span class="tag ${r.tag}">${r.tag==='ok'?'OK':(r.tag==='warn'?'留意':'風險')}</span></td>
+      </tr>`).join('') || '<tr><td colspan="7" class="reason">未勾選任何候選間隔。</td></tr>';
+  }
+
+  function getAminoCandTaus(){
+    const cands=[];
+    if(document.getElementById('amgCand8').checked) cands.push(8);
+    if(document.getElementById('amgCand12').checked) cands.push(12);
+    if(document.getElementById('amgCand24').checked) cands.push(24);
+    if(document.getElementById('amgCand36').checked) cands.push(36);
+    if(document.getElementById('amgCand48').checked) cands.push(48);
+    return cands;
+  }
+
+  function pickRecommendedAmino(regimenRows, target){
+    let recommended=null;
+    const okRows = regimenRows.filter(r=>r.tag==='ok');
+    const pool = okRows.length?okRows:regimenRows;
+    if(pool.length){
+      if(target && target.peak){
+        const mid=(target.peak[0]+target.peak[1])/2;
+        recommended = pool.reduce((best,r)=> Math.abs(r.cmax-mid)<Math.abs(best.cmax-mid)?r:best, pool[0]);
+      } else {
+        recommended = pool.reduce((best,r)=> r.cmin<best.cmin?r:best, pool[0]);
+      }
+    }
+    return recommended;
+  }
+
+  function aminoMonitorHtml(anyNotSS, tHalf, dialysis, scr, concomitantVal, longCourse){
+    const nextTdmText = anyNotSS
+      ? `建議先讓現行（或調整後）處方達穩態（約 3–4 劑，現估 t½ ≈ ${tHalf.toFixed(1)} 小時）後再複測，較能反映真實穩態暴露。`
+      : '若本次調整劑量，建議於調整後第 3–4 劑（達穩態，約 1–2 天）複測；長療程穩定病人每 5–7 天追蹤一組。';
+    const labList = [`SCr／BUN：${scr<1.2?'每 2–3 天至每週':'每 1–2 天（腎功能不穩定）'}`];
+    if(longCourse) labList.push('療程 >1–2 週：建議加做第 8 對腦神經功能（聽力／前庭）評估');
+    if(dialysis!=='none') labList.push('依透析排程調整抽血時機');
+    const signList = ['腎毒性：SCr 上升、尿量減少、trough 逐漸上升', '耳毒性：耳鳴、聽力減退、眩暈、平衡失調'];
+    if(concomitantVal) signList.push('併用藥物之交互作用徵象（見備註欄）');
+    const triggerList = ['腎功能出現變化（改善或惡化）', 'ODD 策略下 trough 變得可偵測（應為 undetectable）', '發燒／腹水／水化狀態改變', '併用腎／耳毒性藥物增減'];
+    return `
+      <div>
+        <h4>下次 TDM 時機</h4><p>${nextTdmText}</p>
+        <h4 style="margin-top:12px;">重點 Lab 監測</h4><ul>${labList.map(x=>`<li>${x}</li>`).join('')}</ul>
+      </div>
+      <div>
+        <h4>臨床 Sign 監測</h4><ul>${signList.map(x=>`<li>${x}</li>`).join('')}</ul>
+        <h4 style="margin-top:12px;">再評估觸發條件</h4><ul>${triggerList.map(x=>`<li>${x}</li>`).join('')}</ul>
+      </div>`;
+  }
+
+  // ---------------- prospective (pre-dose) population-PK prediction ----------------
+  function renderProspectiveAmg(ctx){
+    const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr, target, mic, drugLabel, strategyLabel} = ctx;
+    const ke = CLpop/Vpop, tHalf = 0.693/ke;
+    const R = maintDose/maintInfHr;
+    const CmaxSS = (R/CLpop)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
+    const CminSS = CmaxSS*Math.exp(-ke*(tau-maintInfHr));
+    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target);
+
+    flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
+    if(ssTag!=='ok') flags.push({level:ssTag, text:`計畫處方預測：${ssTagText}，起始劑量或間隔可能需要重新評估。`});
+
+    document.getElementById('amgFitModeBadge').textContent = '起始劑量預測（純族群 PK，尚未給藥）';
+    setHeaderMeta('drug-aminoglycoside', `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${CLpop.toFixed(2)} L/hr ・ 預測 Cmax ${CmaxSS.toFixed(1)}／Cmin ${CminSS.toFixed(1)}`);
+
+    const cells = [
+      ['ke（族群估算）', fmt3(ke), 'hr⁻¹', ''],
+      ['t½（族群估算）', fmt1(tHalf), 'hr', `約需 3–4 劑（4–5 個半衰期）達穩態`],
+      ['Vd（族群估算）', fmt1(Vpop), 'L', useDryWeight?`${(Vpop/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(Vpop/tbw).toFixed(2)} L/kg`],
+      ['CL（族群估算）', fmt2(CLpop), 'L/hr', ''],
+      ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
+      ['預測 Cmax,ss（peak）', fmt1(CmaxSS), 'µg/mL', target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標'],
+      ['預測 Cmin,ss（trough）', fmt1(CminSS), 'µg/mL', target?`目標 <${target.troughHi}`:'']
+    ];
+    if(isFinite(mic)&&mic>0) cells.push(['預測 Cmax/MIC', fmt1(CmaxSS/mic), '', `MIC 假設 ${mic}`]);
+    document.getElementById('amgParamGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
+      let cls='';
+      if(label.startsWith('預測 Cmax,ss')) cls = ssTag==='danger'&&/peak/i.test(label)?'':(target&&target.peak&&(CmaxSS<target.peak[0]*0.85||CmaxSS>target.peak[1]*1.25)?'flag-warn':(target&&target.peak?'flag-ok':''));
+      if(label.startsWith('預測 Cmin,ss')) cls = target&&CminSS>target.troughHi*1.5?'flag-danger':(target&&CminSS>target.troughHi?'flag-warn':(target?'flag-ok':''));
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+    }).join('');
+
+    document.getElementById('amgFlagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    const candTaus = getAminoCandTaus();
+    const dailyDoseNow = maintDose*(24/tau);
+    const regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CLpop, ke, maintInfHr, target, dailyDoseNow, mic));
+    const recommended = pickRecommendedAmino(regimenRows, target);
+    renderRegimenTableAmino(regimenRows, recommended, tau);
+
+    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(true, tHalf, document.getElementById('amgDialysis').value, parseFloat((readScrRowsAmg().slice(-1)[0]||{}).v)||1.0, document.getElementById('amgConcomitant').value.trim(), false);
+
+    // prospective curve
+    const virtualDoses = [];
+    let cursor = 0;
+    const numDoses = Math.min(40, Math.ceil((5*tHalf)/tau) + 2);
+    for(let i=0;i<numDoses;i++){ virtualDoses.push({t_rel:cursor, doseMg:maintDose, infHr:maintInfHr}); cursor += tau; }
+    const cMaxDomain = Math.max((target&&target.peak?target.peak[1]:CmaxSS)*1.3, CmaxSS*1.15, 10);
+    drawCurve({
+      doses: virtualDoses, levels: [], CL: CLpop, V: Vpop, ke, tau, maintDose, maintInf: maintInfHr,
+      isFutureRel: cursor, cMaxDomain, svgId:'amgCurveSvg',
+      toxLine: target?target.troughHi:null, toxLabel: target?`Trough 目標上限 ${target.troughHi}`:null,
+      band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null
+    });
+
+    updateCustomRowAmg(CLpop, ke, target, mic);
+
+    buildAiPromptAmino({
+      age: document.getElementById('amgAge').value, sex: document.getElementById('amgSex').value,
+      height: document.getElementById('amgHeight').value, tbw, dryWeight: useDryWeight?dryWeight:null,
+      cgMethod, crcl, dialysis: document.getElementById('amgDialysis').value, scrRows: readScrRowsAmg(),
+      drugLabel, strategyLabel, target, mic,
+      doseRowsMs: [], levelRowsMs: [], maintDose, tau, maintInfHr,
+      CL: CLpop, V: Vpop, ke, tHalf, CmaxSS, CminSS, fit:{mode:'population (尚未給藥)'},
+      recommended, regimenRows, flags, customResult:null, prospective:true
+    });
+  }
+
+  // ---------------- main render pipeline ----------------
+  function renderAmino(){
+    const age = parseFloat(document.getElementById('amgAge').value);
+    const sex = document.getElementById('amgSex').value;
+    const height = parseFloat(document.getElementById('amgHeight').value);
+    const tbw = parseFloat(document.getElementById('amgTbw').value);
+    const dialysis = document.getElementById('amgDialysis').value;
+    const arcSuspect = document.getElementById('amgArcSuspect').checked;
+    const vdHigh = document.getElementById('amgVdHigh').checked;
+    const scrRows = readScrRowsAmg();
+
+    const drug = document.getElementById('amgDrug').value;
+    const drugLabel = AMINO_DRUG_LABELS[drug] || drug;
+    const strategy = document.getElementById('amgStrategy').value;
+    const strategyLabel = strategy==='odd' ? 'ODD／HDEI' : '傳統多次給藥';
+    const target = getAminoTarget();
+    const mic = parseFloat(document.getElementById('amgMic').value);
+
+    const flags = [];
+    let scr = scrRows.length ? scrRows[scrRows.length-1].v : 1.0;
+    if(!scrRows.length) flags.push({level:'warn', text:'未提供 SCr，暫以 1.0 mg/dL 估算 — 這不是病人實際數據，請務必輸入實際值。'});
+    if(scrRows.length>=2){
+      const first=scrRows[0].v, lastV=scrRows[scrRows.length-1].v;
+      if(lastV > first*1.3) flags.push({level:'warn', text:`SCr 呈上升趨勢（${first.toFixed(2)} → ${lastV.toFixed(2)} mg/dL），腎功能可能正在惡化，目前清除率估算可能高估，aminoglycoside 累積毒性風險上升。`});
+      else if(lastV < first*0.7) flags.push({level:'warn', text:`SCr 呈下降趨勢（${first.toFixed(2)} → ${lastV.toFixed(2)} mg/dL），腎功能可能正在恢復，估算可能低估目前實際清除率，建議近期複測。`});
+    }
+    if(scr < 0.6) flags.push({level:'warn', text:'SCr 偏低，勿機械式進位計算——併同臨床風險因子考慮是否為 augmented renal clearance（ARC）。'});
+    if(drug==='tobramycin') flags.push({level:'ok', text:'Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例），如有院內特定 protocol 請自行對照調整。'});
+
+    const ibw = ibwDevine(height, sex);
+    const {weight:cgWeight, method:cgMethod} = weightForCG(tbw, ibw);
+    const crcl = cockcroftGault(age, cgWeight, scr, sex);
+    if((crcl>130 && arcSuspect) || crcl>150){
+      flags.push({level:'warn', text:`估算 CrCl ${crcl.toFixed(0)} mL/min 偏高，併同臨床風險因子建議考慮 augmented renal clearance；aminoglycoside 清除率與 CrCl 高度相關，標準劑量可能明顯 underdose，ODD 間隔可能需縮短，必要時建議實測 CrCl。`});
+    }
+    if(dialysis!=='none'){
+      flags.push({level:'warn', text:`病人接受 ${dialysis}，清除率由透析主導，Cockcroft-Gault 族群方程不適用——本工具之族群 CL 先驗已放寬權重，請以觀察到的濃度資料與臨床判斷為主，並個別化評估透析時程對劑量之影響。`});
+    }
+
+    // population CL: aminoglycoside clearance approximates CrCl (renal-clearance-dominant drug;
+    // literature-supported ~1:1 relationship, e.g. Cockcroft-Gault CrCl using IBW has been shown
+    // to track gentamicin clearance closely). Unit conversion mL/min -> L/hr via ×0.06.
+    const CLpop = dialysis==='none' ? crcl*0.06 : Math.max(0.3, crcl*0.06);
+    const dryWeight = parseFloat(document.getElementById('amgDryWeight').value);
+    const useDryWeight = isFinite(dryWeight) && dryWeight>0;
+    const weightForVd = useDryWeight ? dryWeight : tbw;
+    const vdCoef = vdHigh ? 0.35 : 0.26;
+    const Vpop = vdCoef*weightForVd;
+    if(useDryWeight && Math.abs(dryWeight-tbw) > tbw*0.05){
+      flags.push({level:'ok', text:`Vd 之族群先驗改用你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg），以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。`});
+    }
+    if(vdHigh) flags.push({level:'ok', text:'已勾選「臨床懷疑 Vd 偏高」，族群 Vd 先驗上修至 0.35 L/kg（水腫／重症／敗血症常見），初期 peak 可能因此偏低，若濃度資料足夠仍會依實測資料擬合校正。'});
+    const omegaCL = dialysis==='none' ? 0.30 : 0.9;
+    const prior = {CLpop, Vpop, sigma:0.15, omegaCL, omegaV:0.25};
+
+    const doseRowsMs = readDoseRowsAmg();
+    const levelRowsMs = readLevelRowsAmg();
+
+    const paramGrid = document.getElementById('amgParamGrid');
+    const flagList = document.getElementById('amgFlagList');
+    const fitBadge = document.getElementById('amgFitModeBadge');
+    const headerMeta = document.getElementById('headerMeta');
+
+    if(doseRowsMs.length===0){
+      const maintDoseP = parseFloat(document.getElementById('amgMaintDose').value);
+      const tauP = parseFloat(document.getElementById('amgMaintInterval').value);
+      const maintInfHrP = parseFloat(document.getElementById('amgMaintInf').value)/60;
+      const hasPlannedRegimen = isFinite(maintDoseP)&&isFinite(tauP)&&isFinite(maintInfHrP)&&maintDoseP>0&&tauP>0&&maintInfHrP>0;
+      if(hasPlannedRegimen){
+        renderProspectiveAmg({crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose:maintDoseP, tau:tauP, maintInfHr:maintInfHrP, target, mic, drugLabel, strategyLabel});
+        return;
+      }
+      paramGrid.innerHTML = '<div class="empty-note" style="padding:16px 20px;">請先在下方「給藥處方與紀錄」填妥計畫處方（維持劑量／間隔／輸注時間），即可看到起始劑量的族群 PK 預測；輸入實際給藥紀錄後則會改用資料擬合。</div>';
+      fitBadge.textContent = '尚無給藥資料';
+      document.getElementById('amgCurveSvg').innerHTML='';
+      flagList.innerHTML='';
+      document.querySelector('#amgRegimenTable tbody').innerHTML='';
+      document.getElementById('amgMonitorGrid').innerHTML='';
+      document.getElementById('amgAiPromptOut').value='';
+      ['amgCustomCmax','amgCustomCmin','amgCustomRatio'].forEach(id=>document.getElementById(id).textContent='—');
+      document.getElementById('amgCustomReason').innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
+      if(document.getElementById('drug-aminoglycoside').classList.contains('active')) setHeaderMeta('drug-aminoglycoside', '尚未輸入資料');
+      return;
+    }
+
+    const t0 = doseRowsMs[0].t;
+    const doses = doseRowsMs.map(d=>({t_rel:(d.t-t0)/3600000, doseMg:d.doseMg, infHr:d.infMin/60}));
+    const levels = levelRowsMs.map(l=>({t_rel:(l.t-t0)/3600000, conc:l.conc}));
+    const dosesForFit = doses.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const levelsForFit = levels.map(l=>({tHr:l.t_rel, conc:l.conc}));
+
+    const fit = fitCLV(dosesForFit, levelsForFit, prior);
+    const CL = fit.CL, V = fit.V;
+    const ke = CL/V, tHalf = 0.693/ke;
+    fitBadge.textContent = {
+      'population':'僅族群估算（尚無濃度）',
+      'single-level':'單點貝氏校正（V 固定為族群值）',
+      }[fit.mode] || `聯合擬合 ${fit.mode.replace('joint ','')}`;
+
+    let anyNotSS=false, earlyPhaseFlag=false, duringInfusionFlag=false;
+    levels.forEach((lv)=>{
+      if(lv.t_rel < 3*tHalf) anyNotSS=true;
+      let prevDose=null;
+      for(const d of doses){ if(d.t_rel<=lv.t_rel) prevDose=d; }
+      if(prevDose){
+        const dt = lv.t_rel - prevDose.t_rel;
+        if(dt>=0 && dt<prevDose.infHr) duringInfusionFlag=true;
+        else if(dt>=prevDose.infHr && dt < prevDose.infHr+0.25) earlyPhaseFlag=true;
+      }
+    });
+    if(anyNotSS) flags.push({level:'warn', text:`至少一筆濃度量測時，距你設定的分析起點未滿 3–4 個半衰期（現估 t½ ≈ ${tHalf.toFixed(1)} 小時），可能尚未達穩態，解讀需保留。`});
+    if(duringInfusionFlag) flags.push({level:'danger', text:'至少一筆濃度的抽血時間落在該劑輸注「進行中」，數值恐反映不完全分布，強烈建議確認實際抽血時間。'});
+    if(earlyPhaseFlag) flags.push({level:'warn', text:'至少一筆濃度距其對應劑量輸注結束不足 15 分鐘，可能落在分布相未完成階段（傳統法建議輸注結束後 30 分鐘才抽 peak），peak 估算建議保留。'});
+
+    levels.forEach(lv=>{
+      const pred = predictConc(lv.t_rel, dosesForFit, CL, V);
+      if(pred>0){
+        const pct = Math.abs(pred-lv.conc)/pred*100;
+        if(pct>30) flags.push({level:'warn', text:`+${lv.t_rel.toFixed(1)}h 量測值 ${lv.conc.toFixed(1)} µg/mL 與模型預測 ${pred.toFixed(1)} µg/mL 差異達 ${pct.toFixed(0)}%，建議核對抽血/給藥時間紀錄或檢驗誤差。`});
+      }
+    });
+
+    const maintDose = parseFloat(document.getElementById('amgMaintDose').value);
+    const tau = parseFloat(document.getElementById('amgMaintInterval').value);
+    const maintInfHr = parseFloat(document.getElementById('amgMaintInf').value)/60;
+    const R = maintDose/maintInfHr;
+    const CmaxSS = (R/CL)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
+    const CminSS = CmaxSS*Math.exp(-ke*(tau-maintInfHr));
+    const dailyDoseNow = maintDose*(24/tau);
+    const lastEventRel = Math.max(doses[doses.length-1].t_rel, levels.length?levels[levels.length-1].t_rel:0);
+    const windowStart = Math.max(0, lastEventRel-24);
+    const auc24Actual = integrateTrapz(t=>predictConc(t,dosesForFit,CL,V), windowStart, lastEventRel, 480);
+
+    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target);
+    if(ssTag!=='ok') flags.push({level:ssTag, text:`現行處方推算：${ssTagText}。`});
+
+    if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
+
+    const cellsHtml = [
+      ['ke（消除速率常數）', fmt3(ke), 'hr⁻¹', ''],
+      ['t½（半衰期）', fmt1(tHalf), 'hr', anyNotSS?'尚未達穩態，保留解讀':''],
+      ['Vd（分布體積）', fmt1(V), 'L', useDryWeight?`${(V/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(V/tbw).toFixed(2)} L/kg`],
+      ['CL（清除率）', fmt2(CL), 'L/hr', ''],
+      ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
+      ['Cmax,ss（現行處方推算，peak）', fmt1(CmaxSS), 'µg/mL', target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標'],
+      ['Cmin,ss（現行處方推算，trough）', fmt1(CminSS), 'µg/mL', target?`目標 <${target.troughHi}`:''],
+      ['近 24h 實際 AUC（依已發生給藥推算）', fmt0(auc24Actual), 'mg·hr/L', '輔助參考，本藥物主要仍以 peak/trough 為準']
+    ];
+    if(isFinite(mic)&&mic>0) cellsHtml.push(['Cmax/MIC', fmt1(CmaxSS/mic), '', `MIC 假設 ${mic}`]);
+    paramGrid.innerHTML = cellsHtml.map(([label,val,unit,sub])=>{
+      let cls='';
+      if(label.startsWith('Cmax,ss')) cls = target&&target.peak?(CmaxSS<target.peak[0]*0.85||CmaxSS>target.peak[1]*1.25?'flag-warn':'flag-ok'):'';
+      if(label.startsWith('Cmin,ss')) cls = target?(CminSS>target.troughHi*1.5?'flag-danger':(CminSS>target.troughHi?'flag-warn':'flag-ok')):'';
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+    }).join('');
+
+    flagList.innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    const candTaus = getAminoCandTaus();
+    const regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CL, ke, maintInfHr, target, dailyDoseNow, mic));
+    const recommended = pickRecommendedAmino(regimenRows, target);
+    renderRegimenTableAmino(regimenRows, recommended, tau);
+
+    const customResult = updateCustomRowAmg(CL, ke, target, mic);
+
+    const longCourse = lastEventRel > 24*10; // >~10 days of recorded therapy
+    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(anyNotSS, tHalf, dialysis, scr, document.getElementById('amgConcomitant').value.trim(), longCourse);
+
+    const cMaxDomain = Math.max(...levels.map(l=>l.conc),0)*1.15 || 0;
+    const domainFromTarget = target&&target.peak ? target.peak[1]*1.3 : (target?target.troughHi*4:10);
+    const finalDomain = Math.max(10, cMaxDomain, CmaxSS*1.15, domainFromTarget);
+    drawCurve({
+      doses, levels, CL, V, ke, tau, maintDose, maintInf: maintInfHr,
+      isFutureRel: lastEventRel, cMaxDomain: finalDomain, svgId:'amgCurveSvg',
+      toxLine: target?target.troughHi:null, toxLabel: target?`Trough 目標上限 ${target.troughHi}`:null,
+      band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null
+    });
+
+    setHeaderMeta('drug-aminoglycoside', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ Cmax ${CmaxSS.toFixed(1)}／Cmin ${CminSS.toFixed(1)}`);
+
+    buildAiPromptAmino({
+      age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, ibw, cgMethod, crcl, dialysis, scrRows,
+      drugLabel, strategyLabel, target, mic,
+      doseRowsMs, levelRowsMs, maintDose, tau, maintInfHr,
+      CL, V, ke, tHalf, CmaxSS, CminSS, auc24Actual, fit,
+      recommended, regimenRows, flags, customResult, prospective:false
+    });
+  }
+
+  function buildAiPromptAmino(d){
+    const scrText = d.scrRows.length
+      ? d.scrRows.map(r=>`${new Date(r.t).toLocaleDateString('zh-TW')} → ${r.v} mg/dL`).join('；')
+      : '（未提供）';
+    const doseText = d.doseRowsMs.length
+      ? d.doseRowsMs.map((r,i)=>`第${i+1}劑 ${new Date(r.t).toLocaleString('zh-TW')}｜${r.doseMg} mg｜輸注 ${r.infMin} 分`).join('\n')
+      : '（尚未給藥，以下為計畫處方之族群預測）';
+    const levelText = d.levelRowsMs.length
+      ? d.levelRowsMs.map(r=>`${new Date(r.t).toLocaleString('zh-TW')} → ${r.conc} µg/mL`).join('\n')
+      : '（未提供任何濃度量測，以下為純族群估算）';
+    const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
+    const concomitant = document.getElementById('amgConcomitant').value.trim() || '（未填寫）';
+    const otherNotes = document.getElementById('amgOtherNotes').value.trim() || '（未填寫）';
+    const site = document.getElementById('amgSite').value.trim() || '（未填寫）';
+    const organism = document.getElementById('amgOrganism').value.trim() || '（未填寫）';
+    const severity = document.getElementById('amgSeverity').value;
+    const sourceControl = document.getElementById('amgSourceControlDone').checked ? '是' : '尚未／不確定';
+    const targetText = d.target ? `${d.target.label}：${d.target.peak?`Peak ${d.target.peak[0]}–${d.target.peak[1]}`:'Peak 無明訂目標'}／Trough <${d.target.troughHi}` : '（尚未鎖定目標）';
+
+    const regimenText = d.regimenRows.map(r=>`q${r.candTau}h → ${r.roundedDose} mg（輸注 ${r.infMinC} 分）：Cmax ${r.cmax.toFixed(1)}／Cmin ${r.cmin.toFixed(1)}${r.ratio!=null?`／Cmax/MIC ${r.ratio.toFixed(1)}`:''}${r===d.recommended?'　←本工具建議':''}`).join('\n');
+
+    const prompt = `你是一位資深臨床藥師顧問。以下是由一套自建 aminoglycoside TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。
+
+【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／peak／trough，並依鎖定的目標範圍投影候選劑量方案。
+【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、Hartford nomogram 之圖形化判讀（本工具改用個體化 ke/Vd 直接反解，理論上更精確，但未對照原始 nomogram 圖形）、辨識少見或複雜交互作用。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。
+
+## 一、病人與腎功能
+- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg（CrCl 計算採 ${d.cgMethod}）
+${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg（與 TBW 不同，Vd 族群先驗採此體重估算）\n`:''}- SCr 數列：${scrText}
+- Cockcroft-Gault CrCl：約 ${d.crcl.toFixed(0)} mL/min
+- 透析狀態：${d.dialysis==='none'?'否':d.dialysis}
+
+## 二、藥物、策略與感染脈絡
+- 目標藥物：${d.drugLabel}；給藥策略：${d.strategyLabel}
+- 鎖定目標：${targetText}
+- 感染部位：${site}；菌種／MIC：${organism}${isFinite(d.mic)&&d.mic>0?`（MIC 假設 ${d.mic} µg/mL）`:''}
+- 嚴重度：${severity}；感染源控制：${sourceControl}
+
+## 三、給藥紀錄（本工具計算之唯一依據）
+${doseText}
+現行維持處方：${d.maintDose} mg q${d.tau}h（輸注 ${(d.maintInfHr*60).toFixed(0)} 分）
+
+## 四、血中濃度量測（自由時點）
+${levelText}
+
+## 五、本工具擬合結果（可稽核）
+- 擬合模式：${d.fit.mode}
+- ke = ${d.ke.toFixed(4)} hr⁻¹，t½ = ${d.tHalf.toFixed(1)} hr
+- Vd = ${d.V.toFixed(1)} L，CL = ${d.CL.toFixed(2)} L/hr
+- 現行處方推算：Cmax(peak) ${d.CmaxSS.toFixed(1)} µg/mL／Cmin(trough) ${d.CminSS.toFixed(1)} µg/mL
+${d.auc24Actual!=null?`- 近 24 小時實際累積 AUC（輔助參考，非本藥物主要目標）：${d.auc24Actual.toFixed(0)} mg·hr/L\n`:''}
+## 六、本工具候選劑量方案
+${regimenText || '（未勾選任何候選間隔）'}
+${d.customResult?`\n藥師手動測試方案：${d.customResult.dose} mg／輸注 ${d.customResult.infMin} 分／q${d.customResult.tauC}h → Cmax ${d.customResult.cmax.toFixed(1)}／Cmin ${d.customResult.cmin.toFixed(1)}（${d.customResult.tagText}）`:''}
+
+## 七、本工具健全性旗標
+${flagText || '（無特別旗標）'}
+
+## 八、併用藥物與備註
+- 腎／耳毒性相關併用藥物：${concomitant}
+- 其他備註：${otherNotes}
+
+## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出）
+[[請貼上：近期完整 lab trend（renal panel／CBC／發炎指標等，含日期）]]
+[[請貼上：近期病程摘要、感染控制進度與臨床反應]]
+[[如有：耳毒性相關主觀症狀紀錄（耳鳴／聽損／眩暈）與聽力檢查結果]]
+[[如有：過去 TDM 紀錄與歷次劑量調整後的反應]]
+
+## 十、請你 specifically 協助評估
+1. 本工具的族群假設（Vd 係數、CrCl→CL 比例、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？
+2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略（如改變 conventional／ODD 策略）？
+3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。
+4. 下一次監測時機與重點，是否需要在本工具建議之外調整？
+
+請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。`;
+
+    document.getElementById('amgAiPromptOut').value = prompt;
+  }
+
+  function initDefaultsAmg(){
+    const now = new Date();
+    const start = new Date(now.getTime() - 2*24*3600000);
+    document.getElementById('amgTherapyStart').value = toLocalInputValue(start);
+    document.getElementById('amgExpandTo').value = toLocalInputValue(now);
+
+    addScrRowAmg(toLocalDateValue(new Date(start.getTime()-24*3600000)), 0.9);
+    addScrRowAmg(toLocalDateValue(now), 0.85);
+
+    populateAminoIndicationOptions();
+    document.getElementById('amgIndication').value = 'severe';
+    updateAminoTargetDisplay();
+
+    expandDosesFnAmg();
+
+    const doseRows = Array.from(document.querySelectorAll('#amgDoseTable .entry-row'));
+    if(doseRows.length>=1){
+      const lastDoseTime = new Date(doseRows[doseRows.length-1].querySelector('.dose-date').value);
+      addLevelRowAmg(toLocalInputValue(new Date(lastDoseTime.getTime()+62*60000)), 17.5); // 30min infusion + 32min -> ~30min post-infusion-end peak
+      addLevelRowAmg(toLocalInputValue(new Date(lastDoseTime.getTime()+22*3600000)), 0.6); // trough-ish before next dose
+    }
+    renderAmino();
+  }
+
+  // ---------------- drug switcher ----------------
+  let currentDrugModule = 'vancomycin';
+  const AMINO_HEADER = {
+    title:'Aminoglycoside TDM 擬合引擎', eyebrow:'Free-Sampling PK',
+    subtitle:'任意抽血時點 · 貝氏 MAP 一室模型擬合 · Peak／Trough 導向劑量建議',
+    docTitle:'Aminoglycoside TDM 擬合引擎',
+    footer:'<strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映院內 TDM protocol 與當代主流實務（見院內 aminoglycoside TDM 收案表），可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。本工具不自動判讀 Hartford nomogram，改採個體化 ke／Vd 反解劑量。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+  };
+  const VANCO_HEADER = {
+    title:'Vancomycin TDM 擬合引擎', eyebrow:'Free-Sampling PK',
+    subtitle:'任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議',
+    docTitle:'Vancomycin TDM 擬合引擎',
+    footer:'<strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+  };
+  function showDrugModule(name){
+    currentDrugModule = name;
+    document.querySelectorAll('.drug-module').forEach(el=>el.classList.remove('active'));
+    const target = document.getElementById('drug-'+name);
+    if(target) target.classList.add('active');
+    document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
+      btn.classList.toggle('primary', btn.dataset.drug===name);
+    });
+    const h = name==='aminoglycoside' ? AMINO_HEADER : VANCO_HEADER;
+    document.getElementById('appTitle').textContent = h.title;
+    document.getElementById('appEyebrow').textContent = h.eyebrow;
+    document.getElementById('appSubtitle').textContent = h.subtitle;
+    document.title = h.docTitle;
+    document.getElementById('footerDisclaimer').innerHTML = h.footer;
+    if(name==='aminoglycoside') renderAmino(); else render();
+  }
+  function clearCurrentDrug(){
+    if(currentDrugModule==='aminoglycoside') clearAllFnAmg(); else clearAllFn();
+  }
+
   // ---------------- wiring ----------------
   function initDefaults(){
     const now = new Date();
@@ -1739,7 +2906,7 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('addLevelRow').addEventListener('click', ()=>{ addLevelRow('', ''); render(); });
     document.getElementById('expandDoses').addEventListener('click', expandDosesFn);
     document.getElementById('pruneBeforeBtn').addEventListener('click', pruneDosesBeforeFn);
-    document.getElementById('clearAllBtn').addEventListener('click', clearAllFn);
+    document.getElementById('clearAllBtn').addEventListener('click', ()=>clearCurrentDrug());
 
     document.getElementById('savePatientBtn').addEventListener('click', savePatientFn);
     document.getElementById('loadPatientBtn').addEventListener('click', loadPatientFn);
@@ -1768,6 +2935,68 @@ ${flagText || '（無特別旗標）'}
     });
 
     initDefaults();
+
+    // ---------------- aminoglycoside module wiring ----------------
+    ['amgAge','amgSex','amgHeight','amgTbw','amgDryWeight','amgDialysis','amgArcSuspect','amgVdHigh',
+     'amgTherapyStart','amgExpandTo','amgMaintDose','amgMaintInterval','amgMaintInf',
+     'amgMic','amgCand8','amgCand12','amgCand24','amgCand36','amgCand48',
+     'amgSite','amgOrganism','amgSeverity','amgSourceControlDone',
+     'amgConcomitant','amgOtherNotes','amgCustomDose','amgCustomInf','amgCustomTau'].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el) el.addEventListener('input', renderAmino), el.addEventListener('change', renderAmino);
+    });
+
+    document.getElementById('amgDrug').addEventListener('change', ()=>{ populateAminoIndicationOptions(); renderAmino(); });
+    document.getElementById('amgStrategy').addEventListener('change', ()=>{
+      const odd = document.getElementById('amgStrategy').value==='odd';
+      document.getElementById('amgCand8').checked = !odd;
+      document.getElementById('amgCand12').checked = !odd;
+      document.getElementById('amgCand24').checked = true;
+      document.getElementById('amgCand36').checked = odd;
+      document.getElementById('amgCand48').checked = odd;
+      populateAminoIndicationOptions();
+      renderAmino();
+    });
+    document.getElementById('amgIndication').addEventListener('change', ()=>{ updateAminoTargetDisplay(); renderAmino(); });
+
+    document.getElementById('amgAddScrRow').addEventListener('click', ()=>{ addScrRowAmg('', ''); renderAmino(); });
+    document.getElementById('amgAddDoseRow').addEventListener('click', ()=>{ addDoseRowAmg('', '', ''); renumberDoseRowsAmg(); renderAmino(); });
+    document.getElementById('amgAddLevelRow').addEventListener('click', ()=>{ addLevelRowAmg('', ''); renderAmino(); });
+    document.getElementById('amgExpandDoses').addEventListener('click', expandDosesFnAmg);
+    document.getElementById('amgPruneBeforeBtn').addEventListener('click', pruneDosesBeforeFnAmg);
+
+    document.getElementById('amgSavePatientBtn').addEventListener('click', savePatientFnAmg);
+    document.getElementById('amgLoadPatientBtn').addEventListener('click', loadPatientFnAmg);
+    document.getElementById('amgDeletePatientBtn').addEventListener('click', deletePatientFnAmg);
+    document.getElementById('amgExportPatientsBtn').addEventListener('click', exportPatientsFnAmg);
+    document.getElementById('amgImportPatientsBtn').addEventListener('click', ()=>{
+      document.getElementById('amgImportFileInput').click();
+    });
+    document.getElementById('amgImportFileInput').addEventListener('change', function(){
+      if(this.files && this.files[0]) importPatientsFnAmg(this.files[0]);
+      this.value = '';
+    });
+    refreshAmgPatientSelect();
+
+    document.getElementById('amgCopyPromptBtn').addEventListener('click', ()=>{
+      const ta = document.getElementById('amgAiPromptOut');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(()=>{
+        const s = document.getElementById('amgCopyStatus');
+        s.textContent = '已複製到剪貼簿';
+        setTimeout(()=>{ s.textContent=''; }, 2500);
+      }).catch(()=>{
+        document.execCommand('copy');
+        document.getElementById('amgCopyStatus').textContent = '已複製';
+      });
+    });
+
+    initDefaultsAmg();
+
+    // ---------------- drug switcher wiring ----------------
+    document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ if(!btn.disabled) showDrugModule(btn.dataset.drug); });
+    });
   });
 
 })();
