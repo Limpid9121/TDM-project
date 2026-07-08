@@ -2538,6 +2538,12 @@ ${flagText || '（無特別旗標）'}
   }
 
   function render(){
+    // Keep the visual "第 N 劑" badges in sync with actual chronological order on
+    // every render — not just after expand/add/prune — so directly editing an
+    // existing dose row's date (which can reorder it relative to its neighbors)
+    // never leaves the on-screen numbering stale relative to what the engine uses.
+    renumberDoseRows();
+
     const dialysis0 = document.getElementById('dialysis').value;
     if(dialysis0 === 'HD'){
       renderVancoHD();
@@ -3594,6 +3600,11 @@ ${flagText || '（無特別旗標）'}
 
   // ---------------- main render pipeline ----------------
   function renderAmino(){
+    // Keep the visual "第 N 劑" badges in sync with actual chronological order on
+    // every render — see the matching comment in render() for why this can't rely
+    // solely on the expand/add/prune call sites.
+    renumberDoseRowsAmg();
+
     const age = parseFloat(document.getElementById('amgAge').value);
     const sex = document.getElementById('amgSex').value;
     const height = parseFloat(document.getElementById('amgHeight').value);
