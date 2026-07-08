@@ -214,6 +214,14 @@
   }
 
   .curve-wrap{padding:16px 20px 4px;}
+  .whatif-bar{
+    display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:8px 2px 2px;
+    font-size:12px;color:var(--ink-soft);border-top:1px dashed var(--line);margin-top:4px;
+  }
+  .whatif-toggle{display:flex;align-items:center;gap:6px;cursor:pointer;font-weight:500;}
+  .whatif-toggle input{width:14px;height:14px;}
+  .whatif-fields{display:flex;align-items:center;gap:4px;flex-wrap:wrap;font-family:var(--mono);}
+  .whatif-readout{font-family:var(--sans);color:var(--amber);font-weight:600;margin-left:6px;}
   svg.curve{width:100%;height:auto;display:block;}
 
   .param-grid{
@@ -282,7 +290,7 @@
   .monitor-grid p, .monitor-grid ul{font-size:12.5px;margin:0;padding-left:18px;}
   .monitor-grid li{margin-bottom:4px;}
 
-  textarea#aiPromptOut{
+  textarea#aiPromptOut, textarea#amgAiPromptOut{
     width:100%;min-height:220px;font-family:var(--mono);font-size:11.5px;line-height:1.6;
     background:#FBFBF9;border:1px solid var(--line-strong);border-radius:8px;padding:12px;color:var(--ink);
     white-space:pre-wrap;
@@ -430,6 +438,8 @@
           <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
           <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
         </div>
+        <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+        <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。濃度曲線在起點前會以淺色標示「假設之穩態暖機段」。此設定只影響濃度基線，不改變你實際輸入的給藥與濃度資料；若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
         <div class="field-row three">
           <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
           <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
@@ -503,6 +513,14 @@
 
       <div class="curve-wrap">
         <svg class="curve" id="curveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="whatif-bar" id="vancoWhatIfBar">
+          <label class="whatif-toggle"><input type="checkbox" id="vancoWhatIfOn"> 疊加「變更劑量後」曲線（what-if）</label>
+          <span class="whatif-fields" id="vancoWhatIfFields" style="display:none;">
+            <input type="number" id="vancoWhatIfDose" class="custom-input dose" placeholder="劑量" step="50" title="新劑量 mg">&nbsp;mg／
+            <input type="number" id="vancoWhatIfInf" class="custom-input inf" placeholder="輸注" step="5" title="輸注時間 分">&nbsp;min，q<input type="number" id="vancoWhatIfTau" class="custom-input tau" placeholder="τ" step="1" title="新間隔 小時">h
+            <span class="whatif-readout" id="vancoWhatIfReadout"></span>
+          </span>
+        </div>
       </div>
 
       <div class="param-grid" id="paramGrid"></div>
@@ -695,6 +713,8 @@
         <div class="btn-row">
           <button class="btn primary small" id="amgExpandDoses" type="button">依上述處方自動展開給藥紀錄</button>
         </div>
+        <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+        <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
 
         <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
@@ -760,6 +780,14 @@
 
       <div class="curve-wrap">
         <svg class="curve" id="amgCurveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <div class="whatif-bar" id="amgWhatIfBar">
+          <label class="whatif-toggle"><input type="checkbox" id="amgWhatIfOn"> 疊加「變更劑量後」曲線（what-if）</label>
+          <span class="whatif-fields" id="amgWhatIfFields" style="display:none;">
+            <input type="number" id="amgWhatIfDose" class="custom-input dose" placeholder="劑量" step="10" title="新劑量 mg">&nbsp;mg／
+            <input type="number" id="amgWhatIfInf" class="custom-input inf" placeholder="輸注" step="5" title="輸注時間 分">&nbsp;min，q<input type="number" id="amgWhatIfTau" class="custom-input tau" placeholder="τ" step="1" title="新間隔 小時">h
+            <span class="whatif-readout" id="amgWhatIfReadout"></span>
+          </span>
+        </div>
       </div>
 
       <div class="param-grid" id="amgParamGrid"></div>
@@ -904,6 +932,35 @@
     }
     return total;
   }
+
+  // ---------------- steady-state priming ----------------
+  // When the first RECORDED dose is actually a maintenance dose given after the
+  // patient was already at steady state, starting the superposition from t=0 with
+  // an empty history under-predicts (the curve "warms up" over ~5 half-lives).
+  // This prepends virtual identical doses (same dose/interval) going back far enough
+  // that concentration at the first real dose reflects long-term accumulation.
+  // Operates on {tHr, doseMg, infHr} arrays (the shape predictConc/fitCLV use).
+  // Returns {doses:[...primed, ...original], primeStartHr}. Does not mutate input.
+  function primePriorDoses(doses, CL, V, opts){
+    if(!doses.length) return {doses:doses.slice(), primeStartHr:null};
+    const ke = CL/V;
+    const tHalf = 0.693/ke;
+    if(!(tHalf>0) || !isFinite(tHalf)) return {doses:doses.slice(), primeStartHr:null};
+    const first = doses[0];
+    let tau = opts && isFinite(opts.tau) && opts.tau>0 ? opts.tau
+            : (doses.length>=2 ? (doses[1].tHr - doses[0].tHr) : 24);
+    if(!(tau>0)) tau = 24;
+    const primeDose = opts && isFinite(opts.doseMg) && opts.doseMg>0 ? opts.doseMg : first.doseMg;
+    const primeInf = opts && isFinite(opts.infHr) && opts.infHr>0 ? opts.infHr : first.infHr;
+    const spanHr = 5*tHalf;
+    const nPrime = Math.min(200, Math.max(1, Math.ceil(spanHr/tau)));
+    const primeDoses = [];
+    for(let i=nPrime; i>=1; i--){
+      primeDoses.push({tHr: first.tHr - i*tau, doseMg: primeDose, infHr: primeInf});
+    }
+    return {doses: primeDoses.concat(doses), primeStartHr: primeDoses.length ? primeDoses[0].tHr : first.tHr};
+  }
+
 
   function nelderMead(f, x0, opts={}){
     const alpha=1, gamma=2, rho=0.5, sig=0.5;
@@ -1161,6 +1218,13 @@
     document.getElementById('loadingFields').style.display='none';
     document.getElementById('loadingDose').value='2000';
     document.getElementById('loadingInf').value='120';
+    document.getElementById('assumeSteadyState').checked=false;
+    document.getElementById('steadyStateHint').style.display='none';
+    document.getElementById('vancoWhatIfOn').checked=false;
+    document.getElementById('vancoWhatIfFields').style.display='none';
+    document.getElementById('vancoWhatIfDose').value='';
+    document.getElementById('vancoWhatIfInf').value='';
+    document.getElementById('vancoWhatIfTau').value='';
     document.getElementById('maintDose').value='';
     document.getElementById('maintInterval').value='';
     document.getElementById('maintInf').value='';
@@ -1204,6 +1268,7 @@
       deepInfection:c('deepInfection'), sourceControlDone:c('sourceControlDone'),
       therapyStart:v('therapyStart'), expandTo:v('expandTo'),
       useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'),
+      assumeSteadyState:c('assumeSteadyState'),
       maintDose:v('maintDose'), maintInterval:v('maintInterval'), maintInf:v('maintInf'),
       doseRows: Array.from(document.querySelectorAll('#doseTable .entry-row')).map(row=>({
         date: row.querySelector('.dose-date').value, doseMg: row.querySelector('.dose-mg').value, infMin: row.querySelector('.dose-inf').value
@@ -1233,6 +1298,8 @@
     setVal('therapyStart', s.therapyStart); setVal('expandTo', s.expandTo);
     setChecked('useLoading', s.useLoading);
     document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
+    setChecked('assumeSteadyState', s.assumeSteadyState);
+    document.getElementById('steadyStateHint').style.display = s.assumeSteadyState ? 'block' : 'none';
     setVal('loadingDose', s.loadingDose); setVal('loadingInf', s.loadingInf);
     setVal('maintDose', s.maintDose); setVal('maintInterval', s.maintInterval); setVal('maintInf', s.maintInf);
     clearTbody('#doseTable');
@@ -1384,6 +1451,38 @@
 
   // ---------------- SVG curve ----------------
   const SVG_NS = 'http://www.w3.org/2000/svg';
+  // ---------------- what-if dose-change overlay helpers (shared) ----------------
+  // Reads the what-if control strip for a given module prefix ('vanco'|'amg').
+  // Returns null when the toggle is off or inputs are incomplete; otherwise
+  // {doseMg, tau, infHr, fromRel}. fromRel defaults to lastRel (change starts
+  // from the last recorded event, i.e. "now").
+  function readWhatIf(prefix, defaults){
+    const on = document.getElementById(prefix+'WhatIfOn');
+    if(!on || !on.checked) return null;
+    const doseEl = document.getElementById(prefix+'WhatIfDose');
+    const infEl = document.getElementById(prefix+'WhatIfInf');
+    const tauEl = document.getElementById(prefix+'WhatIfTau');
+    let doseMg = parseFloat(doseEl.value);
+    let infMin = parseFloat(infEl.value);
+    let tau = parseFloat(tauEl.value);
+    // fall back to current regimen for any blank field so a partial entry still draws
+    if(!(doseMg>0)) doseMg = defaults.doseMg;
+    if(!(infMin>0)) infMin = defaults.infHr*60;
+    if(!(tau>0)) tau = defaults.tau;
+    if(!(doseMg>0)||!(infMin>0)||!(tau>0)) return null;
+    return {doseMg, tau, infHr:infMin/60, fromRel: defaults.lastRel};
+  }
+  function updateWhatIfReadout(prefix, whatIf, CL, ke){
+    const el = document.getElementById(prefix+'WhatIfReadout');
+    if(!el) return;
+    if(!whatIf){ el.textContent=''; return; }
+    const R = whatIf.doseMg/whatIf.infHr;
+    const cmax = (R/CL)*(1-Math.exp(-ke*whatIf.infHr))/(1-Math.exp(-ke*whatIf.tau));
+    const cmin = cmax*Math.exp(-ke*(whatIf.tau-whatIf.infHr));
+    const auc24 = (whatIf.doseMg*(24/whatIf.tau))/CL;
+    el.textContent = `變更後穩態 → Cmax ${cmax.toFixed(1)}／Cmin ${cmin.toFixed(1)}／AUC₂₄ ${auc24.toFixed(0)}`;
+  }
+
   function drawCurve(ctx){
     const svg = document.getElementById(ctx.svgId || 'curveSvg');
     const W=920, H=340, ML=52, MR=18, MT=18, MB=34;
@@ -1393,20 +1492,61 @@
     const toxLabel = ctx.toxLabel || ('腎毒性關切 ' + toxLine);
     const band = ctx.band || (altTrough ? {lo:10, hi:15, label:'替代 trough 目標 10–15'} : null);
 
-    const dosesForPlot = doses.slice();
-    if(doses.length){
+    // steady-state priming: virtual doses given BEFORE the recorded first dose,
+    // with negative t_rel. When present, the x-axis extends left of 0 and that
+    // region is shaded as an assumed warm-up segment.
+    const primeDoses = ctx.primeDoses || [];
+    // what-if regimen: an alternative dose/interval projected forward from whatIf.fromRel,
+    // drawn as a distinct overlay so the user can see the transition when changing dose.
+    const whatIf = ctx.whatIf || null;
+
+    // baseline dosing for plotting = priming (if any) + actual + a few projected
+    // maintenance doses (only when NOT doing a what-if, since what-if supplies its own future)
+    const dosesForPlot = primeDoses.concat(doses.slice());
+    if(doses.length && !whatIf){
       const last = doses[doses.length-1];
       let cursor = last.t_rel + tau;
       for(let i=0;i<3;i++){ dosesForPlot.push({t_rel:cursor, doseMg:ctx.maintDose, infHr:ctx.maintInf}); cursor+=tau; }
     }
-    const tDomainMax = doses.length ? (doses[doses.length-1].t_rel + tau*2.4) : 24;
-    const tMin = 0;
-    const predAt = t => predictConc(t, dosesForPlot.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr})), CL, V);
+
+    const nowRel = ctx.isFutureRel;
+
+    // what-if future doses (start one interval after the last real dose, or at whatIf.fromRel)
+    let whatIfDoses = [];
+    if(whatIf && doses.length){
+      const startRel = (whatIf.fromRel!==undefined && whatIf.fromRel!==null) ? whatIf.fromRel : (doses[doses.length-1].t_rel + whatIf.tau);
+      let cursor = startRel;
+      const nDoses = Math.max(4, Math.ceil((5*(0.693/ke))/whatIf.tau) + 2);
+      for(let i=0;i<nDoses;i++){ whatIfDoses.push({t_rel:cursor, doseMg:whatIf.doseMg, infHr:whatIf.infHr}); cursor+=whatIf.tau; }
+    }
+
+    // x domain
+    const tMinRaw = primeDoses.length ? primeDoses[0].t_rel : 0;
+    const tMin = Math.min(0, tMinRaw);
+    let tDomainMax;
+    if(whatIf && whatIfDoses.length){
+      tDomainMax = whatIfDoses[whatIfDoses.length-1].t_rel + whatIf.tau*1.2;
+    } else {
+      tDomainMax = doses.length ? (doses[doses.length-1].t_rel + tau*2.4) : 24;
+    }
+
+    const baselinePlotDoses = dosesForPlot.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const whatIfPlotDoses = primeDoses.concat(doses).concat(whatIfDoses).map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const predBaseline = t => predictConc(t, baselinePlotDoses, CL, V);
+    const predWhatIf = t => predictConc(t, whatIfPlotDoses, CL, V);
 
     const xScale = t => ML + (t-tMin)/(tDomainMax-tMin) * plotW;
     const yScale = c => MT + plotH - (c/cMaxDomain)*plotH;
 
     let svgParts = [];
+
+    // warm-up shading (assumed steady-state priming region, left of t=0)
+    if(primeDoses.length && tMin<0){
+      const x0=xScale(tMin), x1=xScale(0);
+      svgParts.push(`<rect x="${x0}" y="${MT}" width="${Math.max(0,x1-x0)}" height="${plotH}" fill="var(--line)" opacity="0.28"/>`);
+      svgParts.push(`<text x="${(x0+x1)/2}" y="${MT+12}" font-family="var(--sans)" font-size="10" fill="var(--ink-faint)" text-anchor="middle">假設之穩態暖機段</text>`);
+    }
+
     // gridlines (concentration)
     const cStep = cMaxDomain>60?20:(cMaxDomain>30?10:5);
     for(let c=0; c<=cMaxDomain+0.01; c+=cStep){
@@ -1414,17 +1554,21 @@
       svgParts.push(`<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`);
       svgParts.push(`<text x="${ML-8}" y="${y+4}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="end">${c}</text>`);
     }
-    // y axis unit label
     svgParts.push(`<text x="${ML-8}" y="${MT-4}" font-family="var(--mono)" font-size="10" fill="var(--ink-faint)" text-anchor="end">µg/mL</text>`);
 
-    // x gridlines every 24h
+    // x gridlines every 24h (from 0, both directions)
     for(let t=0; t<=tDomainMax; t+=24){
       const x = xScale(t);
       svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
       svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="middle">+${t}h</text>`);
     }
+    for(let t=-24; t>=tMin; t-=24){
+      const x = xScale(t);
+      svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
+      svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="middle">${t}h</text>`);
+    }
 
-    // toxicity reference line (drug-specific threshold, default 20 for vancomycin)
+    // toxicity reference line
     if(toxLine!==null && toxLine<=cMaxDomain){
       const yTox = yScale(toxLine);
       svgParts.push(`<line x1="${ML}" y1="${yTox}" x2="${W-MR}" y2="${yTox}" stroke="var(--crimson)" stroke-width="1.3" stroke-dasharray="5,4"/>`);
@@ -1436,45 +1580,77 @@
       svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="10" fill="var(--amber)">${band.label}</text>`);
     }
 
-    // dose infusion bars
+    // dose infusion bars (baseline: priming + actual + projected)
     const baseY = MT+plotH;
     dosesForPlot.forEach(d=>{
       if(d.t_rel > tDomainMax) return;
       const x1=xScale(d.t_rel), x2=xScale(d.t_rel+d.infHr);
+      const isPrime = d.t_rel < 0;
       const isFuture = ctx.isFutureRel!==undefined && d.t_rel > ctx.isFutureRel;
-      svgParts.push(`<rect x="${x1}" y="${baseY-5}" width="${Math.max(1.5,x2-x1)}" height="5" fill="${isFuture?'var(--line-strong)':'var(--ink-faint)'}" opacity="${isFuture?0.5:0.85}"/>`);
+      const dim = isPrime || isFuture;
+      svgParts.push(`<rect x="${x1}" y="${baseY-5}" width="${Math.max(1.5,x2-x1)}" height="5" fill="${dim?'var(--line-strong)':'var(--ink-faint)'}" opacity="${dim?0.5:0.85}"/>`);
     });
-
-    // fitted curve — split solid (history) vs dashed (projection)
-    const nowRel = ctx.isFutureRel;
-    const stepsHist = 260, stepsFut = 160;
-    let histPts=[], futPts=[];
-    for(let i=0;i<=stepsHist;i++){
-      const t = tMin + (Math.min(nowRel,tDomainMax)-tMin)*i/stepsHist;
-      histPts.push([xScale(t), yScale(Math.min(predAt(t),cMaxDomain*1.3))]);
+    // what-if dose bars (amber, slightly above baseline bars)
+    if(whatIf){
+      whatIfDoses.forEach(d=>{
+        if(d.t_rel > tDomainMax) return;
+        const x1=xScale(d.t_rel), x2=xScale(d.t_rel+d.infHr);
+        svgParts.push(`<rect x="${x1}" y="${baseY-11}" width="${Math.max(1.5,x2-x1)}" height="5" fill="var(--amber)" opacity="0.75"/>`);
+      });
     }
-    if(nowRel < tDomainMax){
+
+    // fitted baseline curve — split solid (history) vs dashed (projection)
+    const stepsHist = 300, stepsFut = 200;
+    let histPts=[], futPts=[];
+    const histEnd = Math.min(nowRel, tDomainMax);
+    for(let i=0;i<=stepsHist;i++){
+      const t = tMin + (histEnd-tMin)*i/stepsHist;
+      histPts.push([xScale(t), yScale(Math.min(predBaseline(t),cMaxDomain*1.3))]);
+    }
+    if(nowRel < tDomainMax && !whatIf){
       for(let i=0;i<=stepsFut;i++){
         const t = nowRel + (tDomainMax-nowRel)*i/stepsFut;
-        futPts.push([xScale(t), yScale(Math.min(predAt(t),cMaxDomain*1.3))]);
+        futPts.push([xScale(t), yScale(Math.min(predBaseline(t),cMaxDomain*1.3))]);
       }
     }
     const pathD = pts => 'M'+pts.map(p=>p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' L ');
     svgParts.push(`<path d="${pathD(histPts)}" fill="none" stroke="var(--trace)" stroke-width="2.4"/>`);
     if(futPts.length) svgParts.push(`<path d="${pathD(futPts)}" fill="none" stroke="var(--trace-dim)" stroke-width="2.2" stroke-dasharray="6,5"/>`);
 
+    // what-if projected curve (amber), from nowRel forward, using the alternative regimen
+    if(whatIf){
+      let wiPts=[];
+      const wiStart = Math.max(tMin, (whatIf.fromRel!==undefined&&whatIf.fromRel!==null)?nowRel:nowRel);
+      for(let i=0;i<=stepsFut;i++){
+        const t = wiStart + (tDomainMax-wiStart)*i/stepsFut;
+        wiPts.push([xScale(t), yScale(Math.min(predWhatIf(t),cMaxDomain*1.3))]);
+      }
+      if(wiPts.length) svgParts.push(`<path d="${pathD(wiPts)}" fill="none" stroke="var(--amber)" stroke-width="2.4" stroke-dasharray="7,4"/>`);
+    }
+
     // observed levels
     levels.forEach(lv=>{
       const x=xScale(lv.t_rel), yObs=yScale(Math.min(lv.conc,cMaxDomain*1.3));
-      const yPred=yScale(Math.min(predAt(lv.t_rel),cMaxDomain*1.3));
+      const yPred=yScale(Math.min(predBaseline(lv.t_rel),cMaxDomain*1.3));
       svgParts.push(`<line x1="${x}" y1="${yObs}" x2="${x}" y2="${yPred}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2,2"/>`);
-      svgParts.push(`<circle cx="${x}" cy="${yObs}" r="5" fill="var(--trace-strong)" stroke="#fff" stroke-width="1.5"><title>實測 ${lv.conc.toFixed(1)} µg/mL @ +${lv.t_rel.toFixed(1)}h（預測 ${predAt(lv.t_rel).toFixed(1)}）</title></circle>`);
+      svgParts.push(`<circle cx="${x}" cy="${yObs}" r="5" fill="var(--trace-strong)" stroke="#fff" stroke-width="1.5"><title>實測 ${lv.conc.toFixed(1)} µg/mL @ +${lv.t_rel.toFixed(1)}h（預測 ${predBaseline(lv.t_rel).toFixed(1)}）</title></circle>`);
     });
 
     // "now" marker
-    if(nowRel<=tDomainMax){
+    if(nowRel<=tDomainMax && nowRel>=tMin){
       const xn = xScale(nowRel);
       svgParts.push(`<line x1="${xn}" y1="${MT}" x2="${xn}" y2="${MT+plotH}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="1,3" opacity="0.5"/>`);
+      if(whatIf) svgParts.push(`<text x="${xn+3}" y="${MT+plotH-4}" font-family="var(--sans)" font-size="9.5" fill="var(--ink-faint)">變更起點</text>`);
+    }
+
+    // legend when what-if is active
+    if(whatIf){
+      const lx=ML+8, ly=MT+8;
+      svgParts.push(`<rect x="${lx}" y="${ly}" width="150" height="34" fill="#fff" opacity="0.86" stroke="var(--line)" rx="4"/>`);
+      svgParts.push(`<line x1="${lx+8}" y1="${ly+12}" x2="${lx+28}" y2="${ly+12}" stroke="var(--trace)" stroke-width="2.4"/>`);
+      svgParts.push(`<text x="${lx+34}" y="${ly+15}" font-family="var(--sans)" font-size="10" fill="var(--ink-soft)">目前處方</text>`);
+      svgParts.push(`<line x1="${lx+8}" y1="${ly+26}" x2="${lx+28}" y2="${ly+26}" stroke="var(--amber)" stroke-width="2.4" stroke-dasharray="7,4"/>`);
+      svgParts.push(`<text x="${lx+34}" y="${ly+29}" font-family="var(--sans)" font-size="10" fill="var(--ink-soft)">變更後（what-if）</text>`);
     }
 
     svg.innerHTML = svgParts.join('\n');
@@ -1725,8 +1901,22 @@ ${regimenText}
     const t0 = doseRowsMs[0].t;
     const doses = doseRowsMs.map(d=>({t_rel:(d.t-t0)/3600000, doseMg:d.doseMg, infHr:d.infMin/60}));
     const levels = levelRowsMs.map(l=>({t_rel:(l.t-t0)/3600000, conc:l.conc}));
-    const dosesForFit = doses.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const dosesForFitRaw = doses.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
     const levelsForFit = levels.map(l=>({tHr:l.t_rel, conc:l.conc}));
+
+    // steady-state priming: if the first recorded dose is a maintenance dose given
+    // after the patient was already at steady state, prepend virtual prior doses so
+    // the fit/curve start from accumulated (not zero) concentration.
+    const assumeSteadyState = document.getElementById('assumeSteadyState').checked;
+    const maintDoseForm = parseFloat(document.getElementById('maintDose').value);
+    const tauForm = parseFloat(document.getElementById('maintInterval').value);
+    const maintInfForm = parseFloat(document.getElementById('maintInf').value)/60;
+    let dosesForFit = dosesForFitRaw, primeStartHr = null;
+    if(assumeSteadyState){
+      const primed = primePriorDoses(dosesForFitRaw, prior.CLpop, prior.Vpop, {tau:tauForm, doseMg:maintDoseForm, infHr:maintInfForm});
+      dosesForFit = primed.doses;
+      primeStartHr = primed.primeStartHr;
+    }
 
     // --- 3. fit ---
     const fit = fitCLV(dosesForFit, levelsForFit, prior);
@@ -1890,12 +2080,21 @@ ${regimenText}
       </div>`;
 
     // --- 10. curve ---
-    const cMaxDomain = Math.max(22, (Math.max(...levels.map(l=>l.conc),0))*1.15, CmaxSS*1.15);
+    // steady-state priming doses in t_rel shape for the curve (mirrors the fit priming)
+    let primeDosesCurve = [];
+    if(assumeSteadyState && primeStartHr!==null){
+      primeDosesCurve = dosesForFit.filter(d=>d.tHr < doses[0].t_rel).map(d=>({t_rel:d.tHr, doseMg:d.doseMg, infHr:d.infHr}));
+    }
+    const whatIf = readWhatIf('vanco', {doseMg:maintDose, tau, infHr:maintInfHr, lastRel:lastEventRel});
+    const cMaxDomain = Math.max(22, (Math.max(...levels.map(l=>l.conc),0))*1.15, CmaxSS*1.15,
+      whatIf ? ( (whatIf.doseMg/whatIf.infHr/CL)*(1-Math.exp(-ke*whatIf.infHr))/(1-Math.exp(-ke*whatIf.tau)) )*1.15 : 0);
     drawCurve({
       doses, levels, CL, V, ke, tau, maintDose, maintInf: maintInfHr,
       isFutureRel: lastEventRel, cMaxDomain,
-      altTrough: document.getElementById('altTroughStrategy').checked
+      altTrough: document.getElementById('altTroughStrategy').checked,
+      primeDoses: primeDosesCurve, whatIf
     });
+    updateWhatIfReadout('vanco', whatIf, CL, ke);
 
     // --- 11. header meta ---
     setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ AUC₂₄ ${AUC24ss.toFixed(0)}`);
@@ -2074,6 +2273,9 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgTiwRow').style.display = tiw ? 'block' : 'none';
     document.getElementById('amgCandFixedBlock').style.display = tiw ? 'none' : '';
     document.getElementById('amgCandTiwNote').style.display = tiw ? 'block' : 'none';
+    document.getElementById('amgSteadyStateRow').style.display = tiw ? 'none' : 'flex';
+    document.getElementById('amgSteadyStateHint').style.display = (tiw || !document.getElementById('amgAssumeSteadyState').checked) ? 'none' : 'block';
+    document.getElementById('amgWhatIfBar').style.display = tiw ? 'none' : 'flex';
   }
 
   // ---------------- dose rounding & tag scoring (aminoglycoside-specific) ----------------
@@ -2272,6 +2474,13 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgMaintInterval').value='';
     document.getElementById('amgMaintInf').value='';
     document.getElementById('amgPruneBeforeInput').value='';
+    document.getElementById('amgAssumeSteadyState').checked=false;
+    document.getElementById('amgSteadyStateHint').style.display='none';
+    document.getElementById('amgWhatIfOn').checked=false;
+    document.getElementById('amgWhatIfFields').style.display='none';
+    document.getElementById('amgWhatIfDose').value='';
+    document.getElementById('amgWhatIfInf').value='';
+    document.getElementById('amgWhatIfTau').value='';
     document.getElementById('amgScheduleType').value='fixed';
     [1,3,5].forEach(d=>{ document.getElementById('amgTiwDay'+d).checked=true; });
     [0,2,4,6].forEach(d=>{ document.getElementById('amgTiwDay'+d).checked=false; });
@@ -2312,6 +2521,8 @@ ${flagText || '（無特別旗標）'}
       sourceControlDone:c('amgSourceControlDone'),
       therapyStart:v('amgTherapyStart'), expandTo:v('amgExpandTo'),
       maintDose:v('amgMaintDose'), maintInterval:v('amgMaintInterval'), maintInf:v('amgMaintInf'),
+      assumeSteadyState:c('amgAssumeSteadyState'),
+      whatIfOn:c('amgWhatIfOn'), whatIfDose:v('amgWhatIfDose'), whatIfInf:v('amgWhatIfInf'), whatIfTau:v('amgWhatIfTau'),
       scheduleType:v('amgScheduleType'), tiwTime:v('amgTiwTime'),
       tiwDays: [0,1,2,3,4,5,6].filter(d=>c('amgTiwDay'+d)),
       doseRows: Array.from(document.querySelectorAll('#amgDoseTable .entry-row')).map(row=>({
@@ -2343,6 +2554,10 @@ ${flagText || '（無特別旗標）'}
 
     setVal('amgTherapyStart', s.therapyStart); setVal('amgExpandTo', s.expandTo);
     setVal('amgMaintDose', s.maintDose); setVal('amgMaintInterval', s.maintInterval); setVal('amgMaintInf', s.maintInf);
+    setChecked('amgAssumeSteadyState', s.assumeSteadyState);
+    setChecked('amgWhatIfOn', s.whatIfOn);
+    document.getElementById('amgWhatIfFields').style.display = s.whatIfOn ? 'inline-flex' : 'none';
+    setVal('amgWhatIfDose', s.whatIfDose); setVal('amgWhatIfInf', s.whatIfInf); setVal('amgWhatIfTau', s.whatIfTau);
     setVal('amgScheduleType', s.scheduleType||'fixed'); setVal('amgTiwTime', s.tiwTime||'09:00');
     const tiwDays = s.tiwDays || [1,3,5];
     [0,1,2,3,4,5,6].forEach(d=>setChecked('amgTiwDay'+d, tiwDays.includes(d)));
@@ -2768,8 +2983,21 @@ ${flagText || '（無特別旗標）'}
     const t0 = doseRowsMs[0].t;
     const doses = doseRowsMs.map(d=>({t_rel:(d.t-t0)/3600000, doseMg:d.doseMg, infHr:d.infMin/60}));
     const levels = levelRowsMs.map(l=>({t_rel:(l.t-t0)/3600000, conc:l.conc}));
-    const dosesForFit = doses.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const dosesForFitRaw = doses.map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
     const levelsForFit = levels.map(l=>({tHr:l.t_rel, conc:l.conc}));
+
+    // steady-state priming (fixed-interval schedules only; TIW troughs already ~0)
+    const amgScheduleTypeNow = document.getElementById('amgScheduleType').value;
+    const assumeSteadyStateAmg = document.getElementById('amgAssumeSteadyState').checked && amgScheduleTypeNow!=='tiw';
+    const amgTauForm = parseFloat(document.getElementById('amgMaintInterval').value);
+    const amgMaintDoseForm = parseFloat(document.getElementById('amgMaintDose').value);
+    const amgMaintInfForm = parseFloat(document.getElementById('amgMaintInf').value)/60;
+    let dosesForFit = dosesForFitRaw, amgPrimeStartHr = null;
+    if(assumeSteadyStateAmg){
+      const primed = primePriorDoses(dosesForFitRaw, prior.CLpop, prior.Vpop, {tau:amgTauForm, doseMg:amgMaintDoseForm, infHr:amgMaintInfForm});
+      dosesForFit = primed.doses;
+      amgPrimeStartHr = primed.primeStartHr;
+    }
 
     const fit = fitCLV(dosesForFit, levelsForFit, prior);
     const CL = fit.CL, V = fit.V;
@@ -2886,15 +3114,25 @@ ${flagText || '（無特別旗標）'}
     const longCourse = lastEventRel > 24*10; // >~10 days of recorded therapy
     document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(anyNotSS, tHalf, dialysis, scr, document.getElementById('amgConcomitant').value.trim(), longCourse);
 
+    let amgPrimeDosesCurve = [];
+    if(assumeSteadyStateAmg && amgPrimeStartHr!==null){
+      amgPrimeDosesCurve = dosesForFit.filter(d=>d.tHr < doses[0].t_rel).map(d=>({t_rel:d.tHr, doseMg:d.doseMg, infHr:d.infHr}));
+    }
+    // what-if overlay: only meaningful for fixed-interval schedules
+    const amgWhatIf = scheduleType==='tiw' ? null : readWhatIf('amg', {doseMg:maintDose, tau, infHr:maintInfHr, lastRel:lastEventRel});
     const cMaxDomain = Math.max(...levels.map(l=>l.conc),0)*1.15 || 0;
     const domainFromTarget = target&&target.peak ? target.peak[1]*1.3 : (target?target.troughHi*4:10);
-    const finalDomain = Math.max(10, cMaxDomain, CmaxSS*1.15, domainFromTarget);
+    let whatIfPeak = 0;
+    if(amgWhatIf){ const Rw=amgWhatIf.doseMg/amgWhatIf.infHr; whatIfPeak=(Rw/CL)*(1-Math.exp(-ke*amgWhatIf.infHr))/(1-Math.exp(-ke*amgWhatIf.tau)); }
+    const finalDomain = Math.max(10, cMaxDomain, CmaxSS*1.15, domainFromTarget, whatIfPeak*1.15);
     drawCurve({
       doses, levels, CL, V, ke, tau: tauForCurve, maintDose, maintInf: maintInfHr,
       isFutureRel: lastEventRel, cMaxDomain: finalDomain, svgId:'amgCurveSvg',
       toxLine: target?target.troughHi:null, toxLabel: target?`Trough 目標上限 ${target.troughHi}`:null,
-      band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null
+      band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null,
+      primeDoses: amgPrimeDosesCurve, whatIf: amgWhatIf
     });
+    updateWhatIfReadout('amg', amgWhatIf, CL, ke);
 
     setHeaderMeta('drug-aminoglycoside', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ ${scheduleType==='tiw'?'Peak':'Cmax'} ${CmaxSS.toFixed(1)}／${scheduleType==='tiw'?'下次前Trough':'Cmin'} ${CminSS.toFixed(1)}`);
 
@@ -3074,6 +3312,7 @@ ${flagText || '（無特別旗標）'}
     // static field listeners
     ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
+     'assumeSteadyState','vancoWhatIfDose','vancoWhatIfInf','vancoWhatIfTau',
      'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
      'concomitant','otherNotes','customDose','customInf','customTau'].forEach(id=>{
@@ -3083,6 +3322,13 @@ ${flagText || '（無特別旗標）'}
 
     document.getElementById('useLoading').addEventListener('change', function(){
       document.getElementById('loadingFields').style.display = this.checked ? 'grid' : 'none';
+    });
+    document.getElementById('assumeSteadyState').addEventListener('change', function(){
+      document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
+    });
+    document.getElementById('vancoWhatIfOn').addEventListener('change', function(){
+      document.getElementById('vancoWhatIfFields').style.display = this.checked ? 'inline-flex' : 'none';
+      render();
     });
 
     document.getElementById('addScrRow').addEventListener('click', ()=>{ addScrRow('', ''); render(); });
@@ -3123,12 +3369,21 @@ ${flagText || '（無特別旗標）'}
     // ---------------- aminoglycoside module wiring ----------------
     ['amgAge','amgSex','amgHeight','amgTbw','amgDryWeight','amgDialysis','amgArcSuspect','amgVdHigh',
      'amgTherapyStart','amgExpandTo','amgMaintDose','amgMaintInterval','amgMaintInf',
+     'amgAssumeSteadyState','amgWhatIfDose','amgWhatIfInf','amgWhatIfTau',
      'amgMic','amgCand8','amgCand12','amgCand24','amgCand36','amgCand48',
      'amgSite','amgOrganism','amgSeverity','amgSourceControlDone',
      'amgConcomitant','amgOtherNotes','amgCustomDose','amgCustomInf','amgCustomTau',
      'amgTiwTime','amgTiwDay0','amgTiwDay1','amgTiwDay2','amgTiwDay3','amgTiwDay4','amgTiwDay5','amgTiwDay6'].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.addEventListener('input', renderAmino), el.addEventListener('change', renderAmino);
+    });
+
+    document.getElementById('amgAssumeSteadyState').addEventListener('change', function(){
+      document.getElementById('amgSteadyStateHint').style.display = this.checked ? 'block' : 'none';
+    });
+    document.getElementById('amgWhatIfOn').addEventListener('change', function(){
+      document.getElementById('amgWhatIfFields').style.display = this.checked ? 'inline-flex' : 'none';
+      renderAmino();
     });
 
     document.getElementById('amgScheduleType').addEventListener('change', ()=>{ toggleAminoScheduleUI(); renderAmino(); });
