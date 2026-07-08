@@ -407,6 +407,20 @@
         <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
         <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）</label></div>
 
+        <div id="hdInfoBlock" style="display:none;">
+          <div class="field-row">
+            <div class="field"><label>透析膜通量</label>
+              <select id="hdFlux">
+                <option value="unknown">不確定</option>
+                <option value="low">低通量 Low-flux</option>
+                <option value="high">高通量 High-flux</option>
+              </select>
+            </div>
+            <div class="field"></div>
+          </div>
+          <p class="hint" style="margin-top:-6px;">HD 病人 Cockcroft-Gault／族群 AUC 模型不適用，本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis &amp; Nolin, <em>Kidney360</em> 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。通量僅供資訊參考（低通量移除約 0–5%、高通量約 24–50%，AJHP 2004;61:1812），不直接進入計算。給藥處方請至卡片 03 填寫透析時程與透析後劑量。</p>
+        </div>
+
         <div class="entry-rows" id="scrTable"></div>
         <div class="btn-row"><button class="btn small" id="addScrRow" type="button">+ 新增一筆 SCr</button></div>
       </div>
@@ -446,14 +460,31 @@
           <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
         </div>
         <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
-        <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。濃度曲線在起點前會以淺色標示「假設之穩態暖機段」。此設定只影響濃度基線，不改變你實際輸入的給藥與濃度資料；若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
-        <div class="field-row three">
-          <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
-          <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
-          <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="60" step="5"></div>
+        <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
+
+        <div id="fixedRegimenFields">
+          <div class="field-row three">
+            <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
+            <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
+            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="60" step="5"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
+          </div>
         </div>
-        <div class="btn-row">
-          <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
+
+        <div id="hdDoseFields" style="display:none;">
+          <p class="hint" style="margin-top:0;">HD 病人給藥頻次跟著透析排程走（多為 TIW，透析後給予），不是固定小時間隔。請先記錄透析時程，再依時程展開給藥；沒有透析時程時仍可用下方「手動新增一劑」直接輸入實際給藥時間。</p>
+          <div class="entry-rows" id="hdSessionTable"></div>
+          <div class="btn-row"><button class="btn small" id="addHdSessionRow" type="button">+ 新增一次透析時程</button></div>
+          <div class="field-row three" style="margin-top:12px;">
+            <div class="field"><label>透析後維持劑量（mg）</label><input type="number" id="hdMaintDose" step="50" placeholder="如：700"></div>
+            <div class="field"><label>透析結束後幾分鐘給藥</label><input type="number" id="hdOffsetMin" value="0" step="5"></div>
+            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="hdMaintInf" value="60" step="5"></div>
+          </div>
+          <div class="btn-row">
+            <button class="btn primary small" id="expandDosesHD" type="button">依透析時程展開給藥紀錄</button>
+          </div>
         </div>
 
         <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
@@ -537,12 +568,12 @@
 
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
-        <p class="hint" style="margin-top:-4px;">勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
+        <p class="hint" id="regimenSectionHint" style="margin-top:-4px;">勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
         <div id="loadingSuggestion"></div>
         <div class="table-scroll"><table class="regimen-table" id="regimenTable">
-          <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr></thead>
+          <thead id="regimenTableHead"><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
-          <tfoot>
+          <tfoot id="regimenTableFoot">
             <tr class="custom-row">
               <td class="pick-col"><input type="radio" name="vancoRegimenPick" class="regimen-pick" value="custom"></td>
               <td><span class="tag" style="background:var(--trace-soft);color:var(--trace-strong);">自訂</span></td>
@@ -1154,6 +1185,23 @@
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
     wireDelete(row.querySelector('.row-del'), row, render);
   }
+  function addHdSessionRow(startVal, endVal){
+    const container = document.getElementById('hdSessionTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<div class="num-field"><span class="unit">開始</span><input type="datetime-local" class="hd-start" value="${startVal||''}"></div>
+      <div class="num-field"><span class="unit">結束</span><input type="datetime-local" class="hd-end" value="${endVal||''}"></div>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
+    wireDelete(row.querySelector('.row-del'), row, render);
+  }
+  function readHdSessionRows(){
+    return Array.from(document.querySelectorAll('#hdSessionTable .entry-row')).map(row=>({
+      start: parseLocal(row.querySelector('.hd-start').value),
+      end: parseLocal(row.querySelector('.hd-end').value)
+    })).filter(r=>isFinite(r.start)&&isFinite(r.end)&&r.end>r.start).sort((a,b)=>a.start-b.start);
+  }
 
   function clearTbody(sel){ document.querySelector(sel).innerHTML=''; }
 
@@ -1215,6 +1263,45 @@
     render();
   }
 
+  // HD dosing follows the dialysis schedule (typically TIW, post-session), not a fixed
+  // hourly interval — generate one dose per logged session, offset from session END,
+  // instead of looping at a fixed tau. Loading dose (if checked) still applies to the
+  // first generated dose.
+  function expandDosesFnHD(){
+    const hdSessions = readHdSessionRows();
+    if(!hdSessions.length){
+      alert('請先在上方新增至少一次透析時程（開始／結束時間），才能依時程展開給藥紀錄。');
+      return;
+    }
+    const maintDose = parseFloat(document.getElementById('hdMaintDose').value);
+    const offsetMin = parseFloat(document.getElementById('hdOffsetMin').value);
+    const maintInf = parseFloat(document.getElementById('hdMaintInf').value);
+    if(!isFinite(maintDose)||!isFinite(offsetMin)||!isFinite(maintInf)||maintDose<=0||maintInf<=0){
+      alert('請先完整填寫透析後維持劑量、透析結束後幾分鐘給藥、與輸注時間。');
+      return;
+    }
+    const startMs = parseLocal(document.getElementById('therapyStart').value);
+    const toMs = parseLocal(document.getElementById('expandTo').value);
+    const useLoading = document.getElementById('useLoading').checked;
+    clearTbody('#doseTable');
+    let first = true;
+    hdSessions.forEach(s=>{
+      if(isFinite(startMs) && s.end < startMs) return;
+      if(isFinite(toMs) && s.end > toMs) return;
+      const doseTime = s.end + offsetMin*60000;
+      if(first && useLoading){
+        const lDose = parseFloat(document.getElementById('loadingDose').value);
+        const lInf = parseFloat(document.getElementById('loadingInf').value);
+        addDoseRow(toLocalInputValue(new Date(doseTime)), lDose, lInf);
+      } else {
+        addDoseRow(toLocalInputValue(new Date(doseTime)), maintDose, maintInf);
+      }
+      first = false;
+    });
+    renumberDoseRows();
+    render();
+  }
+
   function pruneDosesBeforeFn(){
     const cutoff = parseLocal(document.getElementById('pruneBeforeInput').value);
     if(!isFinite(cutoff)){
@@ -1230,6 +1317,27 @@
     renumberDoseRows();
     render();
     if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
+  }
+
+  const REGIMEN_TABLE_HEAD_NORMAL = '<tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr>';
+  const REGIMEN_SECTION_HINT_NORMAL = '勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。';
+  function toggleDialysisUI(){
+    const isHD = document.getElementById('dialysis').value === 'HD';
+    document.getElementById('hdInfoBlock').style.display = isHD ? 'block' : 'none';
+    document.getElementById('fixedRegimenFields').style.display = isHD ? 'none' : 'block';
+    document.getElementById('hdDoseFields').style.display = isHD ? 'block' : 'none';
+    if(isHD){
+      // what-if pick mechanism doesn't apply to HD's simplified single-suggestion output
+      vancoPickedKey = null;
+      document.getElementById('vancoPickBar').classList.remove('active');
+      document.getElementById('vancoPickStart').value = '';
+    } else {
+      // restore the normal candidate-table head/foot/hint (renderVancoHD overwrites
+      // these while active; nothing in the normal render() path ever resets them)
+      document.getElementById('regimenTableFoot').style.display = '';
+      document.getElementById('regimenTableHead').innerHTML = REGIMEN_TABLE_HEAD_NORMAL;
+      document.getElementById('regimenSectionHint').textContent = REGIMEN_SECTION_HINT_NORMAL;
+    }
   }
 
   function clearAllFn(){
@@ -1250,6 +1358,7 @@
     document.getElementById('dryWeight').value='';
     document.getElementById('dialysis').value='none';
     document.getElementById('arcSuspect').checked=false;
+    document.getElementById('hdFlux').value='unknown';
     clearTbody('#scrTable');
 
     // 02 感染／臨床脈絡
@@ -1278,6 +1387,11 @@
     document.getElementById('maintInf').value='';
     document.getElementById('pruneBeforeInput').value='';
     clearTbody('#doseTable');
+    document.getElementById('hdMaintDose').value='';
+    document.getElementById('hdOffsetMin').value='0';
+    document.getElementById('hdMaintInf').value='60';
+    clearTbody('#hdSessionTable');
+    toggleDialysisUI();
 
     // 04 血中濃度
     clearTbody('#levelTable');
@@ -1308,7 +1422,7 @@
     const c = id => document.getElementById(id).checked;
     return {
       age:v('age'), sex:v('sex'), height:v('height'), tbw:v('tbw'), dryWeight:v('dryWeight'),
-      dialysis:v('dialysis'), arcSuspect:c('arcSuspect'),
+      dialysis:v('dialysis'), arcSuspect:c('arcSuspect'), hdFlux:v('hdFlux'),
       scrRows: Array.from(document.querySelectorAll('#scrTable .entry-row')).map(row=>({
         date: row.querySelector('.scr-date').value, val: row.querySelector('.scr-val').value
       })),
@@ -1318,6 +1432,10 @@
       useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'),
       assumeSteadyState:c('assumeSteadyState'),
       maintDose:v('maintDose'), maintInterval:v('maintInterval'), maintInf:v('maintInf'),
+      hdMaintDose:v('hdMaintDose'), hdOffsetMin:v('hdOffsetMin'), hdMaintInf:v('hdMaintInf'),
+      hdSessionRows: Array.from(document.querySelectorAll('#hdSessionTable .entry-row')).map(row=>({
+        start: row.querySelector('.hd-start').value, end: row.querySelector('.hd-end').value
+      })),
       doseRows: Array.from(document.querySelectorAll('#doseTable .entry-row')).map(row=>({
         date: row.querySelector('.dose-date').value, doseMg: row.querySelector('.dose-mg').value, infMin: row.querySelector('.dose-inf').value
       })),
@@ -1336,7 +1454,7 @@
     const setChecked=(id,val)=>{ document.getElementById(id).checked = !!val; };
 
     setVal('age', s.age); setVal('sex', s.sex||'M'); setVal('height', s.height); setVal('tbw', s.tbw); setVal('dryWeight', s.dryWeight);
-    setVal('dialysis', s.dialysis||'none'); setChecked('arcSuspect', s.arcSuspect);
+    setVal('dialysis', s.dialysis||'none'); setChecked('arcSuspect', s.arcSuspect); setVal('hdFlux', s.hdFlux||'unknown');
     clearTbody('#scrTable');
     (s.scrRows||[]).forEach(r=>addScrRow(r.date, r.val));
 
@@ -1355,6 +1473,10 @@
     document.getElementById('vancoWhatIfReadout').textContent='';
     setVal('loadingDose', s.loadingDose); setVal('loadingInf', s.loadingInf);
     setVal('maintDose', s.maintDose); setVal('maintInterval', s.maintInterval); setVal('maintInf', s.maintInf);
+    setVal('hdMaintDose', s.hdMaintDose); setVal('hdOffsetMin', s.hdOffsetMin===undefined?'0':s.hdOffsetMin); setVal('hdMaintInf', s.hdMaintInf||'60');
+    clearTbody('#hdSessionTable');
+    (s.hdSessionRows||[]).forEach(r=>addHdSessionRow(r.start, r.end));
+    toggleDialysisUI();
     clearTbody('#doseTable');
     (s.doseRows||[]).forEach(r=>addDoseRow(r.date, r.doseMg, r.infMin));
     renumberDoseRows();
@@ -1589,7 +1711,9 @@
     // baseline dosing for plotting = actual + enough projected maintenance doses to
     // cover the full visible domain (so the dashed projection doesn't stop short).
     let tDomainMax;
-    {
+    if(ctx.domainMaxOverride!=null && isFinite(ctx.domainMaxOverride)){
+      tDomainMax = ctx.domainMaxOverride;
+    } else {
       const baselineTail = doses.length ? (doses[doses.length-1].t_rel + Math.max(tau*2.4, 5*tHalf)) : 24;
       let wiTail = 0;
       if(whatIf){
@@ -1600,7 +1724,7 @@
     }
 
     const dosesForPlot = doses.slice();
-    if(doses.length){
+    if(doses.length && !ctx.noGhostDoses){
       const last = doses[doses.length-1];
       const nGhost = Math.max(3, Math.ceil((tDomainMax-last.t_rel)/tau)+1);
       let cursor = last.t_rel + tau;
@@ -1699,16 +1823,21 @@
 
     // baseline curve — solid (history) then dashed (projection). Always drawn in full,
     // independent of whether a what-if is active, so the two remain directly comparable.
+    // The solid/dashed boundary is NOT simply "now" (last recorded dose or level) — a
+    // dose that has already been given keeps rising/falling deterministically afterward
+    // (known ke/Vd, no assumption involved), so solid extends through that dose's own
+    // decay, up to the point where the first GHOST (not-yet-given) dose would start.
     const stepsHist = 300, stepsFut = 240;
     let histPts=[], futPts=[];
-    const histEnd = Math.min(nowRel, tDomainMax);
+    const nextGhostStart = (doses.length && !ctx.noGhostDoses) ? (doses[doses.length-1].t_rel + tau) : nowRel;
+    const histEnd = Math.min(Math.max(nowRel, nextGhostStart), tDomainMax);
     for(let i=0;i<=stepsHist;i++){
       const t = tMin + (histEnd-tMin)*i/stepsHist;
       histPts.push([xScale(t), yScale(Math.min(predBaseline(t),cMaxDomain*1.3))]);
     }
-    if(nowRel < tDomainMax){
+    if(histEnd < tDomainMax){
       for(let i=0;i<=stepsFut;i++){
-        const t = nowRel + (tDomainMax-nowRel)*i/stepsFut;
+        const t = histEnd + (tDomainMax-histEnd)*i/stepsFut;
         futPts.push([xScale(t), yScale(Math.min(predBaseline(t),cMaxDomain*1.3))]);
       }
     }
@@ -1750,6 +1879,25 @@
       svgParts.push(`<line x1="${xs}" y1="${MT}" x2="${xs}" y2="${MT+plotH}" stroke="var(--amber)" stroke-width="1.3" stroke-dasharray="1,3" opacity="0.7"/>`);
       svgParts.push(`<text x="${xs+3}" y="${MT+12}" font-family="var(--sans)" font-size="9.5" fill="var(--amber)">新處方起始</text>`);
     }
+
+    // generic extra markers (e.g. HD session boundaries) — labeled vertical lines,
+    // independent of the what-if mechanism so special-case curves (like dialysis) can
+    // annotate the timeline without needing the what-if machinery at all.
+    (ctx.extraMarkers||[]).forEach(m=>{
+      if(m.rel<tMin || m.rel>tDomainMax) return;
+      const xm = xScale(m.rel);
+      svgParts.push(`<line x1="${xm}" y1="${MT}" x2="${xm}" y2="${MT+plotH}" stroke="${m.color||'var(--ink-faint)'}" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.8"/>`);
+      if(m.label) svgParts.push(`<text x="${xm+3}" y="${MT+12}" font-family="var(--sans)" font-size="9.5" fill="${m.color||'var(--ink-faint)'}">${m.label}</text>`);
+    });
+    // generic shaded bands (e.g. HD session duration) — same visual language as the
+    // existing alt-trough band, but can appear multiple times and anywhere on the domain.
+    (ctx.extraBands||[]).forEach(b=>{
+      const lo = Math.max(tMin, b.startRel), hi = Math.min(tDomainMax, b.endRel);
+      if(hi<=lo) return;
+      const x1=xScale(lo), x2=xScale(hi);
+      svgParts.push(`<rect x="${x1}" y="${MT}" width="${x2-x1}" height="${plotH}" fill="${b.color||'var(--line-strong)'}" opacity="${b.opacity!==undefined?b.opacity:0.25}"/>`);
+      if(b.label) svgParts.push(`<text x="${(x1+x2)/2}" y="${MT+plotH-6}" font-family="var(--sans)" font-size="9.5" fill="var(--ink-soft)" text-anchor="middle">${b.label}</text>`);
+    });
 
     // legend when what-if is active
     if(whatIf){
@@ -2043,7 +2191,359 @@ ${decidedTextP}
   }
 
   // ---------------- main render pipeline ----------------
+  // ---------------- HD (hemodialysis) special-case rendering ----------------
+  // Vancomycin dosing/monitoring in HD patients follows fundamentally different logic
+  // from the rest of this tool: Cockcroft-Gault and the AUC24 steady-state formulas do
+  // not apply (clearance is dialysis-driven; dosing is TIW post-session, not fixed-tau).
+  // Per Lewis & Nolin (Kidney360 2021), pre-HD trough 15–20 µg/mL is the practical target.
+  // Rather than inventing a novel dialysis-clearance PK model (published population PK
+  // models for this population still perform poorly — see Suzuki et al., Antimicrob
+  // Agents Chemother 2023), this reuses the SAME validated 1-compartment engine, but
+  // restricted to the single most recent interdialytic window (elimination there really
+  // is a simple, roughly-constant first-order process, since no dialysis clearance event
+  // occurs inside that window). Analysis across dialysis sessions is intentionally not
+  // attempted — the model doesn't try to simulate the intra-HD drop/rebound at all.
+  function findCurrentHDWindow(hdSessions, doseRowsMs, levelRowsMs){
+    const sorted = hdSessions.slice().sort((a,b)=>a.start-b.start);
+    const lastKnownEventMs = Math.max(
+      doseRowsMs.length ? doseRowsMs[doseRowsMs.length-1].t : 0,
+      levelRowsMs.length ? levelRowsMs[levelRowsMs.length-1].t : 0
+    ) || Date.now();
+    const pastSessions = sorted.filter(s=>s.end <= lastKnownEventMs);
+    const lastSession = pastSessions.length ? pastSessions[pastSessions.length-1] : null;
+    const futureSessions = sorted.filter(s=> lastSession ? s.start > lastSession.end : true);
+    const nextSession = futureSessions.length ? futureSessions[0] : null;
+    return {lastSession, nextSession};
+  }
+  function hdTroughTag(trough){
+    if(trough==null || !isFinite(trough)) return {tag:'ok', tagText:'尚無法計算'};
+    if(trough>20) return {tag:'danger', tagText:'高於目標上限 20，腎毒性風險上升'};
+    if(trough<15) return {tag:'warn', tagText:'低於目標下限 15，可能治療不足'};
+    return {tag:'ok', tagText:'符合 pre-HD 目標 15–20'};
+  }
+
+  function renderVancoHD(){
+    const age = parseFloat(document.getElementById('age').value);
+    const sex = document.getElementById('sex').value;
+    const height = parseFloat(document.getElementById('height').value);
+    const tbw = parseFloat(document.getElementById('tbw').value);
+    const dryWeight = parseFloat(document.getElementById('dryWeight').value);
+    const useDryWeight = isFinite(dryWeight) && dryWeight>0;
+    const weightForDosing = useDryWeight ? dryWeight : tbw;
+    const flux = document.getElementById('hdFlux').value;
+    const fluxLabel = flux==='low'?'低通量':(flux==='high'?'高通量':'不確定');
+    const scrRows = readScrRows();
+    const hdSessions = readHdSessionRows();
+
+    const flags = [];
+    flags.push({level:'ok', text:'HD 病人：Cockcroft-Gault／族群 CrCl 不適用（SCr 受透析主導），本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis & Nolin, Kidney360 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。'});
+    if(!hdSessions.length) flags.push({level:'warn', text:'尚未記錄透析時程——目前僅能提供文獻族群起始劑量建議，無法擬合透析間期清除率或標記透析後反彈風險。建議至卡片 03 補上透析時程以取得個體化建議。'});
+
+    // hide/relabel the normal-path what-if & candidate-table UI, which doesn't apply here
+    document.getElementById('vancoPickBar').classList.remove('active');
+    const foot = document.getElementById('regimenTableFoot');
+    if(foot) foot.style.display = 'none';
+    const hint = document.getElementById('regimenSectionHint');
+    if(hint) hint.textContent = '此區塊改為顯示透析後單一建議劑量（非多方案比較），不提供曲線疊加 what-if 功能。';
+    const head = document.getElementById('regimenTableHead');
+    if(head) head.innerHTML = '<tr><th>項目</th><th>數值</th><th class="reason">說明</th></tr>';
+    document.getElementById('loadingSuggestion').innerHTML =
+      `<div class="flag-item" style="margin-bottom:12px;"><span class="dot"></span><span>HD 起始劑量文獻參考（非個體化）：Loading 約 25 mg/kg（文獻範圍 25–35 mg/kg），維持劑量約 7.5–10 mg/kg 透析後給予（高通量或透析中給藥時可能需上修至 15 mg/kg），依 pre-HD trough 追蹤調整（Lewis SJ, Mueller BA Monte Carlo 模擬研究；院內表：LD 25 mg/kg then 7.5–10 mg/kg after HD TIW）。</span></div>`;
+
+    const doseRowsMs = readDoseRows();
+    const levelRowsMs = readLevelRows();
+    const paramGrid = document.getElementById('paramGrid');
+    const flagList = document.getElementById('flagList');
+    const fitBadge = document.getElementById('fitModeBadge');
+
+    // population priors — HD-specific, NOT CrCl-derived. Literature ranges vary
+    // meaningfully across studies; presented as a starting point only, expected to be
+    // superseded by fitted values as soon as real levels are available.
+    const Vpop = 0.85 * (weightForDosing||70); // studies report ~0.65–1.05 L/kg
+    const CLpop = 0.30; // L/hr, anchored to Suzuki et al. 2023 AAC nonHD-CL (~0.316 L/hr, anuric)
+    const prior = {CLpop, Vpop, sigma:0.15, omegaCL:1.0, omegaV:0.35};
+
+    if(doseRowsMs.length===0){
+      renderVancoHDProspective({weightForDosing, flux, fluxLabel, Vpop, CLpop, flags, scrRows});
+      return;
+    }
+
+    const {lastSession, nextSession} = findCurrentHDWindow(hdSessions, doseRowsMs, levelRowsMs);
+    const windowStartMs = lastSession ? lastSession.end : doseRowsMs[0].t;
+    const windowDoseRows = doseRowsMs.filter(d=> d.t>=windowStartMs && (!nextSession || d.t<nextSession.start));
+    const windowLevelRows = levelRowsMs.filter(l=> l.t>=windowStartMs && (!nextSession || l.t<nextSession.start));
+
+    if(windowDoseRows.length===0){
+      // sessions logged but nothing dosed yet in the current window — fall back to
+      // population/nomogram guidance rather than fitting an empty window.
+      flags.push({level:'warn', text:'目前透析間期尚未記錄給藥，以下為族群估算；記錄本次透析後劑量後，會改用實測資料。'});
+      renderVancoHDProspective({weightForDosing, flux, fluxLabel, Vpop, CLpop, flags, scrRows});
+      return;
+    }
+
+    const dosesForFit = windowDoseRows.map(d=>({tHr:(d.t-windowStartMs)/3600000, doseMg:d.doseMg, infHr:d.infMin/60}));
+    const levelsForFit = windowLevelRows.map(l=>({tHr:(l.t-windowStartMs)/3600000, conc:l.conc}));
+    const fit = fitCLV(dosesForFit, levelsForFit, prior);
+    const CL = fit.CL, V = fit.V, ke = CL/V, tHalf = 0.693/ke;
+    fitBadge.textContent = {
+      'population':'僅族群估算（本透析間期尚無濃度）',
+      'single-level':'單點貝氏校正（本透析間期，V 固定為族群值）',
+    }[fit.mode] || `透析間期聯合擬合 ${fit.mode.replace('joint ','')}`;
+
+    // rebound-timing check: a level drawn within 6h after this window's start (i.e.
+    // shortly after the HD session that opened it) may be falsely low
+    windowLevelRows.forEach(l=>{
+      const hrsSinceSessionEnd = (l.t-windowStartMs)/3600000;
+      if(hrsSinceSessionEnd>=0 && hrsSinceSessionEnd<6){
+        flags.push({level:'warn', text:`有一筆濃度於透析結束後 ${hrsSinceSessionEnd.toFixed(1)} 小時抽血——透析後濃度通常需 3–6 小時才完成反彈（re-equilibration），此數值可能為假性偏低，解讀需保留。`});
+      }
+    });
+
+    // most recent pre-HD trough (a level drawn shortly before the next known session)
+    let measuredPreHDTrough = null;
+    if(nextSession && windowLevelRows.length){
+      const lastLevel = windowLevelRows[windowLevelRows.length-1];
+      const hrsBeforeNextSession = (nextSession.start-lastLevel.t)/3600000;
+      if(hrsBeforeNextSession>=0 && hrsBeforeNextSession<=6) measuredPreHDTrough = lastLevel.conc;
+    }
+
+    // predicted trough at next session (or, if timing unknown, at two illustrative
+    // horizons post-last-dose) using the fitted (or population, if unfit) ke/V
+    const lastDoseRel = dosesForFit[dosesForFit.length-1].tHr;
+    let predictedNextTrough = null, nextSessionRel = null;
+    if(nextSession){
+      nextSessionRel = (nextSession.start-windowStartMs)/3600000;
+      predictedNextTrough = predictConc(nextSessionRel, dosesForFit, CL, V);
+    }
+    const pred48hPostDose = predictConc(lastDoseRel+48, dosesForFit, CL, V);
+    const pred72hPostDose = predictConc(lastDoseRel+72, dosesForFit, CL, V);
+    const nowRelHD = Math.max(...dosesForFit.map(d=>d.tHr), ...levelsForFit.map(l=>l.tHr), 0);
+
+    // dose adjustment suggestion (proportional — same logic pattern used elsewhere in
+    // this tool): new dose = current dose × (target / predicted or measured), targeting
+    // the midpoint of the 15–20 pre-HD trough range
+    const lastDoseMg = windowDoseRows[windowDoseRows.length-1].doseMg;
+    const targetMid = 17.5;
+    const referenceTrough = measuredPreHDTrough!=null ? measuredPreHDTrough : (predictedNextTrough!=null ? predictedNextTrough : pred48hPostDose);
+    let suggestedDose = null;
+    if(referenceTrough>0) suggestedDose = roundDoseTo250(lastDoseMg * (targetMid/referenceTrough));
+
+    if(flags.length===1) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
+
+    // --- param grid ---
+    const cells = [
+      ['ke（透析間期估算）', fmt3(ke), 'hr⁻¹', ''],
+      ['t½（透析間期估算）', fmt1(tHalf), 'hr', ''],
+      ['Vd（估算）', fmt1(V), 'L', `${(V/(weightForDosing||70)).toFixed(2)} L/kg`],
+      ['CL（透析間期，非腎功能）', fmt2(CL), 'L/hr', '不代表殘餘腎功能，僅本期擬合值']
+    ];
+    if(measuredPreHDTrough!=null) cells.push(['最近一次實測 pre-HD trough', fmt1(measuredPreHDTrough), 'µg/mL', '目標 15–20']);
+    if(predictedNextTrough!=null){
+      cells.push(['預測下次透析前濃度', fmt1(predictedNextTrough), 'µg/mL', '目標 15–20（依下次透析時程推算）']);
+    } else {
+      cells.push(['預測濃度（末劑後 48h）', fmt1(pred48hPostDose), 'µg/mL', '未記錄下次透析時程，僅供參考']);
+      cells.push(['預測濃度（末劑後 72h）', fmt1(pred72hPostDose), 'µg/mL', '未記錄下次透析時程，僅供參考']);
+    }
+    paramGrid.innerHTML = cells.map(([label,val,unit,sub])=>{
+      let cls='';
+      if(label.includes('trough')||label.includes('濃度')){
+        const {tag} = hdTroughTag(parseFloat(val));
+        cls = tag==='danger'?'flag-danger':(tag==='warn'?'flag-warn':'flag-ok');
+      }
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+    }).join('');
+
+    flagList.innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    // --- simplified regimen section: single suggested dose, not a candidate table ---
+    const {tag: refTag, tagText: refTagText} = hdTroughTag(referenceTrough);
+    let rows = [];
+    rows.push(`<tr><td>現行透析後劑量</td><td>${fmt0(lastDoseMg)} mg</td><td class="reason">最近一次實際給藥</td></tr>`);
+    if(suggestedDose!=null){
+      rows.push(`<tr><td>建議下次透析後劑量</td><td>${fmt0(suggestedDose)} mg</td><td class="reason">依${measuredPreHDTrough!=null?'實測':'預測'} trough ${referenceTrough.toFixed(1)} 比例反推至目標中點 17.5（${refTagText}）<span class="tag ${refTag}">${refTag==='ok'?'OK':(refTag==='warn'?'留意':'風險')}</span></td></tr>`);
+    }
+    document.querySelector('#regimenTable tbody').innerHTML = rows.join('');
+
+    // --- monitoring ---
+    document.getElementById('monitorGrid').innerHTML = `
+      <div>
+        <h4>下次 TDM 時機</h4>
+        <p>Pre-HD trough：建議每次透析前常規追蹤，尤其劑量剛調整後；穩定病人可每 1–2 次透析追蹤一次。避免透析結束後 6 小時內抽血（反彈未完成，數值假性偏低）。</p>
+      </div>
+      <div>
+        <h4>臨床 Sign 監測</h4>
+        <ul><li>殘餘尿量（如有）變化</li><li>療效：發燒、培養結果、發炎指標趨勢</li><li>輸注反應</li></ul>
+        <h4 style="margin-top:12px;">再評估觸發條件</h4>
+        <ul><li>透析處方調整（頻次、時數、膜材）</li><li>殘餘腎功能變化</li><li>感染臨床惡化或未如預期改善</li></ul>
+      </div>`;
+
+    // --- curve: focused on the current interdialytic window only ---
+    const domainMax = nextSession ? nextSessionRel*1.05 : Math.max(nowRelHD+72, 72);
+    const cMaxDomain = Math.max(22, (Math.max(...levelsForFit.map(l=>l.conc),0))*1.15, (predictedNextTrough||0)*1.3, (measuredPreHDTrough||0)*1.3);
+    const extraMarkers = [], extraBands = [];
+    if(nextSession){
+      extraMarkers.push({rel: nextSessionRel, label:'下次透析', color:'var(--crimson)'});
+      const sessionEndRel = (nextSession.end-windowStartMs)/3600000;
+      extraBands.push({startRel: nextSessionRel, endRel: sessionEndRel, label:'透析中', color:'var(--line-strong)', opacity:0.35});
+    }
+    drawCurve({
+      doses: windowDoseRows.map(d=>({t_rel:(d.t-windowStartMs)/3600000, doseMg:d.doseMg, infHr:d.infMin/60})),
+      levels: windowLevelRows.map(l=>({t_rel:(l.t-windowStartMs)/3600000, conc:l.conc})),
+      CL, V, ke, tau: 48, maintDose: lastDoseMg, maintInf: 60,
+      isFutureRel: nowRelHD, cMaxDomain, t0Ms: windowStartMs,
+      noGhostDoses: true,
+      toxLine: 20, toxLabel: '腎毒性關切 20',
+      band: {lo:15, hi:20, label:'Pre-HD 目標 15–20'},
+      domainMaxOverride: domainMax,
+      extraMarkers, extraBands
+    });
+
+    setHeaderMeta('drug-vancomycin', `HD 病人 ・ 透析間期 CL ${CL.toFixed(2)} L/hr ・ ${measuredPreHDTrough!=null?'實測':'預測'} trough ${referenceTrough.toFixed(1)}`);
+
+    buildAiPromptHD({
+      age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, scrRows, flux: fluxLabel,
+      hdSessions, nextSession,
+      doseRowsMs: windowDoseRows, levelRowsMs: windowLevelRows,
+      CL, V, ke, tHalf, fit, measuredPreHDTrough, predictedNextTrough, pred48hPostDose, pred72hPostDose,
+      lastDoseMg, suggestedDose, referenceTrough, flags,
+      concomitant: document.getElementById('concomitant').value.trim(),
+      otherNotes: document.getElementById('otherNotes').value.trim(),
+      site: document.getElementById('site').value.trim(),
+      organism: document.getElementById('organism').value.trim(),
+      indication: document.getElementById('indication').value,
+      severity: document.getElementById('severity').value
+    });
+  }
+
+  function renderVancoHDProspective(ctx){
+    const {weightForDosing, flux, fluxLabel, Vpop, CLpop, flags, scrRows} = ctx;
+    const ke = CLpop/Vpop, tHalf = 0.693/ke;
+
+    document.getElementById('fitModeBadge').textContent = '起始劑量預測（純族群 PK／文獻 nomogram，尚無透析間期資料）';
+    flags.push({level:'ok', text:'這是純族群估算——尚未在目前透析間期記錄給藥，數值僅來自體重與文獻族群值，個體差異可能很大。記錄實際給藥與濃度後，會改用資料擬合。'});
+
+    const loadSuggest = Math.min(roundDoseTo250(25*(weightForDosing||70)), 3000);
+    const maintSuggestLow = roundDoseTo250(7.5*(weightForDosing||70));
+    const maintSuggestHigh = roundDoseTo250(10*(weightForDosing||70));
+
+    const cells = [
+      ['ke（族群估算）', fmt3(ke), 'hr⁻¹', ''],
+      ['t½（族群估算）', fmt1(tHalf), 'hr', ''],
+      ['Vd（族群估算）', fmt1(Vpop), 'L', `${(Vpop/(weightForDosing||70)).toFixed(2)} L/kg（文獻範圍 0.65–1.05）`],
+      ['CL（族群估算，透析間期）', fmt2(CLpop), 'L/hr', '文獻族群值，非個體化']
+    ];
+    document.getElementById('paramGrid').innerHTML = cells.map(([label,val,unit,sub])=>
+      `<div class="param-cell"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`
+    ).join('');
+
+    document.getElementById('flagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    document.querySelector('#regimenTable tbody').innerHTML = `
+      <tr><td>建議 Loading 劑量</td><td>${fmt0(loadSuggest)} mg</td><td class="reason">約 25 mg/kg（文獻範圍 25–35 mg/kg）</td></tr>
+      <tr><td>建議透析後維持劑量</td><td>${fmt0(maintSuggestLow)}–${fmt0(maintSuggestHigh)} mg</td><td class="reason">約 7.5–10 mg/kg 透析後給予（高通量或透析中給藥可能需上修至 15 mg/kg）</td></tr>`;
+
+    document.getElementById('monitorGrid').innerHTML = `
+      <div>
+        <h4>首次 TDM 時機</h4>
+        <p>建議下次透析前抽 pre-HD trough，目標 15–20 µg/mL；開始給藥、記錄透析時程後，本工具會改用實測資料擬合透析間期清除率。</p>
+      </div>
+      <div>
+        <h4>基礎注意事項</h4>
+        <ul><li>避免透析結束後 6 小時內抽血（反彈未完成，數值假性偏低）</li><li>膜通量：${fluxLabel}——高通量移除比例較高（約 24–50%），低通量較低（約 0–5%）</li></ul>
+      </div>`;
+
+    document.getElementById('curveSvg').innerHTML = '';
+    setHeaderMeta('drug-vancomycin', 'HD 病人（本透析間期尚無給藥資料）');
+
+    document.getElementById('aiPromptOut').value = `你是一位資深臨床藥師顧問。此病人為血液透析（HD）病人，本透析間期尚未記錄給藥，以下是文獻族群起始劑量建議（非個體化）。
+
+## 病人
+- 體重：${weightForDosing||'（未填）'} kg；膜通量：${fluxLabel}
+- SCr／腎功能：洗腎病人不適用 Cockcroft-Gault，僅供臨床脈絡參考（數列：${scrRows.length?scrRows.map(r=>`${new Date(r.t).toLocaleDateString('zh-TW')}→${r.v}`).join('；'):'未提供'}）。
+
+## 建議起始劑量（文獻依據，非本工具擬合）
+- Loading：約 ${fmt0(loadSuggest)} mg（25 mg/kg，範圍 25–35 mg/kg）
+- 維持劑量：約 ${fmt0(maintSuggestLow)}–${fmt0(maintSuggestHigh)} mg，透析後給予（TIW，隨透析排程）
+- 目標：pre-HD trough 15–20 µg/mL（Lewis & Nolin, Kidney360 2021）
+
+## 請你協助評估
+1. 這個文獻起始劑量是否適合此病人（併同殘餘腎功能、體液狀態等臨床判斷）？
+2. 首次 TDM（pre-HD trough）時機建議？
+
+請保持透明：清楚區分「文獻族群建議」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。`;
+  }
+
+  function buildAiPromptHD(d){
+    const scrText = d.scrRows.length
+      ? d.scrRows.map(r=>`${new Date(r.t).toLocaleDateString('zh-TW')} → ${r.v} mg/dL`).join('；')
+      : '（未提供）';
+    const doseText = d.doseRowsMs.map((r,i)=>`第${i+1}劑（本透析間期）${new Date(r.t).toLocaleString('zh-TW')}｜${r.doseMg} mg｜輸注 ${r.infMin} 分`).join('\n');
+    const levelText = d.levelRowsMs.length
+      ? d.levelRowsMs.map(r=>`${new Date(r.t).toLocaleString('zh-TW')} → ${r.conc} µg/mL`).join('\n')
+      : '（本透析間期尚無濃度）';
+    const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
+    const sessionText = d.hdSessions.length
+      ? d.hdSessions.map(s=>`${new Date(s.start).toLocaleString('zh-TW')} → ${new Date(s.end).toLocaleString('zh-TW')}`).join('\n')
+      : '（未記錄）';
+
+    const prompt = `你是一位資深臨床藥師顧問。此病人為血液透析（HD）病人，以下是由自建 vancomycin TDM 工具計算的結果——僅在最近一次透析間期內擬合清除率（不橫跨透析事件），並以 pre-HD trough 15–20 µg/mL 為主要目標。
+
+【此工具做得到的事】在單一透析間期內，用已驗證的一室模型從實際給藥與抽血時間估算 ke／Vd／CL，並依比例式反推下次透析後建議劑量。
+【此工具做不到的事】模擬透析當下的濃度變化（無反彈/雙室機轉）、橫跨多次透析的長期趨勢建模、殘餘腎功能的量化貢獻。請你把重點放在這些工具算不到的部分。
+
+## 一、病人
+- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg
+${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg\n`:''}- 膜通量：${d.flux}
+- SCr 數列（僅供臨床脈絡，未用於清除率估算）：${scrText}
+
+## 二、感染／臨床脈絡
+- 適應症：${d.indication}；嚴重度：${d.severity}；感染部位：${d.site||'（未填寫）'}；菌種：${d.organism||'（未填寫）'}
+
+## 三、透析時程記錄
+${sessionText}
+
+## 四、本透析間期給藥紀錄
+${doseText}
+
+## 五、本透析間期血中濃度
+${levelText}
+
+## 六、本工具擬合結果（僅限本透析間期，可稽核）
+- 擬合模式：${d.fit.mode}
+- ke = ${d.ke.toFixed(4)} hr⁻¹，t½ = ${d.tHalf.toFixed(1)} hr，Vd = ${d.V.toFixed(1)} L，CL = ${d.CL.toFixed(2)} L/hr（透析間期，非腎功能）
+${d.measuredPreHDTrough!=null?`- 最近一次實測 pre-HD trough：${d.measuredPreHDTrough.toFixed(1)} µg/mL\n`:''}${d.predictedNextTrough!=null?`- 預測下次透析前濃度：${d.predictedNextTrough.toFixed(1)} µg/mL\n`:`- 未記錄下次透析時程；末劑後 48h 預測 ${d.pred48hPostDose.toFixed(1)}／72h 預測 ${d.pred72hPostDose.toFixed(1)} µg/mL\n`}
+## 七、劑量建議
+- 現行透析後劑量：${d.lastDoseMg} mg
+${d.suggestedDose!=null?`- 建議下次透析後劑量：${d.suggestedDose} mg（依 ${d.referenceTrough.toFixed(1)} µg/mL 比例反推至目標中點 17.5）\n`:''}
+## 八、本工具健全性旗標
+${flagText || '（無特別旗標）'}
+
+## 九、併用藥物與備註
+- 併用藥物：${d.concomitant||'（未填寫）'}
+- 其他備註：${d.otherNotes||'（未填寫）'}
+
+## 十、尚待你整合評估的臨床資訊
+[[請貼上：殘餘尿量／殘餘腎功能相關資料（如有）]]
+[[請貼上：近期病程摘要、感染控制進度與臨床反應]]
+[[如有：過去透析間期的 TDM 紀錄與劑量調整反應]]
+
+## 十一、請你協助評估
+1. 本工具僅限單一透析間期的擬合，是否有跨透析間期的趨勢需要你補充判斷？
+2. 建議劑量是否需要因殘餘腎功能、體液狀態、透析處方調整而修正？
+3. 下次監測時機是否需要調整？
+
+請保持透明：清楚區分「本工具已算出的數值」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。`;
+
+    document.getElementById('aiPromptOut').value = prompt;
+  }
+
   function render(){
+    const dialysis0 = document.getElementById('dialysis').value;
+    if(dialysis0 === 'HD'){
+      renderVancoHD();
+      return;
+    }
+
     // --- 1. gather patient / renal ---
     const age = parseFloat(document.getElementById('age').value);
     const sex = document.getElementById('sex').value;
@@ -3496,6 +3996,7 @@ ${flagText || '（無特別旗標）'}
     const start = new Date(now.getTime() - 3*24*3600000);
     document.getElementById('therapyStart').value = toLocalInputValue(start);
     document.getElementById('expandTo').value = toLocalInputValue(now);
+    toggleDialysisUI();
 
     addScrRow(toLocalDateValue(new Date(start.getTime()-24*3600000)), 1.1);
     addScrRow(toLocalDateValue(now), 0.95);
@@ -3517,7 +4018,7 @@ ${flagText || '（無特別旗標）'}
     // static field listeners
     ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
-     'assumeSteadyState',
+     'assumeSteadyState','hdFlux','hdMaintDose','hdOffsetMin','hdMaintInf',
      'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
      'concomitant','otherNotes','customDose','customInf','customTau'].forEach(id=>{
@@ -3531,6 +4032,9 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('assumeSteadyState').addEventListener('change', function(){
       document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
     });
+    document.getElementById('dialysis').addEventListener('change', toggleDialysisUI);
+    document.getElementById('addHdSessionRow').addEventListener('click', ()=>{ addHdSessionRow('', ''); render(); });
+    document.getElementById('expandDosesHD').addEventListener('click', expandDosesFnHD);
     document.getElementById('regimenTable').addEventListener('change', function(e){
       if(e.target.classList.contains('regimen-pick')){
         vancoPickedKey = e.target.value;
