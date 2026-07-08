@@ -474,14 +474,50 @@
         </div>
 
         <div id="hdDoseFields" style="display:none;">
-          <p class="hint" style="margin-top:0;">HD 病人給藥頻次跟著透析排程走（多為 TIW，透析後給予），不是固定小時間隔。請先記錄透析時程，再依時程展開給藥；沒有透析時程時仍可用下方「手動新增一劑」直接輸入實際給藥時間。</p>
+          <p class="hint" style="margin-top:0;">HD 病人給藥頻次跟著透析排程走（多為 TIWQN，透析當日固定時刻給予），不是固定小時間隔。下方可依星期規則批次產生透析時程，或用「手動新增一劑」直接輸入實際給藥時間。</p>
+
+          <div style="padding:12px;background:var(--paper);border-radius:var(--radius);margin-bottom:12px;">
+            <div class="field-row">
+              <div class="field"><label>透析星期</label>
+                <div style="display:flex;gap:8px;padding-top:6px;flex-wrap:wrap;">
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay1" checked><label for="hdDay1">一</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay2"><label for="hdDay2">二</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay3" checked><label for="hdDay3">三</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay4"><label for="hdDay4">四</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay5" checked><label for="hdDay5">五</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay6"><label for="hdDay6">六</label></span>
+                  <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay0"><label for="hdDay0">日</label></span>
+                </div>
+                <div class="btn-row" style="margin-top:6px;">
+                  <button class="btn small" id="hdPresetMWF" type="button">套用一三五</button>
+                  <button class="btn small" id="hdPresetTTS" type="button">套用二四六</button>
+                </div>
+              </div>
+            </div>
+            <div class="field-row three">
+              <div class="field"><label>時段</label>
+                <select id="hdSlot">
+                  <option value="am">上午</option>
+                  <option value="pm">下午</option>
+                </select>
+              </div>
+              <div class="field"><label>開始時刻</label><input type="time" id="hdSlotStart" value="08:00"></div>
+              <div class="field"><label>透析時長（小時）</label><input type="number" id="hdDurationHr" value="4" step="0.5" min="0.5"></div>
+            </div>
+            <p class="hint" style="margin-top:-4px;">依上方星期規則，在「分析起點／展開至」範圍內批次產生透析時程（會清空並重建下方列表）。時長只影響畫面顯示與反彈警示的判斷基準時間，不影響清除率擬合本身（擬合只使用透析「結束」時間）；產生後如遇改期／跳過等例外，直接編輯或刪除該筆即可，不需重新整批產生。</p>
+            <div class="btn-row">
+              <button class="btn primary small" id="hdGenerateSessionsBtn" type="button">依星期規則產生透析時程</button>
+            </div>
+          </div>
+
           <div class="entry-rows" id="hdSessionTable"></div>
-          <div class="btn-row"><button class="btn small" id="addHdSessionRow" type="button">+ 新增一次透析時程</button></div>
+          <div class="btn-row"><button class="btn small" id="addHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
           <div class="field-row three" style="margin-top:12px;">
             <div class="field"><label>透析後維持劑量（mg）</label><input type="number" id="hdMaintDose" step="50" placeholder="如：700"></div>
-            <div class="field"><label>透析結束後幾分鐘給藥</label><input type="number" id="hdOffsetMin" value="0" step="5"></div>
+            <div class="field"><label>固定給藥時刻</label><input type="time" id="hdFixedTime" value="21:00"></div>
             <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="hdMaintInf" value="60" step="5"></div>
           </div>
+          <p class="hint" style="margin-top:-6px;">院內慣例 TIWQN：透析當日固定時刻給藥（預設 21:00，確保透析後給予），不依當次實際透析結束時間往後推算。個別病人如需不同給藥時間，展開後直接修改該筆給藥紀錄即可，不影響其他劑次。</p>
           <div class="btn-row">
             <button class="btn primary small" id="expandDosesHD" type="button">依透析時程展開給藥紀錄</button>
           </div>
@@ -732,7 +768,7 @@
           <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="amgMaintInterval" value="24" step="1"></div>
         </div>
         <div id="amgTiwRow" style="display:none;">
-          <p class="hint" style="margin-top:-2px;">NTM 常用 10–25 mg/kg TIW（如週一／三／五），非等距間隔——請勾選實際給藥的星期與時刻，下方「自動展開」會依日曆逐日產生給藥紀錄；穩態相關數字改以你目前輸入的實際給藥史直接推算下一劑前的預測 trough，而非固定間隔公式。</p>
+          <p class="hint" style="margin-top:-2px;">NTM 等適應症常用 10–25 mg/kg TIW（如週一／三／五）；HD 病人給藥亦跟著透析排程走（TIWQN，非等距間隔）——請勾選實際給藥的星期與時刻，下方「自動展開」會依日曆逐日產生給藥紀錄；穩態相關數字改以你目前輸入的實際給藥史直接推算下一劑前的預測 trough，而非固定間隔公式。</p>
           <div class="field-row">
             <div class="field"><label>給藥星期</label>
               <div style="display:flex;gap:8px;padding-top:6px;flex-wrap:wrap;">
@@ -744,8 +780,31 @@
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgTiwDay6"><label for="amgTiwDay6">六</label></span>
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgTiwDay0"><label for="amgTiwDay0">日</label></span>
               </div>
+              <div class="btn-row" style="margin-top:6px;">
+                <button class="btn small" id="amgTiwPresetMWF" type="button">套用一三五</button>
+                <button class="btn small" id="amgTiwPresetTTS" type="button">套用二四六</button>
+              </div>
             </div>
             <div class="field"><label>給藥時刻</label><input type="time" id="amgTiwTime" value="09:00"></div>
+          </div>
+
+          <div id="amgHdScheduleBlock" style="display:none;padding:12px;background:var(--paper);border-radius:var(--radius);margin-top:10px;">
+            <p class="hint" style="margin-top:0;">HD 病人：上方「給藥星期」與「給藥時刻」即為透析日給藥排程（院內慣例 TIWQN，預設 21:00）。以下批次產生透析時程紀錄供對照／未來延伸使用，時長只影響畫面顯示，不影響給藥時間展開。</p>
+            <div class="field-row three">
+              <div class="field"><label>透析時段</label>
+                <select id="amgHdSlot">
+                  <option value="am">上午</option>
+                  <option value="pm">下午</option>
+                </select>
+              </div>
+              <div class="field"><label>開始時刻</label><input type="time" id="amgHdSlotStart" value="08:00"></div>
+              <div class="field"><label>透析時長（小時）</label><input type="number" id="amgHdDurationHr" value="4" step="0.5" min="0.5"></div>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary small" id="amgHdGenerateSessionsBtn" type="button">依星期規則產生透析時程</button>
+            </div>
+            <div class="entry-rows" id="amgHdSessionTable" style="margin-top:10px;"></div>
+            <div class="btn-row"><button class="btn small" id="addAmgHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
           </div>
         </div>
         <div class="btn-row">
@@ -1185,22 +1244,92 @@
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
     wireDelete(row.querySelector('.row-del'), row, render);
   }
-  function addHdSessionRow(startVal, endVal){
-    const container = document.getElementById('hdSessionTable');
+  function addHdSessionRowGeneric(tableId, renderFn, startVal, endVal){
+    const container = document.getElementById(tableId);
     const row = document.createElement('div');
     row.className = 'entry-row';
     row.innerHTML = `<div class="num-field"><span class="unit">開始</span><input type="datetime-local" class="hd-start" value="${startVal||''}"></div>
       <div class="num-field"><span class="unit">結束</span><input type="datetime-local" class="hd-end" value="${endVal||''}"></div>
       <button class="row-del" type="button">×</button>`;
     container.appendChild(row);
-    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
-    wireDelete(row.querySelector('.row-del'), row, render);
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderFn));
+    wireDelete(row.querySelector('.row-del'), row, renderFn);
   }
-  function readHdSessionRows(){
-    return Array.from(document.querySelectorAll('#hdSessionTable .entry-row')).map(row=>({
+  function addHdSessionRow(startVal, endVal){ addHdSessionRowGeneric('hdSessionTable', render, startVal, endVal); }
+  function addHdSessionRowAmg(startVal, endVal){ addHdSessionRowGeneric('amgHdSessionTable', renderAmino, startVal, endVal); }
+  function readHdSessionRowsGeneric(tableId){
+    return Array.from(document.querySelectorAll('#'+tableId+' .entry-row')).map(row=>({
       start: parseLocal(row.querySelector('.hd-start').value),
       end: parseLocal(row.querySelector('.hd-end').value)
     })).filter(r=>isFinite(r.start)&&isFinite(r.end)&&r.end>r.start).sort((a,b)=>a.start-b.start);
+  }
+  function readHdSessionRows(){ return readHdSessionRowsGeneric('hdSessionTable'); }
+  function readHdSessionRowsAmg(){ return readHdSessionRowsGeneric('amgHdSessionTable'); }
+
+  // ---------------- HD (dialysis) weekly-pattern schedule generator ----------------
+  // Shared by vancomycin (dedicated hdDay0..6 checkboxes) and aminoglycoside (reuses the
+  // existing amgTiwDay0..6 weekday checkboxes directly — TIWQN dosing IS exactly that
+  // "weekly fixed weekday + fixed clock time" mechanism aminoglycoside already has, so no
+  // separate weekday input is duplicated there). Purpose: batch-generate dialysis session
+  // rows from a weekday rule instead of one-by-one manual entry.
+  function getCheckedWeekdays(idPrefix){
+    // JS Date.getDay(): 0=Sun..6=Sat
+    return [0,1,2,3,4,5,6].filter(d=>{
+      const el = document.getElementById(idPrefix+d);
+      return el && el.checked;
+    });
+  }
+  function applyWeekdayPreset(idPrefix, days){
+    [0,1,2,3,4,5,6].forEach(d=>{
+      const el = document.getElementById(idPrefix+d);
+      if(el) el.checked = days.includes(d);
+    });
+  }
+  function buildHdSessionsFromPattern(checkedDays, hh, mm, durationHr, rangeStartMs, rangeEndMs){
+    const sessions = [];
+    if(!checkedDays || !checkedDays.length) return sessions;
+    if(!isFinite(rangeStartMs) || !isFinite(rangeEndMs) || rangeEndMs < rangeStartMs) return sessions;
+    if(!isFinite(durationHr) || durationHr<=0) return sessions;
+    let d = new Date(rangeStartMs); d.setHours(0,0,0,0);
+    let guard = 0;
+    while(d.getTime() <= rangeEndMs && guard < 3660){ // ~10y safety cap against runaway loops
+      guard++;
+      if(checkedDays.includes(d.getDay())){
+        const startTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hh, mm, 0, 0).getTime();
+        if(startTime >= rangeStartMs - 60000 && startTime <= rangeEndMs + 60000){
+          sessions.push({start: startTime, end: startTime + durationHr*3600000});
+        }
+      }
+      d.setDate(d.getDate()+1);
+    }
+    return sessions;
+  }
+  // cfg: {getDaysFn, slotTimeId, durationId, rangeStartId, rangeEndId, tableId, addFn, renderFn}
+  function generateHdSessionsFn(cfg){
+    const checkedDays = cfg.getDaysFn();
+    if(!checkedDays.length){ alert('請至少勾選一個透析星期。'); return; }
+    const timeStr = document.getElementById(cfg.slotTimeId).value || '08:00';
+    const timeParts = timeStr.split(':').map(Number);
+    const hh = timeParts[0], mm = timeParts[1]||0;
+    const durationHr = parseFloat(document.getElementById(cfg.durationId).value);
+    const rangeStart = parseLocal(document.getElementById(cfg.rangeStartId).value);
+    const rangeEnd = parseLocal(document.getElementById(cfg.rangeEndId).value);
+    if(!isFinite(rangeStart) || !isFinite(rangeEnd) || rangeEnd <= rangeStart){
+      alert('請先確認「分析起點」與「展開至」已正確填寫，且展開至須晚於分析起點——批次產生會依此範圍展開透析時程。');
+      return;
+    }
+    if(!isFinite(durationHr) || durationHr<=0){
+      alert('請填寫透析時長（小時），需大於 0。');
+      return;
+    }
+    const sessions = buildHdSessionsFromPattern(checkedDays, hh, mm, durationHr, rangeStart, rangeEnd);
+    if(!sessions.length){
+      alert('依目前設定的星期與「分析起點／展開至」範圍，沒有產生任何透析時程，請確認範圍是否涵蓋所選星期。');
+      return;
+    }
+    clearTbody('#'+cfg.tableId);
+    sessions.forEach(s=> cfg.addFn(toLocalInputValue(new Date(s.start)), toLocalInputValue(new Date(s.end))) );
+    cfg.renderFn();
   }
 
   function clearTbody(sel){ document.querySelector(sel).innerHTML=''; }
@@ -1264,9 +1393,12 @@
   }
 
   // HD dosing follows the dialysis schedule (typically TIW, post-session), not a fixed
-  // hourly interval — generate one dose per logged session, offset from session END,
-  // instead of looping at a fixed tau. Loading dose (if checked) still applies to the
-  // first generated dose.
+  // hourly interval, and per hospital convention (TIWQN) is given at a FIXED clock time on
+  // the dialysis day (default 21:00) regardless of exactly when that day's session ended —
+  // not "session end + offset minutes" (the old offset mechanism was removed; the hospital's
+  // actual practice is a fixed evening time to guarantee post-HD dosing, not a fixed delay
+  // after session end, since session end time itself varies AM vs PM shift). Loading dose
+  // (if checked) still applies to the first generated dose.
   function expandDosesFnHD(){
     const hdSessions = readHdSessionRows();
     if(!hdSessions.length){
@@ -1274,10 +1406,12 @@
       return;
     }
     const maintDose = parseFloat(document.getElementById('hdMaintDose').value);
-    const offsetMin = parseFloat(document.getElementById('hdOffsetMin').value);
     const maintInf = parseFloat(document.getElementById('hdMaintInf').value);
-    if(!isFinite(maintDose)||!isFinite(offsetMin)||!isFinite(maintInf)||maintDose<=0||maintInf<=0){
-      alert('請先完整填寫透析後維持劑量、透析結束後幾分鐘給藥、與輸注時間。');
+    const fixedTimeStr = document.getElementById('hdFixedTime').value || '21:00';
+    const fixedTimeParts = fixedTimeStr.split(':').map(Number);
+    const fh = fixedTimeParts[0], fm = fixedTimeParts[1]||0;
+    if(!isFinite(maintDose)||!isFinite(maintInf)||maintDose<=0||maintInf<=0){
+      alert('請先完整填寫透析後維持劑量與輸注時間。');
       return;
     }
     const startMs = parseLocal(document.getElementById('therapyStart').value);
@@ -1288,7 +1422,8 @@
     hdSessions.forEach(s=>{
       if(isFinite(startMs) && s.end < startMs) return;
       if(isFinite(toMs) && s.end > toMs) return;
-      const doseTime = s.end + offsetMin*60000;
+      const dayOf = new Date(s.start);
+      const doseTime = new Date(dayOf.getFullYear(), dayOf.getMonth(), dayOf.getDate(), fh, fm, 0, 0).getTime();
       if(first && useLoading){
         const lDose = parseFloat(document.getElementById('loadingDose').value);
         const lInf = parseFloat(document.getElementById('loadingInf').value);
@@ -1388,8 +1523,13 @@
     document.getElementById('pruneBeforeInput').value='';
     clearTbody('#doseTable');
     document.getElementById('hdMaintDose').value='';
-    document.getElementById('hdOffsetMin').value='0';
+    document.getElementById('hdFixedTime').value='21:00';
     document.getElementById('hdMaintInf').value='60';
+    [1,3,5].forEach(d=>{ document.getElementById('hdDay'+d).checked=true; });
+    [0,2,4,6].forEach(d=>{ document.getElementById('hdDay'+d).checked=false; });
+    document.getElementById('hdSlot').value='am';
+    document.getElementById('hdSlotStart').value='08:00';
+    document.getElementById('hdDurationHr').value='4';
     clearTbody('#hdSessionTable');
     toggleDialysisUI();
 
@@ -1432,7 +1572,9 @@
       useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'),
       assumeSteadyState:c('assumeSteadyState'),
       maintDose:v('maintDose'), maintInterval:v('maintInterval'), maintInf:v('maintInf'),
-      hdMaintDose:v('hdMaintDose'), hdOffsetMin:v('hdOffsetMin'), hdMaintInf:v('hdMaintInf'),
+      hdMaintDose:v('hdMaintDose'), hdFixedTime:v('hdFixedTime'), hdMaintInf:v('hdMaintInf'),
+      hdDayPattern: [0,1,2,3,4,5,6].filter(d=>c('hdDay'+d)),
+      hdSlot:v('hdSlot'), hdSlotStart:v('hdSlotStart'), hdDurationHr:v('hdDurationHr'),
       hdSessionRows: Array.from(document.querySelectorAll('#hdSessionTable .entry-row')).map(row=>({
         start: row.querySelector('.hd-start').value, end: row.querySelector('.hd-end').value
       })),
@@ -1473,7 +1615,10 @@
     document.getElementById('vancoWhatIfReadout').textContent='';
     setVal('loadingDose', s.loadingDose); setVal('loadingInf', s.loadingInf);
     setVal('maintDose', s.maintDose); setVal('maintInterval', s.maintInterval); setVal('maintInf', s.maintInf);
-    setVal('hdMaintDose', s.hdMaintDose); setVal('hdOffsetMin', s.hdOffsetMin===undefined?'0':s.hdOffsetMin); setVal('hdMaintInf', s.hdMaintInf||'60');
+    setVal('hdMaintDose', s.hdMaintDose); setVal('hdFixedTime', s.hdFixedTime||'21:00'); setVal('hdMaintInf', s.hdMaintInf||'60');
+    const hdDayPattern = s.hdDayPattern===undefined ? [1,3,5] : s.hdDayPattern;
+    [0,1,2,3,4,5,6].forEach(d=>setChecked('hdDay'+d, hdDayPattern.includes(d)));
+    setVal('hdSlot', s.hdSlot||'am'); setVal('hdSlotStart', s.hdSlotStart||'08:00'); setVal('hdDurationHr', s.hdDurationHr||'4');
     clearTbody('#hdSessionTable');
     (s.hdSessionRows||[]).forEach(r=>addHdSessionRow(r.start, r.end));
     toggleDialysisUI();
@@ -2205,11 +2350,17 @@ ${decidedTextP}
   // attempted — the model doesn't try to simulate the intra-HD drop/rebound at all.
   function findCurrentHDWindow(hdSessions, doseRowsMs, levelRowsMs){
     const sorted = hdSessions.slice().sort((a,b)=>a.start-b.start);
-    const lastKnownEventMs = Math.max(
-      doseRowsMs.length ? doseRowsMs[doseRowsMs.length-1].t : 0,
-      levelRowsMs.length ? levelRowsMs[levelRowsMs.length-1].t : 0
-    ) || Date.now();
-    const pastSessions = sorted.filter(s=>s.end <= lastKnownEventMs);
+    // Anchor the "current" interdialytic window on the most recent LOGGED CONCENTRATION
+    // if one exists — not simply "whichever of dose/level is chronologically latest".
+    // A pre-HD trough is drawn BEFORE that day's session, so it characterizes the window
+    // that PRECEDES that session, not the window opened by it. Anchoring on the latest
+    // DOSE instead (when a newer dose has since been given, following a later session)
+    // pulls the window forward past the session the level was actually drawn in front
+    // of, silently excluding that level from the fit. Only fall back to the latest dose
+    // when no level has been recorded at all (nothing to fit on either way).
+    const anchorMs = levelRowsMs.length ? levelRowsMs[levelRowsMs.length-1].t
+                     : (doseRowsMs.length ? doseRowsMs[doseRowsMs.length-1].t : Date.now());
+    const pastSessions = sorted.filter(s=>s.end <= anchorMs);
     const lastSession = pastSessions.length ? pastSessions[pastSessions.length-1] : null;
     const futureSessions = sorted.filter(s=> lastSession ? s.start > lastSession.end : true);
     const nextSession = futureSessions.length ? futureSessions[0] : null;
@@ -2323,6 +2474,14 @@ ${decidedTextP}
     // this tool): new dose = current dose × (target / predicted or measured), targeting
     // the midpoint of the 15–20 pre-HD trough range
     const lastDoseMg = windowDoseRows[windowDoseRows.length-1].doseMg;
+    // The dose the CURRENT fit/trough is anchored to (windowDoseRows' last entry) is not
+    // always literally the most recent dose ever given — if a newer dose has already been
+    // given after the window this trough was drawn in front of, that newer dose has no
+    // trough evaluating it yet, so it can't feed the proportional math, but it should
+    // still be visible rather than silently hidden.
+    const trueLastDoseRow = doseRowsMs[doseRowsMs.length-1];
+    const windowLastDoseRow = windowDoseRows[windowDoseRows.length-1];
+    const hasNewerUnevaluatedDose = trueLastDoseRow.t !== windowLastDoseRow.t;
     const targetMid = 17.5;
     const referenceTrough = measuredPreHDTrough!=null ? measuredPreHDTrough : (predictedNextTrough!=null ? predictedNextTrough : pred48hPostDose);
     let suggestedDose = null;
@@ -2358,7 +2517,10 @@ ${decidedTextP}
     // --- simplified regimen section: single suggested dose, not a candidate table ---
     const {tag: refTag, tagText: refTagText} = hdTroughTag(referenceTrough);
     let rows = [];
-    rows.push(`<tr><td>現行透析後劑量</td><td>${fmt0(lastDoseMg)} mg</td><td class="reason">最近一次實際給藥</td></tr>`);
+    rows.push(`<tr><td>本次濃度所依據劑量</td><td>${fmt0(lastDoseMg)} mg</td><td class="reason">本視窗內最近一次給藥，即下方濃度所反映的那一劑</td></tr>`);
+    if(hasNewerUnevaluatedDose){
+      rows.push(`<tr><td>最近一次實際給藥</td><td>${fmt0(trueLastDoseRow.doseMg)} mg</td><td class="reason">${new Date(trueLastDoseRow.t).toLocaleString('zh-TW')}，晚於本次擬合所用的濃度時間，尚無 trough 反映此劑效果，未納入下方建議劑量的計算</td></tr>`);
+    }
     if(suggestedDose!=null){
       rows.push(`<tr><td>建議下次透析後劑量</td><td>${fmt0(suggestedDose)} mg</td><td class="reason">依${measuredPreHDTrough!=null?'實測':'預測'} trough ${referenceTrough.toFixed(1)} 比例反推至目標中點 17.5（${refTagText}）<span class="tag ${refTag}">${refTag==='ok'?'OK':(refTag==='warn'?'留意':'風險')}</span></td></tr>`);
     }
@@ -2377,15 +2539,24 @@ ${decidedTextP}
         <ul><li>透析處方調整（頻次、時數、膜材）</li><li>殘餘腎功能變化</li><li>感染臨床惡化或未如預期改善</li></ul>
       </div>`;
 
-    // --- curve: focused on the current interdialytic window only ---
-    const domainMax = nextSession ? nextSessionRel*1.05 : Math.max(nowRelHD+72, 72);
+    // --- curve: focused on the current interdialytic window only, but mark every
+    // recorded dialysis session that falls within the plotted horizon — not just the
+    // immediate next one. Batch-generating a range ahead of time can already have more
+    // than one future session on file, so stretch the horizon a little to cover a second
+    // one if it exists (bounded — not unlimited — to keep the near-term decay curve legible).
+    const futureSessionsSorted = hdSessions.filter(s=>s.start > windowStartMs).sort((a,b)=>a.start-b.start);
+    const horizonSession = futureSessionsSorted[1] || nextSession;
+    const domainMax = horizonSession ? ((horizonSession.end-windowStartMs)/3600000)*1.05 : Math.max(nowRelHD+72, 72);
     const cMaxDomain = Math.max(22, (Math.max(...levelsForFit.map(l=>l.conc),0))*1.15, (predictedNextTrough||0)*1.3, (measuredPreHDTrough||0)*1.3);
     const extraMarkers = [], extraBands = [];
-    if(nextSession){
-      extraMarkers.push({rel: nextSessionRel, label:'下次透析', color:'var(--crimson)'});
-      const sessionEndRel = (nextSession.end-windowStartMs)/3600000;
-      extraBands.push({startRel: nextSessionRel, endRel: sessionEndRel, label:'透析中', color:'var(--line-strong)', opacity:0.35});
-    }
+    hdSessions.forEach(s=>{
+      const rawStartRel = (s.start-windowStartMs)/3600000;
+      const endRel = (s.end-windowStartMs)/3600000;
+      if(endRel<=0 || rawStartRel>domainMax) return; // ended before this window opened, or beyond the plotted horizon
+      const startRel = Math.max(rawStartRel, 0);
+      extraMarkers.push({rel: startRel, label: (nextSession && s.start===nextSession.start) ? '下次透析' : '透析', color:'var(--crimson)'});
+      extraBands.push({startRel, endRel, label:'透析中', color:'var(--line-strong)', opacity:0.35});
+    });
     drawCurve({
       doses: windowDoseRows.map(d=>({t_rel:(d.t-windowStartMs)/3600000, doseMg:d.doseMg, infHr:d.infMin/60})),
       levels: windowLevelRows.map(l=>({t_rel:(l.t-windowStartMs)/3600000, conc:l.conc})),
@@ -2404,6 +2575,7 @@ ${decidedTextP}
       age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, scrRows, flux: fluxLabel,
       hdSessions, nextSession,
       doseRowsMs: windowDoseRows, levelRowsMs: windowLevelRows,
+      trueLastDoseRow, hasNewerUnevaluatedDose,
       CL, V, ke, tHalf, fit, measuredPreHDTrough, predictedNextTrough, pred48hPostDose, pred72hPostDose,
       lastDoseMg, suggestedDose, referenceTrough, flags,
       concomitant: document.getElementById('concomitant').value.trim(),
@@ -2477,7 +2649,8 @@ ${decidedTextP}
     const scrText = d.scrRows.length
       ? d.scrRows.map(r=>`${new Date(r.t).toLocaleDateString('zh-TW')} → ${r.v} mg/dL`).join('；')
       : '（未提供）';
-    const doseText = d.doseRowsMs.map((r,i)=>`第${i+1}劑（本透析間期）${new Date(r.t).toLocaleString('zh-TW')}｜${r.doseMg} mg｜輸注 ${r.infMin} 分`).join('\n');
+    const doseText = d.doseRowsMs.map((r,i)=>`第${i+1}劑（本透析間期）${new Date(r.t).toLocaleString('zh-TW')}｜${r.doseMg} mg｜輸注 ${r.infMin} 分`).join('\n')
+      + (d.hasNewerUnevaluatedDose ? `\n（提醒：${new Date(d.trueLastDoseRow.t).toLocaleString('zh-TW')} 另有一劑 ${d.trueLastDoseRow.doseMg} mg 已實際給予，但晚於本次擬合所用的濃度時間，尚無對應 trough 可評估其效果，未納入以下擬合與建議劑量。）` : '');
     const levelText = d.levelRowsMs.length
       ? d.levelRowsMs.map(r=>`${new Date(r.t).toLocaleString('zh-TW')} → ${r.conc} µg/mL`).join('\n')
       : '（本透析間期尚無濃度）';
@@ -2513,7 +2686,7 @@ ${levelText}
 - ke = ${d.ke.toFixed(4)} hr⁻¹，t½ = ${d.tHalf.toFixed(1)} hr，Vd = ${d.V.toFixed(1)} L，CL = ${d.CL.toFixed(2)} L/hr（透析間期，非腎功能）
 ${d.measuredPreHDTrough!=null?`- 最近一次實測 pre-HD trough：${d.measuredPreHDTrough.toFixed(1)} µg/mL\n`:''}${d.predictedNextTrough!=null?`- 預測下次透析前濃度：${d.predictedNextTrough.toFixed(1)} µg/mL\n`:`- 未記錄下次透析時程；末劑後 48h 預測 ${d.pred48hPostDose.toFixed(1)}／72h 預測 ${d.pred72hPostDose.toFixed(1)} µg/mL\n`}
 ## 七、劑量建議
-- 現行透析後劑量：${d.lastDoseMg} mg
+- 本次濃度所依據劑量：${d.lastDoseMg} mg（本透析間期內、下方濃度所反映的那一劑）
 ${d.suggestedDose!=null?`- 建議下次透析後劑量：${d.suggestedDose} mg（依 ${d.referenceTrough.toFixed(1)} µg/mL 比例反推至目標中點 17.5）\n`:''}
 ## 八、本工具健全性旗標
 ${flagText || '（無特別旗標）'}
@@ -2979,6 +3152,9 @@ ${flagText || '（無特別旗標）'}
   function isAminoTiwSchedule(){
     return document.getElementById('amgScheduleType').value==='tiw';
   }
+  function isAmgHD(){
+    return document.getElementById('amgDialysis').value==='HD';
+  }
   function toggleAminoScheduleUI(){
     const tiw = isAminoTiwSchedule();
     document.getElementById('amgFixedIntervalRow').style.display = tiw ? 'none' : '';
@@ -2988,6 +3164,24 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgSteadyStateRow').style.display = tiw ? 'none' : 'flex';
     document.getElementById('amgSteadyStateHint').style.display = (tiw || !document.getElementById('amgAssumeSteadyState').checked) ? 'none' : 'block';
     if(tiw) document.getElementById('amgPickBar').classList.remove('active');
+    // the HD dialysis-session generator is nested inside the weekly-weekday block and
+    // only makes sense when that block is itself visible AND the patient is HD.
+    document.getElementById('amgHdScheduleBlock').style.display = (tiw && isAmgHD()) ? 'block' : 'none';
+  }
+  // Switching dialysis to HD nudges the schedule type to "每週固定星期" (TIWQN dosing is
+  // exactly that mechanism — weekday + fixed clock time, not a fixed hourly interval) and
+  // defaults the dosing time to the hospital's 21:00 convention, without clobbering a time
+  // the user has already customized away from the generic (non-HD) default of 09:00.
+  function toggleAmgDialysisUI(){
+    if(isAmgHD()){
+      if(document.getElementById('amgScheduleType').value !== 'tiw'){
+        document.getElementById('amgScheduleType').value = 'tiw';
+      }
+      if(document.getElementById('amgTiwTime').value === '09:00'){
+        document.getElementById('amgTiwTime').value = '21:00';
+      }
+    }
+    toggleAminoScheduleUI();
   }
 
   // ---------------- dose rounding & tag scoring (aminoglycoside-specific) ----------------
@@ -3196,7 +3390,11 @@ ${flagText || '（無特別旗標）'}
     [1,3,5].forEach(d=>{ document.getElementById('amgTiwDay'+d).checked=true; });
     [0,2,4,6].forEach(d=>{ document.getElementById('amgTiwDay'+d).checked=false; });
     document.getElementById('amgTiwTime').value='09:00';
-    toggleAminoScheduleUI();
+    document.getElementById('amgHdSlot').value='am';
+    document.getElementById('amgHdSlotStart').value='08:00';
+    document.getElementById('amgHdDurationHr').value='4';
+    clearTbody('#amgHdSessionTable');
+    toggleAmgDialysisUI();
     clearTbody('#amgDoseTable');
 
     clearTbody('#amgLevelTable');
@@ -3235,6 +3433,10 @@ ${flagText || '（無特別旗標）'}
       assumeSteadyState:c('amgAssumeSteadyState'),
       scheduleType:v('amgScheduleType'), tiwTime:v('amgTiwTime'),
       tiwDays: [0,1,2,3,4,5,6].filter(d=>c('amgTiwDay'+d)),
+      amgHdSlot:v('amgHdSlot'), amgHdSlotStart:v('amgHdSlotStart'), amgHdDurationHr:v('amgHdDurationHr'),
+      amgHdSessionRows: Array.from(document.querySelectorAll('#amgHdSessionTable .entry-row')).map(row=>({
+        start: row.querySelector('.hd-start').value, end: row.querySelector('.hd-end').value
+      })),
       doseRows: Array.from(document.querySelectorAll('#amgDoseTable .entry-row')).map(row=>({
         date: row.querySelector('.dose-date').value, doseMg: row.querySelector('.dose-mg').value, infMin: row.querySelector('.dose-inf').value
       })),
@@ -3273,7 +3475,10 @@ ${flagText || '（無特別旗標）'}
     setVal('amgScheduleType', s.scheduleType||'fixed'); setVal('amgTiwTime', s.tiwTime||'09:00');
     const tiwDays = s.tiwDays || [1,3,5];
     [0,1,2,3,4,5,6].forEach(d=>setChecked('amgTiwDay'+d, tiwDays.includes(d)));
-    toggleAminoScheduleUI();
+    setVal('amgHdSlot', s.amgHdSlot||'am'); setVal('amgHdSlotStart', s.amgHdSlotStart||'08:00'); setVal('amgHdDurationHr', s.amgHdDurationHr||'4');
+    clearTbody('#amgHdSessionTable');
+    (s.amgHdSessionRows||[]).forEach(r=>addHdSessionRowAmg(r.start, r.end));
+    toggleAmgDialysisUI();
     clearTbody('#amgDoseTable');
     (s.doseRows||[]).forEach(r=>addDoseRowAmg(r.date, r.doseMg, r.infMin));
     renumberDoseRowsAmg();
@@ -3965,7 +4170,7 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgExpandTo').value = toLocalInputValue(now);
 
     document.getElementById('amgScheduleType').value = 'fixed';
-    toggleAminoScheduleUI();
+    toggleAmgDialysisUI();
 
     addScrRowAmg(toLocalDateValue(new Date(start.getTime()-24*3600000)), 0.9);
     addScrRowAmg(toLocalDateValue(now), 0.85);
@@ -4047,7 +4252,7 @@ ${flagText || '（無特別旗標）'}
     // static field listeners
     ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
-     'assumeSteadyState','hdFlux','hdMaintDose','hdOffsetMin','hdMaintInf',
+     'assumeSteadyState','hdFlux','hdMaintDose','hdFixedTime','hdMaintInf',
      'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
      'concomitant','otherNotes','customDose','customInf','customTau'].forEach(id=>{
@@ -4064,6 +4269,19 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('dialysis').addEventListener('change', toggleDialysisUI);
     document.getElementById('addHdSessionRow').addEventListener('click', ()=>{ addHdSessionRow('', ''); render(); });
     document.getElementById('expandDosesHD').addEventListener('click', expandDosesFnHD);
+    document.getElementById('hdPresetMWF').addEventListener('click', ()=>{ applyWeekdayPreset('hdDay', [1,3,5]); });
+    document.getElementById('hdPresetTTS').addEventListener('click', ()=>{ applyWeekdayPreset('hdDay', [2,4,6]); });
+    document.getElementById('hdSlot').addEventListener('change', ()=>{
+      document.getElementById('hdSlotStart').value = document.getElementById('hdSlot').value==='pm' ? '13:00' : '08:00';
+    });
+    document.getElementById('hdGenerateSessionsBtn').addEventListener('click', ()=>{
+      generateHdSessionsFn({
+        getDaysFn: ()=>getCheckedWeekdays('hdDay'),
+        slotTimeId:'hdSlotStart', durationId:'hdDurationHr',
+        rangeStartId:'therapyStart', rangeEndId:'expandTo',
+        tableId:'hdSessionTable', addFn:addHdSessionRow, renderFn:render
+      });
+    });
     document.getElementById('regimenTable').addEventListener('change', function(e){
       if(e.target.classList.contains('regimen-pick')){
         vancoPickedKey = e.target.value;
@@ -4143,6 +4361,21 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgPickStart').addEventListener('change', renderAmino);
 
     document.getElementById('amgScheduleType').addEventListener('change', ()=>{ toggleAminoScheduleUI(); renderAmino(); });
+    document.getElementById('amgDialysis').addEventListener('change', ()=>{ toggleAmgDialysisUI(); renderAmino(); });
+    document.getElementById('amgTiwPresetMWF').addEventListener('click', ()=>{ applyWeekdayPreset('amgTiwDay', [1,3,5]); renderAmino(); });
+    document.getElementById('amgTiwPresetTTS').addEventListener('click', ()=>{ applyWeekdayPreset('amgTiwDay', [2,4,6]); renderAmino(); });
+    document.getElementById('amgHdSlot').addEventListener('change', ()=>{
+      document.getElementById('amgHdSlotStart').value = document.getElementById('amgHdSlot').value==='pm' ? '13:00' : '08:00';
+    });
+    document.getElementById('amgHdGenerateSessionsBtn').addEventListener('click', ()=>{
+      generateHdSessionsFn({
+        getDaysFn: ()=>getCheckedWeekdays('amgTiwDay'),
+        slotTimeId:'amgHdSlotStart', durationId:'amgHdDurationHr',
+        rangeStartId:'amgTherapyStart', rangeEndId:'amgExpandTo',
+        tableId:'amgHdSessionTable', addFn:addHdSessionRowAmg, renderFn:renderAmino
+      });
+    });
+    document.getElementById('addAmgHdSessionRow').addEventListener('click', ()=>{ addHdSessionRowAmg('', ''); renderAmino(); });
 
     document.getElementById('amgDrug').addEventListener('change', ()=>{ populateAminoIndicationOptions(); renderAmino(); });
     document.getElementById('amgStrategy').addEventListener('change', ()=>{
