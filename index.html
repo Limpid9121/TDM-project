@@ -3402,8 +3402,13 @@ ${flagText || '（無特別旗標）'}
     }
     const infHr = infMin/60;
     const R = dose/infHr;
-    const cmax = (R/CL)*(1-Math.exp(-ke*infHr))/(1-Math.exp(-ke*tauC));
-    const cmin = cmax*Math.exp(-ke*(tauC-infHr));
+    const cmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*infHr))/(1-Math.exp(-ke*tauC));
+    // aminoglycoside "peak" targets are calibrated to the standard clinical sampling
+    // convention (drawn 30 min after infusion ends, per references/aminoglycoside.md),
+    // not the instantaneous theoretical Cmax at infusion end — decay forward 30 min so
+    // the compared value matches what would actually be measured.
+    const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5);
+    const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(tauC-infHr));
     const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
     cmaxEl.textContent = cmax.toFixed(1);
     cminEl.textContent = cmin.toFixed(1);
@@ -3415,19 +3420,30 @@ ${flagText || '（無特別旗標）'}
   function computeCandidateAmino(candTau, CL, ke, infHrCurrent, target, dailyDoseNow, mic){
     let doseRaw;
     if(target && target.peak){
-      const targetPeak = (target.peak[0]+target.peak[1])/2;
-      doseRaw = targetPeak * CL * infHrCurrent * (1-Math.exp(-ke*candTau)) / (1-Math.exp(-ke*infHrCurrent));
+      const targetPeakClinical = (target.peak[0]+target.peak[1])/2;
+      // target.peak ranges are calibrated to the standard clinical sampling convention
+      // (30 min post-infusion-end), not the instantaneous theoretical Cmax at infusion
+      // end that the closed-form dose formula solves for — inflate the target back to
+      // the infusion-end equivalent before inverting for dose.
+      const targetPeakAtInfusionEnd = targetPeakClinical * Math.exp(ke*0.5);
+      doseRaw = targetPeakAtInfusionEnd * CL * infHrCurrent * (1-Math.exp(-ke*candTau)) / (1-Math.exp(-ke*infHrCurrent));
     } else {
       doseRaw = dailyDoseNow * (candTau/24);
     }
     const roundedDose = roundDoseAmino(doseRaw);
     const infHrC = infHrCurrent;
     const R = roundedDose/infHrC;
-    const cmax = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
-    const cmin = cmax*Math.exp(-ke*(candTau-infHrC));
+    const cmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
+    const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
+    const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(candTau-infHrC));
     const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
+    // when there's no established peak target, the dose above is derived by scaling
+    // the CURRENTLY ENTERED dose proportionally (not solved from CL/V+target) — make
+    // that dependency explicit rather than silently inventing a peak target to solve
+    // against (this indication genuinely has none in the literature reference used)
+    const finalTagText = (!target || !target.peak) ? `${tagText}（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）` : tagText;
     const ratio = (isFinite(mic)&&mic>0) ? cmax/mic : null;
-    return {candTau, roundedDose, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText};
+    return {candTau, roundedDose, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText: finalTagText};
   }
 
   function renderRegimenTableAmino(regimenRows, currentTau){
@@ -3522,10 +3538,11 @@ ${flagText || '（無特別旗標）'}
       flags.push({level:'ok', text:`計畫排程為「每週固定星期」，非等距間隔；預測 Peak／Trough 改以你勾選的星期模擬出的給藥序列直接推算（約第 ${refIdx+1} 劑，反映初步累積後的濃度），並非固定間隔穩態公式。`});
     } else {
       const R = maintDose/maintInfHr;
-      CmaxSS = (R/CLpop)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
-      CminSS = CmaxSS*Math.exp(-ke*(tau-maintInfHr));
+      const CmaxAtInfusionEnd = (R/CLpop)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
+      CmaxSS = CmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
+      CminSS = CmaxAtInfusionEnd*Math.exp(-ke*(tau-maintInfHr));
       tauForCurve = tau;
-      cmaxLabel = '預測 Cmax,ss（peak）'; cminLabel = '預測 Cmin,ss（trough）';
+      cmaxLabel = '預測 Cmax,ss（peak，輸注後 30 分）'; cminLabel = '預測 Cmin,ss（trough）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
       cminSub = target?`目標 <${target.troughHi}`:'';
     }
@@ -3778,10 +3795,11 @@ ${flagText || '（無特別旗標）'}
       tau = parseFloat(document.getElementById('amgMaintInterval').value);
       tauForCurve = tau;
       const R = maintDose/maintInfHr;
-      CmaxSS = (R/CL)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
-      CminSS = CmaxSS*Math.exp(-ke*(tau-maintInfHr));
+      const CmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
+      CmaxSS = CmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
+      CminSS = CmaxAtInfusionEnd*Math.exp(-ke*(tau-maintInfHr));
       dailyDoseNow = maintDose*(24/tau);
-      cmaxLabel = 'Cmax,ss（現行處方推算，peak）'; cminLabel = 'Cmin,ss（現行處方推算，trough）';
+      cmaxLabel = 'Cmax,ss（現行處方推算，peak，輸注後 30 分）'; cminLabel = 'Cmin,ss（現行處方推算，trough）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
       cminSub = target?`目標 <${target.troughHi}`:'';
     }
