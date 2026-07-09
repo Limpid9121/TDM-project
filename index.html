@@ -733,6 +733,13 @@
         </div>
         <div class="hint" id="amgTargetDisplay" style="margin-top:-4px;"></div>
         <p class="hint" id="amgTobraNote" style="display:none;">Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例）；若貴院有 tobramycin 專屬 protocol，請自行對照調整。</p>
+        <div class="field" style="margin-top:8px;">
+          <label>ODD／HDEI 適用性——是否符合以下任一項（符合則多數文獻與院內 protocol 建議改採傳統多次給藥）</label>
+          <div class="checkline"><input type="checkbox" id="amgOddExclPregnancy"><label for="amgOddExclPregnancy">懷孕</label></div>
+          <div class="checkline"><input type="checkbox" id="amgOddExclFluid"><label for="amgOddExclFluid">大量體液蓄積或分布容積異常（腹水／燒燙傷 ≥20% 體表面積／anasarca／末期肝病）</label></div>
+          <div class="checkline"><input type="checkbox" id="amgOddExclNeutropenia"><label for="amgOddExclNeutropenia">嗜中性球低下或其他顯著免疫抑制</label></div>
+          <div class="checkline"><input type="checkbox" id="amgOddExclEndocarditisCns"><label for="amgOddExclEndocarditisCns">心內膜炎／中樞神經系統感染（腦膜炎）</label></div>
+        </div>
         <div class="field-row">
           <div class="field"><label>感染部位</label><input type="text" id="amgSite" placeholder="如：菌血症、肺炎、骨髓炎、UTI…"></div>
           <div class="field"><label>菌種／MIC（選填）</label><input type="text" id="amgOrganism" placeholder="如：Pseudomonas, MIC 未知"></div>
@@ -846,7 +853,8 @@
               </div>
             </div>
           </div>
-          <p class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。本工具不自動判讀 Hartford nomogram（該圖表邊界為特定已發表迴歸式，需查證原始文獻，本工具寧可不猜）；候選方案改用個體化 ke／Vd 直接反解達標劑量，效果等價甚至更精確，隨機點也能用。</p>
+          <p class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。ODD／HDEI 策略下，本工具會依估算 CrCl 帶出建議起始間隔（q24/q36/q48，邏輯與 Hartford nomogram 相同的 CrCl 分段依據，見下方「建議」標籤；q12h 因缺乏同等把握的分段依據，維持人工判斷），並在勾選卡片 02 的 ODD 排除因子時停用建議；有濃度資料時則已改用個體化 ke／Vd 直接反解達標劑量，比對單點落於 nomogram 哪一區更精確。</p>
+          <p class="hint">PAE（給藥後即使濃度低於 MIC，抑菌效果仍持續一段時間，約 2–8 小時，與峰濃度高度相關）是決定「能不能拉長間隔」的核心機制之一；嗜中性球低下病人 PAE 可能縮短（已反映在上方排除因子），Pseudomonas 則因重複頻繁給藥易生 adaptive resistance，拉長間隔的藥效學理由較強（如菌種欄含 Pseudomonas，下方會出現對應提示）。最終間隔選擇仍需你綜合臨床判斷，本工具不會自動鎖定單一間隔。</p>
         </div>
         <p class="hint" id="amgCandTiwNote" style="display:none;">目前為「每週固定星期」排程，給藥非等距，候選間隔比較不適用。右側改直接顯示依你目前給藥史推算的「下次排定劑量前預測 trough」與「最近一劑後預測 peak」；如需測試不同劑量，可用結果區的「自訂」列。</p>
       </div>
@@ -3186,6 +3194,48 @@ ${flagText || '（無特別旗標）'}
 
   // ---------------- dose rounding & tag scoring (aminoglycoside-specific) ----------------
   function roundDoseAmino(mg){ return Math.max(20, Math.round(mg/10)*10); }
+  // ---------------- 院內安瓿品項對照（劑量捨入用，方便護理師實際操作） ----------------
+  // Amikacin: Acemycin Injection 500 mg/2 mL/vial (250 mg/mL). Gentamicin: V-Genta inj
+  // 80 mg/2 mL/vial (40 mg/mL). Tobramycin intentionally has no entry — not stocked at
+  // this hospital; falls back to the generic mg-rounding below with an explicit flag.
+  const AMINO_VIALS = {
+    amikacin: {label:'Acemycin Injection', mgPerVial:500, mlPerVial:2, concMgPerMl:250},
+    gentamicin: {label:'V-Genta inj', mgPerVial:80, mlPerVial:2, concMgPerMl:40}
+  };
+  function roundDoseAminoVial(mg, drug){
+    const vial = AMINO_VIALS[drug];
+    if(!vial){
+      return {mg: roundDoseAmino(mg), ml: null, vialLabel: null};
+    }
+    const mlRaw = mg / vial.concMgPerMl;
+    const mlRounded = Math.max(0.1, Math.round(mlRaw*10)/10);
+    const mgRounded = Math.round(mlRounded * vial.concMgPerMl);
+    return {mg: mgRounded, ml: mlRounded, vialLabel: vial.label};
+  }
+  // ---------------- ODD／HDEI 建議起始間隔（依 CrCl 分段） ----------------
+  // The Hartford nomogram's graphical boundaries are themselves derived from a one-
+  // compartment model (Vd 0.25 L/kg) with ke computed from CrCl 25/40/60 mL/min for the
+  // 48h/36h/24h boundaries respectively, then visually flattened for bedside charting —
+  // i.e. the nomogram reduces to a simple CrCl-banded interval choice (cross-validated
+  // against a second, independently published re-analysis: CrCl<20 not validated/avoid,
+  // 20–39→q48h, 40–59→q36h, ≥60→q24h). Implemented directly here rather than digitizing
+  // the nomogram curve images, which would only be as precise as pixel-reading and would
+  // only cover the specific reference doses drawn. The q12h boundary (Urban-Craig /
+  // amikacin variants) is deliberately NOT auto-suggested — no equally solid published
+  // CrCl breakpoint was found for it, left to manual judgement instead of guessing.
+  function getAminoOddCrClSuggestion(crcl){
+    if(!isFinite(crcl)) return null;
+    if(crcl < 20) return {tau:null, text:'估算 CrCl <20 mL/min，Hartford nomogram 之驗證範圍未涵蓋此區間，不建議 ODD／HDEI，改採傳統多次給藥。'};
+    if(crcl < 40) return {tau:48, text:'依 Hartford nomogram 之 CrCl 分段依據（20–39 mL/min → q48h）建議起始間隔 q48h。'};
+    if(crcl < 60) return {tau:36, text:'依 Hartford nomogram 之 CrCl 分段依據（40–59 mL/min → q36h）建議起始間隔 q36h。'};
+    return {tau:24, text:'依 Hartford nomogram 之 CrCl 分段依據（≥60 mL/min → q24h）建議起始間隔 q24h。'};
+  }
+  const AMINO_ODD_EXCLUSIONS = [
+    {id:'amgOddExclPregnancy', label:'懷孕'},
+    {id:'amgOddExclFluid', label:'大量體液蓄積或分布容積異常（腹水／燒燙傷≥20%BSA／anasarca／末期肝病）'},
+    {id:'amgOddExclNeutropenia', label:'嗜中性球低下或其他顯著免疫抑制'},
+    {id:'amgOddExclEndocarditisCns', label:'心內膜炎／中樞神經系統感染（腦膜炎）'}
+  ];
 
   function regimenTagAmino(peak, trough, target){
     if(!target) return {tag:'ok', tagText:'尚未鎖定目標'};
@@ -3373,6 +3423,10 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgSeverity').selectedIndex=0;
     document.getElementById('amgMic').value='';
     document.getElementById('amgSourceControlDone').checked=false;
+    document.getElementById('amgOddExclPregnancy').checked=false;
+    document.getElementById('amgOddExclFluid').checked=false;
+    document.getElementById('amgOddExclNeutropenia').checked=false;
+    document.getElementById('amgOddExclEndocarditisCns').checked=false;
 
     document.getElementById('amgTherapyStart').value='';
     document.getElementById('amgExpandTo').value='';
@@ -3428,6 +3482,8 @@ ${flagText || '（無特別旗標）'}
       drug:v('amgDrug'), strategy:v('amgStrategy'), indication:v('amgIndication'),
       site:v('amgSite'), organism:v('amgOrganism'), severity:v('amgSeverity'), mic:v('amgMic'),
       sourceControlDone:c('amgSourceControlDone'),
+      oddExclPregnancy:c('amgOddExclPregnancy'), oddExclFluid:c('amgOddExclFluid'),
+      oddExclNeutropenia:c('amgOddExclNeutropenia'), oddExclEndocarditisCns:c('amgOddExclEndocarditisCns'),
       therapyStart:v('amgTherapyStart'), expandTo:v('amgExpandTo'),
       maintDose:v('amgMaintDose'), maintInterval:v('amgMaintInterval'), maintInf:v('amgMaintInf'),
       assumeSteadyState:c('amgAssumeSteadyState'),
@@ -3463,6 +3519,8 @@ ${flagText || '（無特別旗標）'}
     updateAminoTargetDisplay();
     setVal('amgSite', s.site); setVal('amgOrganism', s.organism); setVal('amgSeverity', s.severity); setVal('amgMic', s.mic);
     setChecked('amgSourceControlDone', s.sourceControlDone);
+    setChecked('amgOddExclPregnancy', s.oddExclPregnancy); setChecked('amgOddExclFluid', s.oddExclFluid);
+    setChecked('amgOddExclNeutropenia', s.oddExclNeutropenia); setChecked('amgOddExclEndocarditisCns', s.oddExclEndocarditisCns);
 
     setVal('amgTherapyStart', s.therapyStart); setVal('amgExpandTo', s.expandTo);
     setVal('amgMaintDose', s.maintDose); setVal('amgMaintInterval', s.maintInterval); setVal('amgMaintInf', s.maintInf);
@@ -3622,7 +3680,7 @@ ${flagText || '（無特別旗標）'}
     return {dose, infMin, tauC, cmax, cmin, tag, tagText};
   }
 
-  function computeCandidateAmino(candTau, CL, ke, infHrCurrent, target, dailyDoseNow, mic){
+  function computeCandidateAmino(candTau, CL, ke, infHrCurrent, target, dailyDoseNow, mic, drug){
     let doseRaw;
     if(target && target.peak){
       const targetPeakClinical = (target.peak[0]+target.peak[1])/2;
@@ -3635,7 +3693,7 @@ ${flagText || '（無特別旗標）'}
     } else {
       doseRaw = dailyDoseNow * (candTau/24);
     }
-    const roundedDose = roundDoseAmino(doseRaw);
+    const {mg: roundedDose, ml: doseMl, vialLabel} = roundDoseAminoVial(doseRaw, drug);
     const infHrC = infHrCurrent;
     const R = roundedDose/infHrC;
     const cmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
@@ -3648,18 +3706,19 @@ ${flagText || '（無特別旗標）'}
     // against (this indication genuinely has none in the literature reference used)
     const finalTagText = (!target || !target.peak) ? `${tagText}（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）` : tagText;
     const ratio = (isFinite(mic)&&mic>0) ? cmax/mic : null;
-    return {candTau, roundedDose, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText: finalTagText};
+    return {candTau, roundedDose, doseMl, vialLabel, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText: finalTagText};
   }
 
-  function renderRegimenTableAmino(regimenRows, currentTau){
+  function renderRegimenTableAmino(regimenRows, currentTau, suggestedTau){
     document.querySelector('#amgRegimenTable tbody').innerHTML = regimenRows.map(r=>{
       const key = 'cand-'+r.candTau;
       const checked = amgPickedKey===key ? 'checked' : '';
+      const doseText = r.doseMl!=null ? `${fmt0(r.roundedDose)} mg（${r.doseMl.toFixed(1)} mL）` : `${fmt0(r.roundedDose)} mg`;
       return `
       <tr class="${amgPickedKey===key?'picked':''}">
         <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" value="${key}" ${checked}></td>
-        <td>q${r.candTau}h${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}</td>
-        <td>${fmt0(r.roundedDose)} mg／${r.infMinC} min輸注</td>
+        <td>q${r.candTau}h${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}${suggestedTau!=null && r.candTau===suggestedTau?' <span class="tag ok">建議</span>':''}</td>
+        <td>${doseText}／${r.infMinC} min輸注</td>
         <td>q${r.candTau}h</td>
         <td>${fmt1(r.cmax)}</td>
         <td>${fmt1(r.cmin)}</td>
@@ -3784,8 +3843,8 @@ ${flagText || '（無特別旗標）'}
     } else {
       const candTaus = getAminoCandTaus();
       const dailyDoseNow = maintDose*(24/tau);
-      regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CLpop, ke, maintInfHr, target, dailyDoseNow, mic));
-      renderRegimenTableAmino(regimenRows, tau);
+      regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CLpop, ke, maintInfHr, target, dailyDoseNow, mic, drug));
+      renderRegimenTableAmino(regimenRows, tau, oddSuggestedTau);
     }
 
     document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(true, tHalf, document.getElementById('amgDialysis').value, parseFloat((readScrRowsAmg().slice(-1)[0]||{}).v)||1.0, document.getElementById('amgConcomitant').value.trim(), false);
@@ -3852,7 +3911,15 @@ ${flagText || '（無特別旗標）'}
       else if(lastV < first*0.7) flags.push({level:'warn', text:`SCr 呈下降趨勢（${first.toFixed(2)} → ${lastV.toFixed(2)} mg/dL），腎功能可能正在恢復，估算可能低估目前實際清除率，建議近期複測。`});
     }
     if(scr < 0.6) flags.push({level:'warn', text:'SCr 偏低，勿機械式進位計算——併同臨床風險因子考慮是否為 augmented renal clearance（ARC）。'});
-    if(drug==='tobramycin') flags.push({level:'ok', text:'Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例），如有院內特定 protocol 請自行對照調整。'});
+    if(drug==='tobramycin') flags.push({level:'warn', text:'Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例），如有院內特定 protocol 請自行對照調整；本院目前無 tobramycin 品項，劑量僅按一般 10mg 捨入計算，如需使用請先確認取得管道（如專案申請／其他院區調撥），或評估以 gentamicin／amikacin 替代的可行性。'});
+
+    const organismVal = document.getElementById('amgOrganism').value.trim();
+    const strategyIsOdd = document.getElementById('amgStrategy').value === 'odd';
+    if(/pseudomonas/i.test(organismVal) && !strategyIsOdd){
+      flags.push({level:'ok', text:'菌種含 Pseudomonas：文獻顯示其對頻繁重複給藥（如 q8h）易產生 adaptive resistance（攝取下降、PAE 與殺菌效果逐次減弱），適度拉長間隔（ODD）之藥效學理論基礎較強，可作為策略選擇的參考之一（非強制建議）。'});
+    }
+
+    const activeOddExclusions = AMINO_ODD_EXCLUSIONS.filter(e=>document.getElementById(e.id).checked);
 
     const ibw = ibwDevine(height, sex);
     const {weight:cgWeight, method:cgMethod} = weightForCG(tbw, ibw);
@@ -3863,6 +3930,26 @@ ${flagText || '（無特別旗標）'}
     if(dialysis!=='none'){
       flags.push({level:'warn', text:`病人接受 ${dialysis}，清除率由透析主導，Cockcroft-Gault 族群方程不適用——本工具之族群 CL 先驗已放寬權重，請以觀察到的濃度資料與臨床判斷為主，並個別化評估透析時程對劑量之影響。`});
     }
+
+    // ODD／HDEI 建議起始間隔：CrCl 分段（同 Hartford nomogram 之依據）為基礎，任一排除
+    // 因子成立時直接覆蓋為「不建議 ODD」，不論 CrCl 落在哪一段。
+    let oddSuggestedTau = null;
+    if(strategyIsOdd){
+      if(activeOddExclusions.length){
+        const names = activeOddExclusions.map(e=>e.label).join('、');
+        const neutropeniaNote = activeOddExclusions.some(e=>e.id==='amgOddExclNeutropenia')
+          ? '；嗜中性球低下病人的 PAE（給藥後持續抑菌效果）可能因免疫功能下降而縮短（動物實驗證據），拉長間隔可能讓濃度低於 MIC 的時間超過有效 PAE 覆蓋範圍，增加治療失敗風險'
+          : '';
+        flags.push({level:'warn', text:`目前策略為 ODD／HDEI，但勾選了：${names}——多數文獻與院內 protocol 建議此族群改採傳統多次給藥${neutropeniaNote}。`});
+      } else {
+        const crclSuggestion = getAminoOddCrClSuggestion(crcl);
+        if(crclSuggestion){
+          oddSuggestedTau = crclSuggestion.tau;
+          flags.push({level: crclSuggestion.tau==null ? 'warn' : 'ok', text: crclSuggestion.text + '（僅供起始間隔參考，仍請綜合菌種／感染部位／臨床狀況判斷；已有個體化濃度資料時，請優先參考下方候選間隔實際 Cmax/Cmin，而非此建議。）'});
+        }
+      }
+    }
+
 
     // population CL: aminoglycoside clearance approximates CrCl (renal-clearance-dominant drug;
     // literature-supported ~1:1 relationship, e.g. Cockcroft-Gault CrCl using IBW has been shown
@@ -4039,8 +4126,8 @@ ${flagText || '（無特別旗標）'}
       syncPickRadios('amg');
     } else {
       candTaus = getAminoCandTaus();
-      regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CL, ke, maintInfHr, target, dailyDoseNow, mic));
-      renderRegimenTableAmino(regimenRows, tau);
+      regimenRows = candTaus.map(ct=>computeCandidateAmino(ct, CL, ke, maintInfHr, target, dailyDoseNow, mic, drug));
+      renderRegimenTableAmino(regimenRows, tau, oddSuggestedTau);
     }
 
     const customResult = updateCustomRowAmg(CL, ke, target, mic);
@@ -4337,6 +4424,7 @@ ${flagText || '（無特別旗標）'}
      'amgAssumeSteadyState',
      'amgMic','amgCand8','amgCand12','amgCand24','amgCand36','amgCand48',
      'amgSite','amgOrganism','amgSeverity','amgSourceControlDone',
+     'amgOddExclPregnancy','amgOddExclFluid','amgOddExclNeutropenia','amgOddExclEndocarditisCns',
      'amgConcomitant','amgOtherNotes','amgCustomDose','amgCustomInf','amgCustomTau',
      'amgTiwTime','amgTiwDay0','amgTiwDay1','amgTiwDay2','amgTiwDay3','amgTiwDay4','amgTiwDay5','amgTiwDay6'].forEach(id=>{
       const el = document.getElementById(id);
