@@ -341,7 +341,7 @@
       <div class="drug-switch" id="drugSwitch">
         <button class="btn small primary drug-switch-btn" type="button" data-drug="vancomycin">Vancomycin</button>
         <button class="btn small drug-switch-btn" type="button" data-drug="aminoglycoside">Aminoglycoside</button>
-        <button class="btn small drug-switch-btn coming-soon" type="button" disabled title="尚未建置">Azole<span class="soon-tag">即將推出</span></button>
+        <button class="btn small drug-switch-btn" type="button" data-drug="azole">Azole</button>
         <button class="btn small drug-switch-btn coming-soon" type="button" disabled title="尚未建置">抗癲癇藥物<span class="soon-tag">即將推出</span></button>
       </div>
     </div>
@@ -936,6 +936,307 @@
         <div class="btn-row">
           <button class="btn primary small" id="amgCopyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="amgCopyStatus"></span>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  </div>
+
+  <div id="drug-azole" class="drug-module">
+  <main class="grid">
+    <!-- ============ LEFT: INPUT PANEL (AZOLE) ============ -->
+    <section class="stack" id="azlInputPanel">
+
+      <!-- 0. 病人資料存檔 -->
+      <div class="card" id="azlPatientManagerCard">
+        <h2><span class="idx">⟳</span>病人資料存檔</h2>
+        <p class="hint">依病歷號分別儲存與載入。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
+        <div class="field-row">
+          <div class="field"><label>病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
+          <div class="field"><label>選擇已儲存的病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary small" id="azlSavePatientBtn" type="button">儲存／更新此病人</button>
+          <button class="btn small" id="azlLoadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn small" id="azlExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
+          <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
+        </div>
+        <div class="hint" id="azlPatientMeta" style="margin-top:8px;min-height:14px;"></div>
+      </div>
+
+      <!-- 1. 目標藥物與適應症 -->
+      <div class="card">
+        <h2><span class="idx">01</span>目標藥物與適應症</h2>
+        <p class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。三顆藥目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）與院內 protocol，詳細來源見下方各處提示。</p>
+        <div class="field-row">
+          <div class="field"><label>目標藥物</label>
+            <select id="azlDrug">
+              <option value="voriconazole">Voriconazole</option>
+              <option value="posaconazole">Posaconazole</option>
+              <option value="isavuconazole">Isavuconazole</option>
+            </select>
+          </div>
+          <div class="field"><label>適應症（決定目標值）</label>
+            <select id="azlIndication"></select>
+          </div>
+        </div>
+        <div class="hint" id="azlTargetDisplay" style="margin-top:-4px;"></div>
+        <p class="hint" id="azlIsaBanner" style="display:none;">TDM 非常規：isavuconazole 一般不以濃度常規滴定劑量，測量目的僅為排除極端值（療效不佳或毒性），不做劑量調整幅度建議。</p>
+      </div>
+
+      <!-- 2. 人口學 -->
+      <div class="card">
+        <h2><span class="idx">02</span>人口學與身體計測</h2>
+        <div class="field-row three">
+          <div class="field"><label>年齡（歲）</label><input type="number" id="azlAge" value="55" min="0" max="120"></div>
+          <div class="field"><label>生理性別</label><select id="azlSex"><option value="M">男</option><option value="F">女</option></select></div>
+          <div class="field"><label>身高（cm）</label><input type="number" id="azlHeight" value="165" min="100" max="230"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>實際體重 TBW（kg）</label><input type="number" id="azlTbw" value="60" min="20" max="250" step="0.1"></div>
+          <div class="field"><label>懷孕／哺乳</label>
+            <select id="azlPregnancy"><option value="no">否</option><option value="pregnant">懷孕</option><option value="lactating">哺乳</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>近期體重變化（選填）</label><input type="text" id="azlWeightChange" placeholder="水腫？脫水？"></div>
+          <div class="field"></div>
+        </div>
+      </div>
+
+      <!-- 3. 器官功能與 lab（最新一筆） -->
+      <div class="card">
+        <h2><span class="idx">03</span>器官功能與相關 lab（最新一筆）</h2>
+        <p class="hint">三唑類受肝功能與發炎狀態（CRP）顯著影響；voriconazole 另受 CYP2C19 影響（見下方藥物專屬子表）。趨勢圖（多筆日期疊圖）排在核心邏輯之後實作，這裡先收最新一筆數值。</p>
+        <div class="field-row three">
+          <div class="field"><label>AST／ALT（U/L）</label><input type="text" id="azlAstAlt" placeholder="如：45 / 60"></div>
+          <div class="field"><label>Total bilirubin（mg/dL）</label><input type="number" id="azlBilirubin" step="0.1"></div>
+          <div class="field"><label>Albumin（g/dL）</label><input type="number" id="azlAlbumin" step="0.1"></div>
+        </div>
+        <div class="field-row three">
+          <div class="field"><label>CRP（mg/dL 或 mg/L，請標單位）</label><input type="text" id="azlCrp" placeholder=""></div>
+          <div class="field"><label>SCr（mg/dL）</label><input type="number" id="azlScr" step="0.01"></div>
+          <div class="field"><label>lab 日期</label><input type="date" id="azlLabDate"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>體液狀態／升壓劑／ECMO（選填）</label><input type="text" id="azlFluidStatus" placeholder="水腫/大量輸液/升壓劑/ECMO"></div>
+          <div class="field"><label>其他影響吸收／代謝之因素（選填）</label><input type="text" id="azlOtherFactors" placeholder="肝硬化、重症、發炎急性期等"></div>
+        </div>
+      </div>
+
+      <!-- 4. 感染脈絡 + 臨床病程客觀回報（5.0.1） -->
+      <div class="card">
+        <h2><span class="idx">04</span>感染脈絡與臨床病程</h2>
+        <div class="field-row">
+          <div class="field"><label>感染部位</label><input type="text" id="azlSite" placeholder="特別註明 CNS、心內膜炎、骨/關節、肺、菌血症"></div>
+          <div class="field"><label>疑似／確診菌種（選填）</label><input type="text" id="azlOrganism" placeholder=""></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>嚴重度</label><select id="azlSeverity"><option>穩定</option><option>sepsis</option><option>septic shock</option></select></div>
+          <div class="field"><label>感染源控制</label><div class="checkline" style="margin-top:8px;"><input type="checkbox" id="azlSourceControl"><label for="azlSourceControl">已控制（引流／移除導管等）</label></div></div>
+        </div>
+        <p class="hint" style="margin-top:10px;margin-bottom:4px;"><strong>臨床病程客觀回報</strong>（選填，皆不強迫填滿——工具依 MSG/EORTC 治療反應框架自動推論感染控制趨勢，不要求你自己先下判斷；填得越完整，5.0 的交叉核對越準）：</p>
+        <div class="field-row">
+          <div class="field"><label>發燒趨勢（過去 24–48 小時）</label>
+            <select id="azlFeverTrend"><option value="">未填</option><option value="improving">退燒中</option><option value="persistent">持續發燒</option><option value="worsening">新發燒或惡化</option><option value="na">不適用（本無發燒）</option></select>
+          </div>
+          <div class="field"><label>ANC 趨勢</label>
+            <select id="azlAncTrend"><option value="">未填</option><option value="rising">回升中</option><option value="flat">持平</option><option value="low">仍在低點或下降中</option><option value="na">不適用</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>感染部位相關症狀變化</label>
+            <select id="azlLocalSymptom"><option value="">未填</option><option value="improving">改善</option><option value="flat">持平</option><option value="worsening">惡化</option><option value="na">不適用</option></select>
+          </div>
+          <div class="field"><label>影像學（若有追蹤）</label>
+            <select id="azlImaging"><option value="">未填／未追蹤</option><option value="shrinking">縮小</option><option value="stable">穩定</option><option value="growing">增大</option><option value="new">新病灶</option></select>
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>黴菌學／生物標記（若有送驗）</label>
+            <select id="azlMycology"><option value="">未填／未送驗</option><option value="clearing">轉陰或下降</option><option value="flat">持平</option><option value="rising">上升或未轉陰</option></select>
+          </div>
+          <div class="field"></div>
+        </div>
+      </div>
+
+      <!-- 5. 給藥處方 -->
+      <div class="card">
+        <h2><span class="idx">05</span>給藥處方</h2>
+        <div class="field-row">
+          <div class="field"><label>劑型／途徑</label><select id="azlFormulation"></select></div>
+          <div class="field"><label>給藥頻次</label><select id="azlFreq"><option value="qd">QD（每日一次）</option><option value="bid">BID（每日兩次）</option></select></div>
+        </div>
+        <div class="checkline"><input type="checkbox" id="azlUseLoading"><label for="azlUseLoading">已給過 loading dose</label></div>
+        <div class="field-row" id="azlLoadingRow" style="display:none;">
+          <div class="field"><label>Loading 劑量＋時間</label><input type="text" id="azlLoadingInfo" placeholder="如：400mg q12h ×2 doses, 完成於 2026/7/1 20:00"></div>
+          <div class="field"></div>
+        </div>
+        <div class="field-row" id="azlDoseBidRow">
+          <div class="field"><label id="azlDoseAmLabel">維持劑量—早上（mg）</label><input type="number" id="azlDoseAm" step="50"></div>
+          <div class="field" id="azlDosePmField"><label>維持劑量—晚上（mg）</label><input type="number" id="azlDosePm" step="50"></div>
+        </div>
+        <p class="hint" id="azlDoseHint" style="margin-top:-6px;"></p>
+        <div class="field-row">
+          <div class="field"><label>本療程起始日期時間（判斷穩態用）</label><input type="datetime-local" id="azlTherapyStart"></div>
+          <div class="field"><label>近期漏給／暫停／延遲劑量（選填）</label><input type="text" id="azlMissedDoses" placeholder=""></div>
+        </div>
+      </div>
+
+      <!-- 6. 濃度量測 -->
+      <div class="card">
+        <h2><span class="idx">06</span>濃度量測（trough）</h2>
+        <p class="hint">三唑類以 trough（下一劑前）為主，只報 trough 與是否達穩態，不做 Cpeak 等 PK 參數預測。</p>
+        <div class="field-row">
+          <div class="field"><label>Trough 結果（µg/mL，即 mg/L）</label><input type="number" id="azlTroughVal" step="0.1"></div>
+          <div class="field"><label>抽血日期時間</label><input type="datetime-local" id="azlTroughDate"></div>
+        </div>
+      </div>
+
+      <!-- 7. 藥物專屬子表 -->
+      <div class="card" id="azlVoriSubtable" style="display:none;">
+        <h2><span class="idx">07</span>Voriconazole 專屬</h2>
+        <div class="field-row">
+          <div class="field"><label>CYP2C19（若知）</label>
+            <select id="azlCyp2c19"><option value="">不明</option><option value="PM">PM（poor metabolizer）</option><option value="IM">IM</option><option value="NM">NM（正常）</option><option value="RM">RM</option><option value="UM">UM（ultra-rapid）</option></select>
+          </div>
+          <div class="field"></div>
+        </div>
+        <p class="hint">15–20% 東亞族裔為 CYP2C19 慢代謝者（PM），血中濃度可能達一般人 2–4 倍（UpToDate）——台灣病人組成下這欄特別容易命中，建議盡量填寫。</p>
+      </div>
+
+      <div class="card" id="azlIsaSubtable" style="display:none;">
+        <h2><span class="idx">07</span>Isavuconazole 專屬</h2>
+        <div class="field-row">
+          <div class="field"><label>本次測 TDM 理由</label>
+            <select id="azlIsaReason"><option value="">未填</option><option value="poor_response">療效不佳</option><option value="toxicity">疑似毒性</option><option value="interaction">藥物交互作用</option><option value="other">其他</option></select>
+          </div>
+          <div class="field"></div>
+        </div>
+      </div>
+
+      <!-- 8. 臨床毒性表徵勾選清單（5.0.2） -->
+      <div class="card">
+        <h2><span class="idx">08</span>臨床毒性表徵</h2>
+        <p class="hint">依 Pharmacology of azoles 逐藥列出的不良反應分三級：良性/預期（只記錄）、警覺（即使濃度正常也優先跳出獨立提示）、長期追蹤（不影響當次判讀，累積提醒）。請勾選目前觀察到的項目，沒有就不用勾。</p>
+
+        <p class="hint" style="margin-bottom:2px;"><strong>肝毒性臨床表現</strong>（三藥共通，警覺級）：</p>
+        <div class="checkline"><input type="checkbox" id="azlSxJaundice"><label for="azlSxJaundice">黃疸</label></div>
+        <div class="checkline"><input type="checkbox" id="azlSxDarkUrine"><label for="azlSxDarkUrine">茶色尿</label></div>
+        <div class="checkline"><input type="checkbox" id="azlSxRuqPain"><label for="azlSxRuqPain">右上腹痛</label></div>
+        <div class="checkline"><input type="checkbox" id="azlSxPruritus"><label for="azlSxPruritus">皮膚搔癢</label></div>
+
+        <div id="azlVoriSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>Voriconazole — 良性／預期（僅記錄）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxPhotopsia"><label for="azlSxPhotopsia">畏光／閃光感（用藥後 30 分鐘內出現，多在 30–60 分鐘緩解，約 19% 病人）</label></div>
+          <p class="hint" style="margin-bottom:2px;margin-top:8px;"><strong>Voriconazole — 神經毒性（警覺級）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxHallucination"><label for="azlSxHallucination">視幻覺／聽幻覺</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxConfusion"><label for="azlSxConfusion">意識混亂／躁動</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxMyoclonus"><label for="azlSxMyoclonus">肌陣攣</label></div>
+          <p class="hint" style="margin-bottom:2px;margin-top:8px;"><strong>Voriconazole — 長期追蹤（不影響當次判讀）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxPhotosensitivity"><label for="azlSxPhotosensitivity">光敏感皮疹</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxBonePain"><label for="azlSxBonePain">不明原因骨痛（合併 ALP 上升，periostitis）</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxHairNail"><label for="azlSxHairNail">落髮／指甲變化</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxSkinLesion"><label for="azlSxSkinLesion">皮膚異常病灶（皮膚癌風險）</label></div>
+        </div>
+
+        <div id="azlPosaSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>Posaconazole — 假性醛固酮增多症相關（命中 2 項以上會具名提示）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxHtn"><label for="azlSxHtn">新發／難控制高血壓</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxEdema"><label for="azlSxEdema">下肢水腫</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxWeakness"><label for="azlSxWeakness">肌肉無力或抽筋（低血鉀相關）</label></div>
+        </div>
+
+        <div id="azlIsaSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>Isavuconazole — IV 輸注反應（急性，僅 IV）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxChills"><label for="azlSxChills">畏寒</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxDyspnea"><label for="azlSxDyspnea">呼吸困難</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxHypotension"><label for="azlSxHypotension">低血壓</label></div>
+        </div>
+
+        <div id="azlGiSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>一般腸胃症狀（常見，僅記錄）</strong>：</p>
+          <div class="checkline"><input type="checkbox" id="azlSxNausea"><label for="azlSxNausea">噁心</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxVomit"><label for="azlSxVomit">嘔吐</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxDiarrhea"><label for="azlSxDiarrhea">腹瀉</label></div>
+        </div>
+      </div>
+
+      <!-- 9. 併用藥物 -->
+      <div class="card">
+        <h2><span class="idx">09</span>併用藥物清單</h2>
+        <p class="hint">特別標明 CYP 誘導／抑制劑、PPI／H2；系統會用關鍵字比對已知高風險類別（不做精確劑量換算資料庫）。</p>
+        <div class="field">
+          <label>藥名／劑量／頻次（每行一項）</label>
+          <textarea id="azlConcomitant" placeholder="如：tacrolimus 2mg BID, rifampin, warfarin…"></textarea>
+        </div>
+      </div>
+
+      <!-- 10. 治療目標與限制 -->
+      <div class="card">
+        <h2><span class="idx">10</span>治療目標與限制</h2>
+        <div class="field">
+          <label>治療目標</label>
+          <textarea id="azlTreatmentGoal" placeholder=""></textarea>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field"><label>預計療程長度</label><input type="text" id="azlExpectedDuration"></div>
+          <div class="field"><label>劑量／給藥限制</label><input type="text" id="azlDoseConstraints" placeholder="IV access／輸液限制／口服困難"></div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>既往對本藥或同類藥的不良反應</label>
+          <input type="text" id="azlPriorAdr">
+        </div>
+      </div>
+
+      <!-- 11. 備註 -->
+      <div class="card">
+        <h2><span class="idx">11</span>其他備註</h2>
+        <textarea id="azlOtherNotes"></textarea>
+      </div>
+
+    </section>
+
+    <!-- ============ RIGHT: RESULTS PANEL (AZOLE) ============ -->
+    <section class="panel" id="azlResultsPanel">
+
+      <div class="results-head">
+        <h2>判讀結果</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="mode-badge" id="azlFitModeBadge">尚無資料</span>
+        </div>
+      </div>
+
+      <div class="param-grid" id="azlParamGrid"></div>
+
+      <div class="section-block">
+        <h3><span class="idx">A</span>健全性檢查與情境提示</h3>
+        <div class="flag-list" id="azlFlagList"></div>
+      </div>
+
+      <div class="section-block" id="azlDoseSuggestBlock" style="display:none;">
+        <h3><span class="idx">B</span>劑量調整建議（已依本院整顆／半顆限制捨入）</h3>
+        <div class="flag-list" id="azlDoseSuggestList"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">C</span>未來監測建議</h3>
+        <div class="monitor-grid" id="azlMonitorGrid"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">D</span>AI 諮詢 Prompt</h3>
+        <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
+        <textarea id="azlAiPromptOut" readonly></textarea>
+        <div class="btn-row">
+          <button class="btn primary small" id="azlCopyPromptBtn" type="button">複製 Prompt</button>
+          <span class="copy-status" id="azlCopyStatus"></span>
         </div>
       </div>
 
@@ -1849,6 +2150,11 @@
     const toxLine = (ctx.toxLine!==undefined && ctx.toxLine!==null) ? ctx.toxLine : 20;
     const toxLabel = ctx.toxLabel || ('腎毒性關切 ' + toxLine);
     const band = ctx.band || (altTrough ? {lo:10, hi:15, label:'替代 trough 目標 10–15'} : null);
+    // micLine: optional secondary reference line {value,label}, e.g. the Cmax/MIC≥8 efficacy
+    // floor for aminoglycosides. Deliberately a separate concept from toxLine (a ceiling,
+    // styled in crimson) — this is a floor, styled distinctly, drawn additively alongside
+    // whatever fixed target band is already shown, never replacing it.
+    const micLine = ctx.micLine || null;
     const t0Ms = (ctx.t0Ms!==undefined && ctx.t0Ms!==null && isFinite(ctx.t0Ms)) ? ctx.t0Ms : null;
 
     // what-if regimen: {doseMg, tau, infHr, startRel} — an alternative dose/interval
@@ -1955,6 +2261,11 @@
       const yLo=yScale(band.lo), yHi=yScale(band.hi);
       svgParts.push(`<rect x="${ML}" y="${yHi}" width="${plotW}" height="${yLo-yHi}" fill="var(--amber-soft)" opacity="0.5"/>`);
       svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="10" fill="var(--amber)">${band.label}</text>`);
+    }
+    if(micLine && micLine.value!=null && isFinite(micLine.value) && micLine.value<=cMaxDomain){
+      const yMic = yScale(micLine.value);
+      svgParts.push(`<line x1="${ML}" y1="${yMic}" x2="${W-MR}" y2="${yMic}" stroke="var(--trace-strong)" stroke-width="1.3" stroke-dasharray="2,3"/>`);
+      svgParts.push(`<text x="${ML+6}" y="${yMic-5}" font-family="var(--sans)" font-size="10" fill="var(--trace-strong)">${micLine.label}</text>`);
     }
 
     // dose infusion bars (baseline: actual + projected)
@@ -3098,29 +3409,49 @@ ${flagText || '（無特別旗標）'}
   // Gentamicin and tobramycin share the same table (tobramycin has no separately
   // published institutional target in the source reference; this is a documented
   // clinical-convention assumption, flagged to the user in the UI, not a fabricated number).
+  // micRatioApplicable: true marks indications where the Cmax/MIC≥8 bactericidal efficacy
+  // check (see CMAX_MIC_EFFICACY_FLOOR below) is clinically meaningful and gets applied.
+  // Literature-verified scope, NOT applied uniformly to every indication:
+  //  - INCLUDED: classic gram-negative-bacillus treatment indications (UTI/other GNR/severe-
+  //    Pseudomonas-type infections). Basis: Moore RD et al. J Infect Dis 1987;155:93-9 (peak/MIC
+  //    ratio vs clinical response in 236 GNR infections); Kashuba AD et al. Antimicrob Agents
+  //    Chemother 1999;43:623-9 (Cmax/MIC≥10 → 90% day-7 response probability in GNR pneumonia,
+  //    graded response from ratio 8 upward); Stanford Health Care Aminoglycoside Dosing Guideline
+  //    (Cmax/MIC 8–10 = optimal bactericidal activity).
+  //  - EXCLUDED — gram-positive synergy (gentamicin low-dose + beta-lactam/glycopeptide for
+  //    endocarditis): different PD mechanism entirely (synergistic cell-wall-mediated uptake, not
+  //    aminoglycoside-driven concentration-dependent killing). Institutional synergy protocols
+  //    (Stanford guideline; NHS Highland gentamicin-in-IE guideline) explicitly state peak targets/
+  //    Cmax-MIC ratios are not applicable for synergy dosing and monitor trough only.
+  //  - EXCLUDED — NTM/TB indications: ATS/ERS/ESCMID/IDSA 2020 NTM guideline sets an ABSOLUTE
+  //    peak target (65–80 µg/mL for TIW IV amikacin), not a Cmax/MIC ratio, and NTM MIC scale is
+  //    unrelated to the GNR-bacillus scale this 8–10 target was derived from (amikacin NTM
+  //    epidemiological cutoff ≈64 mg/L — an 8–10× target against that MIC would imply a nonsensical
+  //    512–640 µg/mL peak). Applying the GNR-derived ratio here would be a category error, not
+  //    just an unverified assumption.
   const GENT_CONVENTIONAL = [
     {id:'synergy', label:'革蘭氏陽性菌（synergy）', peak:[3,4], troughHi:1},
-    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[4,6], troughHi:2},
-    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[6,10], troughHi:2},
-    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[8,10], troughHi:2}
+    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[4,6], troughHi:2, micRatioApplicable:true},
+    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[6,10], troughHi:2, micRatioApplicable:true},
+    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[8,10], troughHi:2, micRatioApplicable:true}
   ];
   const GENT_ODD = [
     {id:'gpc', label:'革蘭氏陽性菌', peak:[10,12], troughHi:1},
-    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[12,16], troughHi:1},
-    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[16,20], troughHi:1},
-    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[18,20], troughHi:1}
+    {id:'gnr_uti', label:'革蘭氏陰性菌 UTI', peak:[12,16], troughHi:1, micRatioApplicable:true},
+    {id:'gnr_other', label:'革蘭氏陰性菌其他感染', peak:[16,20], troughHi:1, micRatioApplicable:true},
+    {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[18,20], troughHi:1, micRatioApplicable:true}
   ];
   const AMINO_TARGETS = {
     gentamicin: {conventional: GENT_CONVENTIONAL, odd: GENT_ODD},
     tobramycin: {conventional: GENT_CONVENTIONAL, odd: GENT_ODD},
     amikacin: {
       conventional: [
-        {id:'gnr_general', label:'革蘭氏陰性菌（一般）', peak:[20,30], troughHi:8},
-        {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[25,35], troughHi:8},
+        {id:'gnr_general', label:'革蘭氏陰性菌（一般）', peak:[20,30], troughHi:8, micRatioApplicable:true},
+        {id:'severe', label:'肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas', peak:[25,35], troughHi:8, micRatioApplicable:true},
         {id:'ntm', label:'NTM', peak:[20,35], troughHi:8}
       ],
       odd: [
-        {id:'gnr', label:'革蘭氏陰性菌', peak:null, troughHi:2},
+        {id:'gnr', label:'革蘭氏陰性菌', peak:null, troughHi:2, micRatioApplicable:true},
         {id:'tb_ntm', label:'TB／NTM（15 mg/kg qd）', peak:[40,60], troughHi:4},
         {id:'ntm_alt', label:'NTM（10–15 mg/kg qd 或 10–25 mg/kg tiw）', peak:[25,40], troughHi:4}
       ]
@@ -3237,7 +3568,25 @@ ${flagText || '（無特別旗標）'}
     {id:'amgOddExclEndocarditisCns', label:'心內膜炎／中樞神經系統感染（腦膜炎）'}
   ];
 
-  function regimenTagAmino(peak, trough, target){
+  // Cmax/MIC ≥ 8 gram-negative-bacillus bactericidal efficacy floor — see the literature note
+  // above AMINO_TARGETS for citations and the exact scope (micRatioApplicable) this applies to.
+  // Deliberately independent of, and does NOT replace, the fixed institutional peak-range check
+  // above: the fixed range is a population-level default (already tuned to the fixed institutional
+  // peak-range table); this is a supplementary per-isolate check that only fires when the
+  // pharmacist has actually entered a MIC for an indication where the ratio target applies.
+  const CMAX_MIC_EFFICACY_FLOOR = 8;
+  function checkCmaxMicEfficacy(cmax, mic, target){
+    if(!target || !target.micRatioApplicable) return null;
+    if(!isFinite(mic) || mic<=0) return null;
+    if(!isFinite(cmax)) return null;
+    const ratio = cmax/mic;
+    if(ratio < CMAX_MIC_EFFICACY_FLOOR){
+      return `Cmax/MIC ${ratio.toFixed(1)}，低於革蘭氏陰性菌殺菌效益門檻 ${CMAX_MIC_EFFICACY_FLOOR}，即使 peak 落在固定目標區間內，對此 MIC 的菌株可能仍療效不足`;
+    }
+    return null;
+  }
+
+  function regimenTagAmino(peak, trough, target, mic){
     if(!target) return {tag:'ok', tagText:'尚未鎖定目標'};
     const troughHi = target.troughHi;
     const peakLo = target.peak ? target.peak[0] : null;
@@ -3252,6 +3601,8 @@ ${flagText || '（無特別旗標）'}
       if(peak < peakLo*0.85){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 低於目標下限 ${peakLo}，可能療效不足`); }
       else if(peak > peakHi*1.25){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 高於目標上限 ${peakHi}`); }
     }
+    const micWarn = checkCmaxMicEfficacy(peak, mic, target);
+    if(micWarn){ if(tag!=='danger') tag='warn'; reasons.push(micWarn); }
     if(reasons.length===0) reasons.push('符合目標範圍');
     return {tag, tagText:reasons.join('；')};
   }
@@ -3672,7 +4023,7 @@ ${flagText || '（無特別旗標）'}
     // the compared value matches what would actually be measured.
     const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5);
     const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(tauC-infHr));
-    const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
+    const {tag, tagText} = regimenTagAmino(cmax, cmin, target, mic);
     cmaxEl.textContent = cmax.toFixed(1);
     cminEl.textContent = cmin.toFixed(1);
     ratioEl.textContent = (isFinite(mic)&&mic>0) ? (cmax/mic).toFixed(1) : '—';
@@ -3699,7 +4050,7 @@ ${flagText || '（無特別旗標）'}
     const cmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
     const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
     const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(candTau-infHrC));
-    const {tag, tagText} = regimenTagAmino(cmax, cmin, target);
+    const {tag, tagText} = regimenTagAmino(cmax, cmin, target, mic);
     // when there's no established peak target, the dose above is derived by scaling
     // the CURRENTLY ENTERED dose proportionally (not solved from CL/V+target) — make
     // that dependency explicit rather than silently inventing a peak target to solve
@@ -3811,7 +4162,7 @@ ${flagText || '（無特別旗標）'}
       cminSub = target?`目標 <${target.troughHi}`:'';
     }
 
-    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target);
+    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target, mic);
     if(ssTag!=='ok') flags.push({level:ssTag, text:`計畫處方預測：${ssTagText}，起始劑量或間隔可能需要重新評估。`});
 
     document.getElementById('amgFitModeBadge').textContent = '起始劑量預測（純族群 PK，尚未給藥）';
@@ -3826,11 +4177,13 @@ ${flagText || '（無特別旗標）'}
       [cmaxLabel, fmt1(CmaxSS), 'µg/mL', cmaxSub],
       [cminLabel, fmt1(CminSS), 'µg/mL', cminSub]
     ];
-    if(isFinite(mic)&&mic>0) cells.push(['預測 Cmax/MIC', fmt1(CmaxSS/mic), '', `MIC 假設 ${mic}`]);
+    const micApplicable = target && target.micRatioApplicable;
+    if(isFinite(mic)&&mic>0) cells.push(['預測 Cmax/MIC', fmt1(CmaxSS/mic), '', micApplicable?`MIC 假設 ${mic}（GNR 殺菌效益門檻 ≥${CMAX_MIC_EFFICACY_FLOOR}）`:`MIC 假設 ${mic}（此適應症無此比值之驗證門檻，僅供參考）`]);
     document.getElementById('amgParamGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
       let cls='';
       if(label===cmaxLabel) cls = target&&target.peak?(CmaxSS<target.peak[0]*0.85||CmaxSS>target.peak[1]*1.25?'flag-warn':'flag-ok'):'';
       if(label===cminLabel) cls = target?(CminSS>target.troughHi*1.5?'flag-danger':(CminSS>target.troughHi?'flag-warn':'flag-ok')):'';
+      if(label==='預測 Cmax/MIC') cls = micApplicable ? ((CmaxSS/mic) < CMAX_MIC_EFFICACY_FLOOR ? 'flag-warn' : 'flag-ok') : '';
       return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
     }).join('');
 
@@ -3857,13 +4210,15 @@ ${flagText || '（無特別旗標）'}
     const t0MsProspective = isFinite(parseLocal(document.getElementById('amgTherapyStart').value)) ? parseLocal(document.getElementById('amgTherapyStart').value) : Date.now();
     const customResultP = updateCustomRowAmg(CLpop, ke, target, mic);
     const amgWhatIfP = scheduleType==='tiw' ? null : resolveWhatIf('amg', regimenRows, customResultP, {t0Ms:t0MsProspective, defaultStartMs:t0MsProspective});
-    const cMaxDomain = Math.max((target&&target.peak?target.peak[1]:CmaxSS)*1.3, CmaxSS*1.15, 10,
+    const micLineValP = (target&&target.micRatioApplicable&&isFinite(mic)&&mic>0) ? mic*CMAX_MIC_EFFICACY_FLOOR : null;
+    const cMaxDomain = Math.max((target&&target.peak?target.peak[1]:CmaxSS)*1.3, CmaxSS*1.15, 10, (micLineValP||0)*1.15,
       amgWhatIfP ? ((amgWhatIfP.doseMg/amgWhatIfP.infHr/CLpop)*(1-Math.exp(-ke*amgWhatIfP.infHr))/(1-Math.exp(-ke*amgWhatIfP.tau)))*1.15 : 0);
     drawCurve({
       doses: virtualDoses, levels: [], CL: CLpop, V: Vpop, ke, tau: tauForCurve, maintDose, maintInf: maintInfHr,
       isFutureRel: cursor, cMaxDomain, svgId:'amgCurveSvg', t0Ms: t0MsProspective,
       toxLine: target?target.troughHi:null, toxLabel: target?`Trough 目標上限 ${target.troughHi}`:null,
       band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null,
+      micLine: micLineValP!=null ? {value:micLineValP, label:`MIC×${CMAX_MIC_EFFICACY_FLOOR} 效益門檻 ${micLineValP.toFixed(1)}`} : null,
       whatIf: amgWhatIfP
     });
     updateWhatIfReadout('amg', amgWhatIfP, CLpop, ke);
@@ -4096,7 +4451,7 @@ ${flagText || '（無特別旗標）'}
       cminSub = target?`目標 <${target.troughHi}`:'';
     }
 
-    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target);
+    const {tag: ssTag, tagText: ssTagText} = regimenTagAmino(CmaxSS, CminSS, target, mic);
     if(ssTag!=='ok') flags.push({level:ssTag, text:`${scheduleType==='tiw'?'目前推算':'現行處方推算'}：${ssTagText}。`});
 
     if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
@@ -4111,11 +4466,13 @@ ${flagText || '（無特別旗標）'}
       [cminLabel, fmt1(CminSS), 'µg/mL', cminSub],
       ['近 24h 實際 AUC（依已發生給藥推算）', fmt0(auc24Actual), 'mg·hr/L', '輔助參考，本藥物主要仍以 peak/trough 為準']
     ];
-    if(isFinite(mic)&&mic>0) cellsHtml.push(['Cmax/MIC', fmt1(CmaxSS/mic), '', `MIC 假設 ${mic}`]);
+    const micApplicable = target && target.micRatioApplicable;
+    if(isFinite(mic)&&mic>0) cellsHtml.push(['Cmax/MIC', fmt1(CmaxSS/mic), '', micApplicable?`MIC 假設 ${mic}（GNR 殺菌效益門檻 ≥${CMAX_MIC_EFFICACY_FLOOR}）`:`MIC 假設 ${mic}（此適應症無此比值之驗證門檻，僅供參考）`]);
     paramGrid.innerHTML = cellsHtml.map(([label,val,unit,sub])=>{
       let cls='';
       if(label===cmaxLabel) cls = target&&target.peak?(CmaxSS<target.peak[0]*0.85||CmaxSS>target.peak[1]*1.25?'flag-warn':'flag-ok'):'';
       if(label===cminLabel) cls = target?(CminSS>target.troughHi*1.5?'flag-danger':(CminSS>target.troughHi?'flag-warn':'flag-ok')):'';
+      if(label==='Cmax/MIC') cls = micApplicable ? ((CmaxSS/mic) < CMAX_MIC_EFFICACY_FLOOR ? 'flag-warn' : 'flag-ok') : '';
       return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
     }).join('');
 
@@ -4145,12 +4502,14 @@ ${flagText || '（無特別旗標）'}
     const domainFromTarget = target&&target.peak ? target.peak[1]*1.3 : (target?target.troughHi*4:10);
     let whatIfPeak = 0;
     if(amgWhatIf){ const Rw=amgWhatIf.doseMg/amgWhatIf.infHr; whatIfPeak=(Rw/CL)*(1-Math.exp(-ke*amgWhatIf.infHr))/(1-Math.exp(-ke*amgWhatIf.tau)); }
-    const finalDomain = Math.max(10, cMaxDomain, CmaxSS*1.15, domainFromTarget, whatIfPeak*1.15);
+    const micLineVal = (target&&target.micRatioApplicable&&isFinite(mic)&&mic>0) ? mic*CMAX_MIC_EFFICACY_FLOOR : null;
+    const finalDomain = Math.max(10, cMaxDomain, CmaxSS*1.15, domainFromTarget, whatIfPeak*1.15, (micLineVal||0)*1.15);
     drawCurve({
       doses, levels, CL, V, ke, tau: tauForCurve, maintDose, maintInf: maintInfHr,
       isFutureRel: lastEventRel, cMaxDomain: finalDomain, svgId:'amgCurveSvg', t0Ms: t0,
       toxLine: target?target.troughHi:null, toxLabel: target?`Trough 目標上限 ${target.troughHi}`:null,
       band: (target&&target.peak) ? {lo:target.peak[0], hi:target.peak[1], label:`Peak 目標 ${target.peak[0]}–${target.peak[1]}`} : null,
+      micLine: micLineVal!=null ? {value:micLineVal, label:`MIC×${CMAX_MIC_EFFICACY_FLOOR} 效益門檻 ${micLineVal.toFixed(1)}`} : null,
       primeDoses: amgPrimeDosesCurve, whatIf: amgWhatIf
     });
     updateWhatIfReadout('amg', amgWhatIf, CL, ke);
@@ -4277,6 +4636,709 @@ ${flagText || '（無特別旗標）'}
     renderAmino();
   }
 
+  // ==================================================================
+  // AZOLE module — trough-vs-target + contextual cross-check engine.
+  // Deliberately NOT a PK-fitting engine (no Cpeak/Vd/CL/AUC/ke/t1/2 —
+  // routine azole TDM doesn't model these; see AZOLE_MODULE_SPEC_v6.md).
+  // Thresholds sourced from UpToDate "Pharmacology of azoles" and
+  // "Prevention of invasive fungal infections..." (both accessed 2026-07-11),
+  // Segal et al. MSG/EORTC response consensus criteria, IDSA 2016
+  // Aspergillosis guideline, and this hospital's actual formulary.
+  // ==================================================================
+
+  const AZOLE_TARGETS = {
+    voriconazole: {
+      indications: [
+        {id:'prophylaxis', label:'預防', lo:0.5, hi:5.5},
+        {id:'treatment', label:'治療', lo:1.0, hi:5.5, preferLo:2, preferHi:5.5},
+        {id:'cns', label:'CNS 感染', lo:1.0, hi:5.5, preferLo:2, preferHi:5.5}
+      ],
+      toxicityLine: 5.5,
+      steadyDays: 5 // day 5-7 whether or not loading given; 5 used as earliest reasonable check
+    },
+    posaconazole: {
+      indications: [
+        {id:'prophylaxis', label:'預防', lo:0.7, hi:null},
+        {id:'treatment', label:'治療', lo:1.0, hi:null, preferLo:2, preferHi:3}
+      ],
+      hepatoWatchLine: 1.83, // evidence-mixed early-warning value (Tverdek 2017), not adopted by UpToDate itself
+      toxicityLine: 4, // UpToDate — pseudohyperaldosteronism risk
+      steadyDays: 7
+    },
+    isavuconazole: {
+      indications: [
+        {id:'general', label:'（未依適應症分層——見說明）', lo:null, hi:null}
+      ],
+      typicalFloor: 1, // descriptive: most patients reach this on standard dosing; NOT an efficacy floor
+      toxicityLine: [4.6, 5.1],
+      steadyDays: null // TDM not routine; no steady-state gate applied
+    }
+  };
+
+  const AZOLE_FORMULATIONS = {
+    voriconazole: [
+      {id:'iv', label:'IV（Vfend for Solution for Infusion 200mg/vial）'},
+      {id:'po', label:'PO 膜衣錠（Vfend Film-coated Tablet 200mg/tab，可剝半不磨粉）'}
+    ],
+    posaconazole: [
+      {id:'tablet', label:'PO 緩釋錠（Posanol Tablets 100mg/tab，不可剝半磨粉）'},
+      {id:'iv', label:'IV（Posanol Concentrate for Solution for Infusion 300mg/16.7mL/vial）'},
+      {id:'suspension', label:'PO 懸浮液（本院無此品項，僅供外院帶藥等特殊情況選用）'}
+    ],
+    isavuconazole: [
+      {id:'po', label:'PO 膠囊（Cresemba Capsule 100mg/cap，以 isavuconazole 計，不可剝半磨粉）'},
+      {id:'iv', label:'IV（Cresemba Powder for Concentrate for Solution for Infusion 200mg/vial，以 isavuconazole 計）'}
+    ]
+  };
+
+  // PO minimum practical dosing unit (mg). voriconazole tablets can be halved
+  // (not crushed); posaconazole/isavuconazole cannot be split at all.
+  const AZOLE_PO_UNIT_MG = {voriconazole:100, posaconazole:100, isavuconazole:100};
+
+  const AZOLE_CYP3A4_SUBSTRATES = ['cyclosporine','tacrolimus','sirolimus','venetoclax','busulfan','vincristine','cyclophosphamide','methadone','simvastatin','lovastatin','apixaban','rivaroxaban','dronedarone','everolimus'];
+  const AZOLE_CYP2C9_SUBSTRATES = ['warfarin'];
+  const AZOLE_CYP3A4_INDUCERS = ['rifampin','rifampicin','phenytoin','carbamazepine','phenobarbital',"st. john's wort",'st johns wort','st. johns wort'];
+
+  const AZOLE_PPI_H2_KEYWORDS = ['omeprazole','esomeprazole','pantoprazole','lansoprazole','rabeprazole','dexlansoprazole','famotidine','ranitidine','cimetidine','nizatidine','ppi','h2 blocker','h2-blocker'];
+
+  function azoleIndicationList(drug){
+    return (AZOLE_TARGETS[drug] && AZOLE_TARGETS[drug].indications) || [];
+  }
+
+  // ---- Section 3: trough vs target ----
+  function checkAzoleTrough(drug, indicationId, trough){
+    const cfg = AZOLE_TARGETS[drug];
+    if(!cfg) return {tag:'ok', tagText:'', notes:[], target:null, lowFlag:false, highFlag:false};
+    const ind = cfg.indications.find(i=>i.id===indicationId) || cfg.indications[0];
+    if(!isFinite(trough)) return {tag:'ok', tagText:'尚未輸入 trough 結果', notes:[], target:ind, lowFlag:false, highFlag:false};
+    let tag='ok'; const reasons=[]; const notes=[]; let lowFlag=false, highFlag=false;
+    if(drug==='voriconazole'){
+      if(ind.lo!=null && trough < ind.lo){ tag='warn'; lowFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 低於目標下限 ${ind.lo}`); }
+      if(trough > cfg.toxicityLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過 ${cfg.toxicityLine}，神經／肝毒性風險升高，應主動評估`); }
+      if(tag==='ok' && ind.preferLo!=null && trough < ind.preferLo){ notes.push(`落在目標區間內，但低於最適區間下限 ${ind.preferLo}`); }
+    } else if(drug==='posaconazole'){
+      if(ind.lo!=null && trough < ind.lo){ tag='warn'; lowFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 低於目標下限 ${ind.lo}`); }
+      if(trough > cfg.toxicityLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過整體毒性上限 ${cfg.toxicityLine}，建議評估假性醛固酮增多症相關徵象（血壓／血鉀／鹼中毒）`); }
+      else if(trough > cfg.hepatoWatchLine){ highFlag=true; notes.push(`Trough ${trough.toFixed(1)} 超過 ${cfg.hepatoWatchLine}（文獻證據不一致的肝毒性提早留意值，非絕對閾值），建議對照 LFT`); }
+      if(tag==='ok' && ind.preferLo!=null && trough>=ind.lo && trough < ind.preferLo){ notes.push(`落在目標內，但低於最適區間 ${ind.preferLo}–${ind.preferHi}`); }
+    } else if(drug==='isavuconazole'){
+      const [toxLo, toxHi] = cfg.toxicityLine;
+      if(trough > toxLo){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 達文獻毒性關切區間（${toxLo}–${toxHi}），建議評估肝功能與其他毒性徵象`); }
+      else if(trough <= cfg.typicalFloor){ notes.push(`低於多數病人標準劑量下可達到的 ${cfg.typicalFloor}（描述性，非療效門檻，不建議僅因此調整劑量）`); }
+    }
+    if(reasons.length===0) reasons.push('落在目標區間內，無明確異常');
+    return {tag, tagText:reasons.join('；'), notes, target:ind, lowFlag, highFlag};
+  }
+
+  // ---- Section 4: steady state ----
+  function computeAzoleSteadyState(drug, therapyStartMs, nowMs){
+    const cfg = AZOLE_TARGETS[drug];
+    if(!cfg || cfg.steadyDays==null) return {applicable:false, isSteady:null, daysElapsed:null, daysNeeded:null};
+    if(!isFinite(therapyStartMs) || !isFinite(nowMs)) return {applicable:true, isSteady:null, daysElapsed:null, daysNeeded:cfg.steadyDays};
+    const daysElapsed = (nowMs - therapyStartMs)/86400000;
+    return {applicable:true, isSteady: daysElapsed >= cfg.steadyDays, daysElapsed, daysNeeded:cfg.steadyDays};
+  }
+
+  // ---- Section 5.0.1: infection-control trend, inferred from objective inputs ----
+  function inferInfectionTrend(inputs){
+    const {fever, anc, local, imaging, mycology} = inputs || {};
+    const worsening = [], improving = [];
+    let anyData = false;
+    if(fever && fever!=='na'){ anyData=true; if(fever==='worsening') worsening.push('發燒趨勢惡化／新發燒'); else if(fever==='improving') improving.push('退燒中'); }
+    if(anc && anc!=='na'){ anyData=true; if(anc==='low') worsening.push('ANC 仍在低點或下降中'); else if(anc==='rising') improving.push('ANC 回升中'); }
+    if(local && local!=='na'){ anyData=true; if(local==='worsening') worsening.push('感染部位相關症狀惡化'); else if(local==='improving') improving.push('感染部位相關症狀改善'); }
+    if(imaging){ anyData=true; if(imaging==='growing') worsening.push('影像學顯示病灶增大'); else if(imaging==='new') worsening.push('影像學出現新病灶'); else if(imaging==='shrinking') improving.push('影像學病灶縮小'); }
+    if(mycology){ anyData=true; if(mycology==='rising') worsening.push('黴菌學／生物標記上升或未轉陰'); else if(mycology==='clearing') improving.push('黴菌學／生物標記轉陰或下降'); }
+    if(!anyData) return {trend:'unknown', reasons:[]};
+    if(worsening.length>0) return {trend:'worsening', reasons:worsening};
+    if(improving.length>0) return {trend:'improving', reasons:improving};
+    return {trend:'stable', reasons:[]};
+  }
+
+  // ---- Section 5.0.2: three-tier toxicity sign classification ----
+  function classifyToxicitySigns(drug, s){
+    s = s || {};
+    const alerts = [], benign = [], longTerm = [];
+    if(s.jaundice||s.darkUrine||s.ruqPain||s.pruritus){
+      const items = [];
+      if(s.jaundice) items.push('黃疸'); if(s.darkUrine) items.push('茶色尿'); if(s.ruqPain) items.push('右上腹痛'); if(s.pruritus) items.push('皮膚搔癢');
+      alerts.push(`疑似肝毒性臨床表現（${items.join('、')}），建議立即複查 LFT 並評估減量／停藥`);
+    }
+    if(drug==='voriconazole'){
+      if(s.photopsia) benign.push('畏光／閃光感（用藥後30-60分鐘內常見，預期內，非停藥/減量理由）');
+      const neuro = [];
+      if(s.hallucination) neuro.push('幻覺'); if(s.confusion) neuro.push('意識混亂／躁動'); if(s.myoclonus) neuro.push('肌陣攣');
+      if(neuro.length) alerts.push(`神經毒性徵候（${neuro.join('、')}），建議評估減量，不論濃度數字`);
+      if(s.photosensitivity) longTerm.push('光敏感皮疹');
+      if(s.bonePain) longTerm.push('不明原因骨痛＋ALP上升，疑似periostitis');
+      if(s.hairNail) longTerm.push('落髮／指甲變化');
+      if(s.skinLesion) longTerm.push('皮膚異常病灶，建議安排皮膚科評估（長期使用皮膚癌風險）');
+    } else if(drug==='posaconazole'){
+      const pseudo = [];
+      if(s.htn) pseudo.push('高血壓'); if(s.edema) pseudo.push('下肢水腫'); if(s.weakness) pseudo.push('肌肉無力/抽筋');
+      if(pseudo.length>=2) alerts.push(`疑似 posaconazole 相關假性醛固酮增多症（${pseudo.join('、')}），建議加驗 renin／aldosterone／11-deoxycortisol 確認`);
+      else if(pseudo.length===1) benign.push(`${pseudo[0]}（單一項目，未達假性醛固酮增多症具名組合門檻，持續觀察）`);
+      if(s.nausea||s.vomit||s.diarrhea) benign.push('腸胃症狀（噁心/嘔吐/腹瀉），常見，通常不需停藥');
+    } else if(drug==='isavuconazole'){
+      const infusion = [];
+      if(s.chills) infusion.push('畏寒'); if(s.dyspnea) infusion.push('呼吸困難'); if(s.hypotension) infusion.push('低血壓');
+      if(infusion.length) alerts.push(`疑似輸注反應（${infusion.join('、')}），非濃度依賴性，建議評估減慢輸注速度`);
+      if(s.nausea||s.vomit||s.diarrhea) benign.push('腸胃症狀，常見');
+    }
+    return {hasAlert: alerts.length>0, alerts, benign, longTerm};
+  }
+
+  // ---- Section 5.0.3: cross-check trough tag against clinical trajectory ----
+  function crossCheckClinical(troughResult, infectionTrend, toxicity){
+    const messages = [];
+    if(infectionTrend.trend==='worsening' || toxicity.hasAlert){
+      const causes = [];
+      if(infectionTrend.trend==='worsening') causes.push(...infectionTrend.reasons);
+      if(toxicity.hasAlert) causes.push(...toxicity.alerts);
+      messages.push({level:'danger', text:`${causes.join('；')}——建議以臨床整體評估為主，即使濃度落在目標區間內也應重新評估治療`});
+    } else if(infectionTrend.trend==='improving' && !toxicity.hasAlert && troughResult && troughResult.tag==='warn'){
+      messages.push({level:'ok', text:'trough 數值提示異常，但感染控制改善中且無警覺徵象，是否需要因濃度調整劑量，建議綜合臨床判斷，非必然依數字調整'});
+    }
+    return messages;
+  }
+
+  // ---- Section 5.5: CYP interaction keyword check ----
+  function checkCypInteractionsAzole(text){
+    if(!text) return [];
+    const lower = text.toLowerCase();
+    const hits = [];
+    const substrateHits = AZOLE_CYP3A4_SUBSTRATES.filter(d=>lower.includes(d));
+    if(substrateHits.length) hits.push(`偵測到 CYP3A4 受質、治療窗窄藥物：${substrateHits.join('、')}——請確認併用藥濃度／劑量是否需要因本次 azole 治療調整`);
+    const c9Hits = AZOLE_CYP2C9_SUBSTRATES.filter(d=>lower.includes(d));
+    if(c9Hits.length) hits.push(`偵測到 CYP2C9 受質：${c9Hits.join('、')}——併用可能使 INR 上升，出血風險增加`);
+    const inducerHits = AZOLE_CYP3A4_INDUCERS.filter(d=>lower.includes(d));
+    if(inducerHits.length) hits.push(`偵測到 CYP3A4 強效誘導劑：${inducerHits.join('、')}——可能使 azole 濃度大幅下降，voriconazole 應避免併用`);
+    if(lower.includes('vincristine')) hits.push('偵測到 vincristine：voriconazole／posaconazole 應避免在給藥前一天、當天、後一天使用（三日窗）');
+    return hits;
+  }
+
+  // ---- Section 5.6: PO dose rounding to achievable whole/half-unit combinations ----
+  function suggestPoDoseAzole(drug, currentAmMg, currentPmMg, freq, direction){
+    const unit = AZOLE_PO_UNIT_MG[drug];
+    const currentTotal = (parseFloat(currentAmMg)||0) + (freq==='bid' ? (parseFloat(currentPmMg)||0) : 0);
+    if(!isFinite(currentTotal) || currentTotal<=0 || !unit) return null;
+    const lo = direction==='increase' ? currentTotal*1.25 : currentTotal*0.5;
+    const hi = direction==='increase' ? currentTotal*1.5 : currentTotal*0.75;
+    function splitBid(totalUnits){
+      const pmUnits = Math.floor(totalUnits/2);
+      const amUnits = totalUnits - pmUnits;
+      return {amMg:amUnits*unit, pmMg:pmUnits*unit, symmetric: amUnits===pmUnits};
+    }
+    const candidates = [];
+    const mLo = Math.max(1, Math.ceil(lo/unit));
+    const mHi = Math.floor((hi+1e-9)/unit);
+    for(let m=mLo; m<=mHi; m++){
+      const totalMg = m*unit;
+      if(freq==='bid'){
+        const {amMg,pmMg,symmetric} = splitBid(m);
+        candidates.push({totalMg, amMg, pmMg, symmetric});
+      } else {
+        candidates.push({totalMg, amMg: totalMg, pmMg:null, symmetric:true});
+      }
+    }
+    if(candidates.length===0){
+      const center = (lo+hi)/2;
+      const m = Math.max(1, Math.round(center/unit));
+      const totalMg = m*unit;
+      let amMg,pmMg,symmetric;
+      if(freq==='bid'){ const r=splitBid(m); amMg=r.amMg; pmMg=r.pmMg; symmetric=r.symmetric; } else { amMg=totalMg; pmMg=null; symmetric=true; }
+      candidates.push({totalMg, amMg, pmMg, symmetric, outOfIdealRange:true});
+    }
+    return {currentTotal, targetLo:lo, targetHi:hi, unit, candidates};
+  }
+
+  // ---- Sections 5.1-5.3: drug-specific contextual checklists ----
+  function contextualChecksVoriconazole(troughResult, ctx){
+    const flags = [];
+    if(!troughResult.lowFlag && !troughResult.highFlag) return flags;
+    if(troughResult.lowFlag){
+      const causes = [];
+      if(ctx.missedDoses) causes.push('近期有漏給/暫停/延遲劑量紀錄，先排除順從性問題');
+      if(ctx.infectionTrend.trend==='improving') causes.push('感染控制改善中，trough 下降可能反映發炎緩解而非劑量不足');
+      if(ctx.cyp2c19==='UM'||ctx.cyp2c19==='RM') causes.push(`CYP2C19 標記為 ${ctx.cyp2c19}，代謝較快可能為主因，加量前先確認`);
+      const inducers = AZOLE_CYP3A4_INDUCERS.filter(d=>ctx.concomitantLower.includes(d));
+      if(inducers.length) causes.push(`併用藥含已知 CYP3A4/2C19 誘導劑：${inducers.join('、')}`);
+      if(causes.length) flags.push({level:'warn', text:`Trough 偏低，排查中：${causes.join('；')}。都排除後才考慮增量 25–50%`});
+      else flags.push({level:'warn', text:'Trough 偏低，未偵測到其他解釋因子，可考慮增量 25–50%（因非線性代謝，劑量小幅調整可能造成 trough 大幅波動，建議調整後排較密集的複測）'});
+    }
+    if(troughResult.highFlag){
+      const causes = [];
+      if(ctx.infectionTrend.reasons.length===0 && ctx.crpEntered) causes.push('目前有記錄 CRP，發炎可能推高 trough，待發炎緩解後可能自行下降，勿貿然大幅減量');
+      if(ctx.cyp2c19==='PM') causes.push('CYP2C19 標記為 PM，代謝較慢可能為主因');
+      if(ctx.toxicity.hasAlert){
+        flags.push({level:'danger', text:`已有神經／肝毒性臨床表現，建議 hold 1 劑後再減 50%，而非單純減量 25–50%`});
+      } else {
+        const suffix = causes.length ? `排查中：${causes.join('；')}。都排除後才考慮減量 25–50%` : '可考慮減量 25–50%';
+        flags.push({level:'warn', text:`Trough 偏高，${suffix}`});
+      }
+    }
+    return flags;
+  }
+
+  function contextualChecksPosaconazole(troughResult, ctx){
+    const flags = [];
+    if(!troughResult.lowFlag) return flags;
+    if(ctx.formulation==='suspension'){
+      const absorptionIssues = [];
+      if(ctx.giSymptoms) absorptionIssues.push('黏膜炎/腹瀉/嘔吐等 GI 症狀');
+      if(ctx.ppiHit) absorptionIssues.push('併用 PPI/H2');
+      if(absorptionIssues.length){
+        flags.push({level:'warn', text:`Trough 偏低（懸浮液劑型）：偵測到吸收相關因子（${absorptionIssues.join('、')}），建議先處理吸收問題（改隨餐/停 PPI/改善 GI，或考慮改緩釋錠/IV），而非直接加量`});
+      } else {
+        flags.push({level:'warn', text:'Trough 偏低（懸浮液劑型），未偵測到明顯吸收障礙因子，可考慮加量，惟懸浮液本身吸收變異度大，建議優先評估改用緩釋錠或 IV'});
+      }
+    } else {
+      if(ctx.giSymptoms){
+        flags.push({level:'warn', text:'Trough 偏低：已勾選腸胃症狀（黏膜炎/腹瀉/嘔吐相關），緩釋錠在嚴重腸胃狀況下吸收仍可能下降（程度不如懸浮液劇烈），建議先處理腸胃狀況、待吸收改善後複測，而非直接加量'});
+      } else {
+        flags.push({level:'warn', text:'Trough 偏低，本院為緩釋錠／IV劑型，食物/PPI 對吸收影響有限，未偵測到嚴重腸胃因子，可直接考慮劑量不足；口服吸收仍有疑慮時建議評估改用 IV'});
+      }
+    }
+    return flags;
+  }
+
+  function contextualChecksIsavuconazole(troughResult, ctx){
+    return [{level:'ok', text:'TDM 非常規：一般不以濃度常規滴定劑量，測量目的僅為排除極端值；isavuconazole 縮短 QTc（與另兩顆延長 QTc 相反），先天性短 QT 症候群病人禁忌使用'}];
+  }
+
+  // ---- DOM glue ----
+  function populateAzoleIndicationOptions(){
+    const drug = document.getElementById('azlDrug').value;
+    const sel = document.getElementById('azlIndication');
+    const list = azoleIndicationList(drug);
+    sel.innerHTML = list.map(i=>`<option value="${i.id}">${i.label}</option>`).join('');
+  }
+  function populateAzoleFormulationOptions(){
+    const drug = document.getElementById('azlDrug').value;
+    const sel = document.getElementById('azlFormulation');
+    const list = AZOLE_FORMULATIONS[drug] || [];
+    const keep = sel.value;
+    sel.innerHTML = list.map(f=>`<option value="${f.id}">${f.label}</option>`).join('');
+    if(list.some(f=>f.id===keep)) sel.value = keep;
+  }
+  function toggleAzoleDrugUI(){
+    const drug = document.getElementById('azlDrug').value;
+    document.getElementById('azlVoriSubtable').style.display = drug==='voriconazole' ? '' : 'none';
+    document.getElementById('azlIsaSubtable').style.display = drug==='isavuconazole' ? '' : 'none';
+    document.getElementById('azlVoriSigns').style.display = drug==='voriconazole' ? '' : 'none';
+    document.getElementById('azlPosaSigns').style.display = drug==='posaconazole' ? '' : 'none';
+    document.getElementById('azlIsaSigns').style.display = drug==='isavuconazole' ? '' : 'none';
+    document.getElementById('azlGiSigns').style.display = (drug==='posaconazole'||drug==='isavuconazole') ? '' : 'none';
+    document.getElementById('azlIsaBanner').style.display = drug==='isavuconazole' ? '' : 'none';
+    const freqSel = document.getElementById('azlFreq');
+    if(freqSel.dataset.userTouched!=='1'){ freqSel.value = drug==='voriconazole' ? 'bid' : 'qd'; }
+    populateAzoleIndicationOptions();
+    populateAzoleFormulationOptions();
+    toggleAzoleFreqUI();
+  }
+  function toggleAzoleFreqUI(){
+    const drug = document.getElementById('azlDrug').value;
+    const freq = document.getElementById('azlFreq').value;
+    const bid = freq==='bid';
+    document.getElementById('azlDosePmField').style.display = bid ? '' : 'none';
+    document.getElementById('azlDoseAmLabel').textContent = bid ? '維持劑量—早上（mg）' : '維持劑量（mg）';
+    const unit = AZOLE_PO_UNIT_MG[drug];
+    const canHalve = drug==='voriconazole';
+    let hint = `PO 最小可用單位 ${unit}mg（${canHalve?'可剝半，不磨粉':'不可剝半磨粉'}）`;
+    if(bid && drug==='voriconazole') hint += '；BID 可早晚不同劑量以提高調整彈性（見劑量建議區塊）';
+    document.getElementById('azlDoseHint').textContent = hint;
+  }
+
+  function readAzoleToxicitySigns(){
+    const c = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+    return {
+      jaundice:c('azlSxJaundice'), darkUrine:c('azlSxDarkUrine'), ruqPain:c('azlSxRuqPain'), pruritus:c('azlSxPruritus'),
+      photopsia:c('azlSxPhotopsia'), hallucination:c('azlSxHallucination'), confusion:c('azlSxConfusion'), myoclonus:c('azlSxMyoclonus'),
+      photosensitivity:c('azlSxPhotosensitivity'), bonePain:c('azlSxBonePain'), hairNail:c('azlSxHairNail'), skinLesion:c('azlSxSkinLesion'),
+      htn:c('azlSxHtn'), edema:c('azlSxEdema'), weakness:c('azlSxWeakness'),
+      chills:c('azlSxChills'), dyspnea:c('azlSxDyspnea'), hypotension:c('azlSxHypotension'),
+      nausea:c('azlSxNausea'), vomit:c('azlSxVomit'), diarrhea:c('azlSxDiarrhea')
+    };
+  }
+
+  function buildAiPromptAzole(d){
+    const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
+    return `你是感染科／臨床藥學顧問。以下是一名接受 azole 抗黴菌藥 TDM 病人的資料，本工具僅做 trough 對目標值判讀與情境交叉檢查（非 PK 擬合），請你整合下列資訊給第二意見：
+
+【目標藥物】${d.drugLabel}／適應症：${d.indicationLabel}
+【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
+【器官功能】AST/ALT ${d.astAlt||'未填'}／Bilirubin ${d.bilirubin||'未填'}／Albumin ${d.albumin||'未填'}／CRP ${d.crp||'未填'}／SCr ${d.scr||'未填'}
+【感染脈絡】部位：${d.site||'未填'}／菌種：${d.organism||'未填'}／嚴重度：${d.severity}
+【給藥處方】${d.formulationLabel}，${d.freqLabel}，${d.doseText}，療程起始：${d.therapyStart||'未填'}
+【Trough】${d.trough!=null?d.trough+' µg/mL':'未輸入'}（${d.troughDate||'未填日期'}）／是否達穩態：${d.steadyText}
+【已觸發的情境提示】
+${flagText||'（無）'}
+【治療目標】${d.treatmentGoal||'未填'}
+
+請你根據以上資料，整合最新的臨床病程（若有近期完整 lab 趨勢、影像報告，請一併貼上）給出你的判斷與建議，並指出本工具未涵蓋但你認為重要的面向。`;
+  }
+
+  function buildAzoleMonitorGrid(drug){
+    const nextTroughText = drug==='voriconazole' ? '劑量/劑型調整後約 5–7 天再測（非線性代謝可視情況更密集複測）'
+      : drug==='posaconazole' ? '劑量/劑型調整後約 7–10 天再測'
+      : '非常規追蹤，依臨床需要與 ID 討論';
+    let labText;
+    if(drug==='posaconazole') labText = 'ALT/bilirubin：基線＋至少每週，直到治療第一個月；IV 且 CrCl<50 加強腎功能監測；電解質（低鉀）';
+    else if(drug==='voriconazole') labText = 'CRP 追蹤（用於解讀 trough 漂移，非固定頻率規定，trough 異常時建議一併複查）；LFT 依臨床需要';
+    else labText = 'LFT 依臨床需要；避免因單一數字盲目滴定';
+    const signText = drug==='voriconazole' ? '視覺障礙、幻覺/腦病、肝毒性、光毒性/皮膚；長期使用另留意骨痛與皮膚病灶'
+      : drug==='posaconazole' ? '肝毒性、低鉀/水腫、（IV）腎功能'
+      : '肝毒性、腸胃、（IV）輸注反應';
+    const retrigger = drug==='voriconazole' ? 'CRP/發炎大幅變化、新增 CYP 交互作用藥、肝功能惡化'
+      : drug==='posaconazole' ? '劑型或進食/PPI 改變、新增 CYP 交互作用藥、肝功能惡化、CrCl<50 開始 IV'
+      : '療效不佳、疑似毒性、新增交互作用藥';
+    return `
+      <div>
+        <h4>下次 Trough 時機</h4>
+        <p>${nextTroughText}</p>
+        <h4 style="margin-top:12px;">Lab 監測</h4>
+        <p>${labText}</p>
+      </div>
+      <div>
+        <h4>臨床 Sign 監測</h4>
+        <p>${signText}</p>
+        <h4 style="margin-top:12px;">再評估觸發時機</h4>
+        <p>${retrigger}</p>
+      </div>`;
+  }
+
+  function renderAzole(){
+    const drugLabels = {voriconazole:'Voriconazole', posaconazole:'Posaconazole', isavuconazole:'Isavuconazole'};
+    const drug = document.getElementById('azlDrug').value;
+    const indicationId = document.getElementById('azlIndication').value;
+    const indList = azoleIndicationList(drug);
+    const indObj = indList.find(i=>i.id===indicationId) || indList[0];
+    const trough = parseFloat(document.getElementById('azlTroughVal').value);
+    const troughDateMs = parseLocal(document.getElementById('azlTroughDate').value);
+    const therapyStartMs = parseLocal(document.getElementById('azlTherapyStart').value);
+    const nowMs = isFinite(troughDateMs) ? troughDateMs : Date.now();
+
+    const troughResult = checkAzoleTrough(drug, indicationId, trough);
+    const steady = computeAzoleSteadyState(drug, therapyStartMs, nowMs);
+
+    const trendInputs = {
+      fever: document.getElementById('azlFeverTrend').value,
+      anc: document.getElementById('azlAncTrend').value,
+      local: document.getElementById('azlLocalSymptom').value,
+      imaging: document.getElementById('azlImaging').value,
+      mycology: document.getElementById('azlMycology').value
+    };
+    const infectionTrend = inferInfectionTrend(trendInputs);
+    const signs = readAzoleToxicitySigns();
+    const toxicity = classifyToxicitySigns(drug, signs);
+    const crossCheckMsgs = crossCheckClinical(troughResult, infectionTrend, toxicity);
+
+    const concomitant = document.getElementById('azlConcomitant').value || '';
+    const concomitantLower = concomitant.toLowerCase();
+    const interactionHits = checkCypInteractionsAzole(concomitant);
+    const ppiHit = AZOLE_PPI_H2_KEYWORDS.some(k=>concomitantLower.includes(k));
+
+    const formulation = document.getElementById('azlFormulation').value;
+    const cyp2c19El = document.getElementById('azlCyp2c19');
+    const cyp2c19 = cyp2c19El ? cyp2c19El.value : '';
+    const missedDoses = document.getElementById('azlMissedDoses').value.trim();
+    const crp = document.getElementById('azlCrp').value.trim();
+    const giSymptoms = signs.diarrhea || signs.vomit || signs.nausea;
+
+    const ctx = {missedDoses, infectionTrend, cyp2c19, concomitantLower, crpEntered: !!crp, toxicity, formulation, giSymptoms, ppiHit};
+    let contextFlags = [];
+    const knownNotSteady = steady.applicable===true && steady.isSteady===false;
+    if(knownNotSteady && isFinite(trough)){
+      contextFlags = [{level:'warn', text:`尚未達穩態（已 ${steady.daysElapsed.toFixed(1)} 天，需 ≥${steady.daysNeeded} 天），此 trough 僅供參考，暫不套用劑量調整幅度建議`}];
+    } else {
+      if(drug==='voriconazole') contextFlags = contextualChecksVoriconazole(troughResult, ctx);
+      else if(drug==='posaconazole') contextFlags = contextualChecksPosaconazole(troughResult, ctx);
+      else if(drug==='isavuconazole') contextFlags = contextualChecksIsavuconazole(troughResult, ctx);
+    }
+
+    const flags = [];
+    if(!isFinite(trough)){
+      flags.push({level:'ok', text:'尚未輸入 trough 結果'});
+    } else {
+      flags.push({level: troughResult.tag, text: troughResult.tagText});
+      troughResult.notes.forEach(n=>flags.push({level:'warn', text:n}));
+    }
+    crossCheckMsgs.forEach(m=>flags.push(m));
+    contextFlags.forEach(f=>flags.push(f));
+    toxicity.benign.forEach(b=>flags.push({level:'ok', text:`（記錄）${b}`}));
+    toxicity.longTerm.forEach(l=>flags.push({level:'ok', text:`（長期追蹤）${l}——依療程長度累積提醒，非當次判讀依據`}));
+    interactionHits.forEach(h=>flags.push({level:'warn', text:h}));
+    if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
+
+    const targetText = indObj ? (indObj.lo!=null ? `${indObj.lo}${indObj.hi!=null?'–'+indObj.hi:''}` : '無明訂範圍，見說明') : '';
+    const steadyText = steady.applicable===false ? '不適用（TDM 非常規，不特別做穩態判定）'
+      : (steady.isSteady==null ? '尚未輸入療程起始日' : (steady.isSteady?`已達穩態（第 ${steady.daysElapsed.toFixed(1)} 天）`:`尚未達穩態（第 ${steady.daysElapsed.toFixed(1)} 天，需 ≥${steady.daysNeeded} 天）`));
+    const cells = [
+      ['Trough 結果', isFinite(trough)?trough.toFixed(1):'—', 'µg/mL', `目標 ${targetText}`],
+      ['是否達穩態', steadyText, '', '']
+    ];
+    document.getElementById('azlParamGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
+      let cls='';
+      if(label==='Trough 結果' && isFinite(trough)) cls = troughResult.tag==='warn'?'flag-warn':'flag-ok';
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+    }).join('');
+
+    document.getElementById('azlFlagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+    document.getElementById('azlFitModeBadge').textContent = `${drugLabels[drug]}／${indObj?indObj.label:''}`;
+
+    const doseSuggestBlock = document.getElementById('azlDoseSuggestBlock');
+    const doseSuggestList = document.getElementById('azlDoseSuggestList');
+    const freq = document.getElementById('azlFreq').value;
+    const amMg = parseFloat(document.getElementById('azlDoseAm').value);
+    const pmMg = parseFloat(document.getElementById('azlDosePm').value);
+    if(drug!=='isavuconazole' && isFinite(trough) && (troughResult.lowFlag||troughResult.highFlag) && !knownNotSteady){
+      const direction = troughResult.lowFlag ? 'increase' : 'decrease';
+      if(formulation==='iv'){
+        const currentTotal = (amMg||0) + (freq==='bid'?(pmMg||0):0);
+        const lo = direction==='increase'?currentTotal*1.25:currentTotal*0.5;
+        const hi = direction==='increase'?currentTotal*1.5:currentTotal*0.75;
+        doseSuggestBlock.style.display='';
+        doseSuggestList.innerHTML = isFinite(currentTotal)&&currentTotal>0
+          ? `<div class="flag-item"><span class="dot"></span><span>IV 途徑可依配製後濃度直接抽取計算劑量，不受整顆限制。理論目標總日劑量約 ${lo.toFixed(0)}–${hi.toFixed(0)} mg（現行 ${currentTotal.toFixed(0)} mg／日，${direction==='increase'?'增量':'減量'} 25–50%）。</span></div>`
+          : `<div class="flag-item"><span class="dot"></span><span>請先輸入目前劑量才能計算建議調整範圍。</span></div>`;
+      } else {
+        const result = suggestPoDoseAzole(drug, amMg, pmMg, freq, direction);
+        if(result && result.candidates.length){
+          const unit = result.unit;
+          doseSuggestBlock.style.display='';
+          doseSuggestList.innerHTML = result.candidates.map(c=>{
+            const desc = (freq==='bid' && c.pmMg!=null)
+              ? `早上 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）／晚上 ${(c.pmMg/unit).toFixed(1)} 顆（${c.pmMg}mg）`
+              : `每日一次 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）`;
+            const note = c.symmetric ? '對稱' : '不對稱（早晚不同，多出的一份預設放早上，如貴科習慣相反可自行調換）';
+            const rangeNote = c.outOfIdealRange ? '（理論區間內無可行整顆／半顆倍數解，取最接近值供參考）' : '';
+            return `<div class="flag-item"><span class="dot"></span><span>總日劑量 ${c.totalMg}mg（${note}）：${desc}${rangeNote}</span></div>`;
+          }).join('');
+        } else {
+          doseSuggestBlock.style.display='none';
+          doseSuggestList.innerHTML='';
+        }
+      }
+    } else {
+      doseSuggestBlock.style.display='none';
+      doseSuggestList.innerHTML='';
+    }
+
+    document.getElementById('azlMonitorGrid').innerHTML = buildAzoleMonitorGrid(drug);
+    setHeaderMeta('drug-azole', `${drugLabels[drug]}／${indObj?indObj.label:''}／Trough ${isFinite(trough)?trough.toFixed(1):'—'}`);
+
+    const doseText = freq==='bid'
+      ? `早${isFinite(amMg)?amMg:'—'}mg／晚${isFinite(pmMg)?pmMg:'—'}mg`
+      : `${isFinite(amMg)?amMg:'—'}mg QD`;
+    const formObj = (AZOLE_FORMULATIONS[drug]||[]).find(f=>f.id===formulation);
+    const aiData = {
+      drugLabel: drugLabels[drug], indicationLabel: indObj?indObj.label:'',
+      age: document.getElementById('azlAge').value, sex: document.getElementById('azlSex').value,
+      height: document.getElementById('azlHeight').value, tbw: document.getElementById('azlTbw').value,
+      astAlt: document.getElementById('azlAstAlt').value, bilirubin: document.getElementById('azlBilirubin').value,
+      albumin: document.getElementById('azlAlbumin').value, crp: document.getElementById('azlCrp').value, scr: document.getElementById('azlScr').value,
+      site: document.getElementById('azlSite').value, organism: document.getElementById('azlOrganism').value, severity: document.getElementById('azlSeverity').value,
+      formulationLabel: formObj ? formObj.label : formulation,
+      freqLabel: freq==='bid'?'BID':'QD', doseText,
+      therapyStart: document.getElementById('azlTherapyStart').value,
+      trough: isFinite(trough)?trough:null, troughDate: document.getElementById('azlTroughDate').value,
+      steadyText, flags, treatmentGoal: document.getElementById('azlTreatmentGoal').value
+    };
+    document.getElementById('azlAiPromptOut').value = buildAiPromptAzole(aiData);
+  }
+
+  // ---------------- azole patient records ----------------
+  const AZOLE_PATIENTS_KEY = 'azole_tdm_patients_v1';
+  let currentAzlPatientId = null;
+
+  function collectStateAzole(){
+    const v = id => document.getElementById(id).value;
+    const c = id => document.getElementById(id).checked;
+    return {
+      age:v('azlAge'), sex:v('azlSex'), height:v('azlHeight'), tbw:v('azlTbw'), pregnancy:v('azlPregnancy'), weightChange:v('azlWeightChange'),
+      astAlt:v('azlAstAlt'), bilirubin:v('azlBilirubin'), albumin:v('azlAlbumin'), crp:v('azlCrp'), scr:v('azlScr'), labDate:v('azlLabDate'),
+      fluidStatus:v('azlFluidStatus'), otherFactors:v('azlOtherFactors'),
+      site:v('azlSite'), organism:v('azlOrganism'), severity:v('azlSeverity'), sourceControl:c('azlSourceControl'),
+      feverTrend:v('azlFeverTrend'), ancTrend:v('azlAncTrend'), localSymptom:v('azlLocalSymptom'), imaging:v('azlImaging'), mycology:v('azlMycology'),
+      drug:v('azlDrug'), indication:v('azlIndication'),
+      formulation:v('azlFormulation'), freq:v('azlFreq'), useLoading:c('azlUseLoading'), loadingInfo:v('azlLoadingInfo'),
+      doseAm:v('azlDoseAm'), dosePm:v('azlDosePm'), therapyStart:v('azlTherapyStart'), missedDoses:v('azlMissedDoses'),
+      troughVal:v('azlTroughVal'), troughDate:v('azlTroughDate'),
+      cyp2c19:v('azlCyp2c19'), isaReason:v('azlIsaReason'),
+      sx: {
+        jaundice:c('azlSxJaundice'), darkUrine:c('azlSxDarkUrine'), ruqPain:c('azlSxRuqPain'), pruritus:c('azlSxPruritus'),
+        photopsia:c('azlSxPhotopsia'), hallucination:c('azlSxHallucination'), confusion:c('azlSxConfusion'), myoclonus:c('azlSxMyoclonus'),
+        photosensitivity:c('azlSxPhotosensitivity'), bonePain:c('azlSxBonePain'), hairNail:c('azlSxHairNail'), skinLesion:c('azlSxSkinLesion'),
+        htn:c('azlSxHtn'), edema:c('azlSxEdema'), weakness:c('azlSxWeakness'),
+        chills:c('azlSxChills'), dyspnea:c('azlSxDyspnea'), hypotension:c('azlSxHypotension'),
+        nausea:c('azlSxNausea'), vomit:c('azlSxVomit'), diarrhea:c('azlSxDiarrhea')
+      },
+      concomitant:v('azlConcomitant'),
+      treatmentGoal:v('azlTreatmentGoal'), expectedDuration:v('azlExpectedDuration'), doseConstraints:v('azlDoseConstraints'), priorAdr:v('azlPriorAdr'),
+      otherNotes:v('azlOtherNotes')
+    };
+  }
+  function applyStateAzole(s){
+    const setVal=(id,val)=>{ const el=document.getElementById(id); if(el) el.value = (val!==undefined&&val!==null)?val:''; };
+    const setChecked=(id,val)=>{ const el=document.getElementById(id); if(el) el.checked = !!val; };
+    setVal('azlAge', s.age); setVal('azlSex', s.sex||'M'); setVal('azlHeight', s.height); setVal('azlTbw', s.tbw);
+    setVal('azlPregnancy', s.pregnancy||'no'); setVal('azlWeightChange', s.weightChange);
+    setVal('azlAstAlt', s.astAlt); setVal('azlBilirubin', s.bilirubin); setVal('azlAlbumin', s.albumin);
+    setVal('azlCrp', s.crp); setVal('azlScr', s.scr); setVal('azlLabDate', s.labDate);
+    setVal('azlFluidStatus', s.fluidStatus); setVal('azlOtherFactors', s.otherFactors);
+    setVal('azlSite', s.site); setVal('azlOrganism', s.organism); setVal('azlSeverity', s.severity||'穩定'); setChecked('azlSourceControl', s.sourceControl);
+    setVal('azlFeverTrend', s.feverTrend); setVal('azlAncTrend', s.ancTrend); setVal('azlLocalSymptom', s.localSymptom);
+    setVal('azlImaging', s.imaging); setVal('azlMycology', s.mycology);
+    setVal('azlDrug', s.drug||'voriconazole');
+    toggleAzoleDrugUI();
+    if(s.indication) setVal('azlIndication', s.indication);
+    setVal('azlFormulation', s.formulation);
+    const freqSel = document.getElementById('azlFreq');
+    if(s.freq){ freqSel.value = s.freq; freqSel.dataset.userTouched='1'; }
+    toggleAzoleFreqUI();
+    setChecked('azlUseLoading', s.useLoading);
+    document.getElementById('azlLoadingRow').style.display = s.useLoading ? '' : 'none';
+    setVal('azlLoadingInfo', s.loadingInfo);
+    setVal('azlDoseAm', s.doseAm); setVal('azlDosePm', s.dosePm);
+    setVal('azlTherapyStart', s.therapyStart); setVal('azlMissedDoses', s.missedDoses);
+    setVal('azlTroughVal', s.troughVal); setVal('azlTroughDate', s.troughDate);
+    setVal('azlCyp2c19', s.cyp2c19); setVal('azlIsaReason', s.isaReason);
+    const sx = s.sx || {};
+    ['jaundice','darkUrine','ruqPain','pruritus','photopsia','hallucination','confusion','myoclonus',
+     'photosensitivity','bonePain','hairNail','skinLesion','htn','edema','weakness',
+     'chills','dyspnea','hypotension','nausea','vomit','diarrhea'].forEach(k=>{
+       setChecked('azlSx'+k.charAt(0).toUpperCase()+k.slice(1), sx[k]);
+     });
+    setVal('azlConcomitant', s.concomitant);
+    setVal('azlTreatmentGoal', s.treatmentGoal); setVal('azlExpectedDuration', s.expectedDuration);
+    setVal('azlDoseConstraints', s.doseConstraints); setVal('azlPriorAdr', s.priorAdr);
+    setVal('azlOtherNotes', s.otherNotes);
+    renderAzole();
+  }
+  function loadAzlPatientsList(){
+    try{ const raw = localStorage.getItem(AZOLE_PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
+    catch(e){ return []; }
+  }
+  function saveAzlPatientsList(list){
+    try{ localStorage.setItem(AZOLE_PATIENTS_KEY, JSON.stringify(list)); return true; }
+    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
+  }
+  function refreshAzlPatientSelect(selectAfter){
+    const list = loadAzlPatientsList();
+    const sel = document.getElementById('azlPatientSelect');
+    const keep = selectAfter!==undefined ? selectAfter : sel.value;
+    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
+    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
+      const d = new Date(p.savedAt);
+      const pad=n=>String(n).padStart(2,'0');
+      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
+      return `<option value="${p.id}">${label}</option>`;
+    }).join('');
+    if(keep) sel.value = keep;
+  }
+  function savePatientFnAzl(){
+    const label = document.getElementById('azlPatientLabel').value.trim();
+    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+    const list = loadAzlPatientsList();
+    const data = collectStateAzole();
+    const now = Date.now();
+    if(currentAzlPatientId && list.some(p=>p.id===currentAzlPatientId)){
+      const idx = list.findIndex(p=>p.id===currentAzlPatientId);
+      list[idx] = {id:currentAzlPatientId, label, savedAt:now, data};
+    } else {
+      const id = 'azl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
+      list.push({id, label, savedAt:now, data});
+      currentAzlPatientId = id;
+    }
+    if(!saveAzlPatientsList(list)) return;
+    refreshAzlPatientSelect(currentAzlPatientId);
+    document.getElementById('azlPatientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
+  }
+  function loadPatientFnAzl(){
+    const id = document.getElementById('azlPatientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
+    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
+    if(!ok) return;
+    const list = loadAzlPatientsList();
+    const rec = list.find(p=>p.id===id);
+    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshAzlPatientSelect(''); return; }
+    document.getElementById('azlPatientLabel').value = rec.label;
+    applyStateAzole(rec.data);
+    currentAzlPatientId = rec.id;
+    document.getElementById('azlPatientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
+  }
+  function deletePatientFnAzl(){
+    const id = document.getElementById('azlPatientSelect').value;
+    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
+    const ok = confirm('確定要刪除這位病人的存檔嗎？此動作無法復原。');
+    if(!ok) return;
+    let list = loadAzlPatientsList();
+    list = list.filter(p=>p.id!==id);
+    if(!saveAzlPatientsList(list)) return;
+    if(currentAzlPatientId===id) currentAzlPatientId=null;
+    document.getElementById('azlPatientLabel').value='';
+    refreshAzlPatientSelect('');
+    document.getElementById('azlPatientMeta').textContent = '已刪除。';
+  }
+  function exportPatientsFnAzl(){
+    const list = loadAzlPatientsList();
+    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
+    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const d = new Date();
+    const pad=n=>String(n).padStart(2,'0');
+    a.href = url;
+    a.download = `azole_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  }
+  function importPatientsFnAzl(file){
+    const reader = new FileReader();
+    reader.onload = function(){
+      let imported;
+      try{ imported = JSON.parse(reader.result); }
+      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
+      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
+      const existing = loadAzlPatientsList();
+      const map = new Map(existing.map(p=>[p.id,p]));
+      let count=0;
+      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
+      saveAzlPatientsList(Array.from(map.values()));
+      refreshAzlPatientSelect();
+      document.getElementById('azlPatientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
+    };
+    reader.readAsText(file);
+  }
+  function clearAllFnAzl(){
+    const ok = confirm('確定要清空目前畫面上的 azole 資料嗎？已儲存的病人存檔不會受影響。');
+    if(!ok) return;
+    document.querySelectorAll('#azlInputPanel input[type=text], #azlInputPanel input[type=number], #azlInputPanel input[type=date], #azlInputPanel input[type=datetime-local], #azlInputPanel textarea').forEach(el=>el.value='');
+    document.querySelectorAll('#azlInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
+    document.getElementById('azlDrug').value='voriconazole';
+    document.getElementById('azlSex').value='M'; document.getElementById('azlPregnancy').value='no'; document.getElementById('azlSeverity').value='穩定';
+    document.getElementById('azlFreq').dataset.userTouched='';
+    toggleAzoleDrugUI();
+    document.getElementById('azlPatientLabel').value='';
+    currentAzlPatientId = null;
+    renderAzole();
+  }
+
+  function initDefaultsAzole(){
+    const now = new Date();
+    const start = new Date(now.getTime() - 6*24*3600000);
+    toggleAzoleDrugUI();
+    document.getElementById('azlTherapyStart').value = toLocalInputValue(start);
+    document.getElementById('azlTroughDate').value = toLocalInputValue(now);
+    document.getElementById('azlTroughVal').value = '0.8';
+    document.getElementById('azlDoseAm').value = '200';
+    document.getElementById('azlDosePm').value = '200';
+    document.getElementById('azlLabDate').value = toLocalDateValue(now);
+    renderAzole();
+  }
+
   // ---------------- drug switcher ----------------
   let currentDrugModule = 'vancomycin';
   const AMINO_HEADER = {
@@ -4291,6 +5353,12 @@ ${flagText || '（無特別旗標）'}
     docTitle:'Vancomycin TDM 擬合引擎',
     footer:'<strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
+  const AZOLE_HEADER = {
+    title:'Azole TDM 判讀引擎', eyebrow:'Trough-Only · 非 PK 擬合',
+    subtitle:'Trough 對目標值判讀 · 臨床病程交叉核對 · 情境檢查清單',
+    docTitle:'Azole TDM 判讀引擎',
+    footer:'<strong>定位聲明：</strong>本模組為 trough 對目標值判讀＋情境交叉檢查工具，不做 PK 擬合（不計算 Cpeak／Vd／CL／AUC／ke／t½，例行 azole TDM 不建模）。目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles；Prevention of invasive fungal infections in adults with hematologic malignancies and HCT recipients）、Segal 等人 MSG/EORTC 治療反應共識標準、IDSA 2016 Aspergillosis Guideline 與本院實際藥局品項，可能與特定院內 protocol 有出入，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+  };
   function showDrugModule(name){
     currentDrugModule = name;
     document.querySelectorAll('.drug-module').forEach(el=>el.classList.remove('active'));
@@ -4299,16 +5367,16 @@ ${flagText || '（無特別旗標）'}
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
       btn.classList.toggle('primary', btn.dataset.drug===name);
     });
-    const h = name==='aminoglycoside' ? AMINO_HEADER : VANCO_HEADER;
+    const h = name==='aminoglycoside' ? AMINO_HEADER : (name==='azole' ? AZOLE_HEADER : VANCO_HEADER);
     document.getElementById('appTitle').textContent = h.title;
     document.getElementById('appEyebrow').textContent = h.eyebrow;
     document.getElementById('appSubtitle').textContent = h.subtitle;
     document.title = h.docTitle;
     document.getElementById('footerDisclaimer').innerHTML = h.footer;
-    if(name==='aminoglycoside') renderAmino(); else render();
+    if(name==='aminoglycoside') renderAmino(); else if(name==='azole') renderAzole(); else render();
   }
   function clearCurrentDrug(){
-    if(currentDrugModule==='aminoglycoside') clearAllFnAmg(); else clearAllFn();
+    if(currentDrugModule==='aminoglycoside') clearAllFnAmg(); else if(currentDrugModule==='azole') clearAllFnAzl(); else clearAllFn();
   }
 
   // ---------------- wiring ----------------
@@ -4511,6 +5579,58 @@ ${flagText || '（無特別旗標）'}
     });
 
     initDefaultsAmg();
+
+    // ---------------- azole wiring ----------------
+    ['azlAge','azlSex','azlHeight','azlTbw','azlPregnancy','azlWeightChange',
+     'azlAstAlt','azlBilirubin','azlAlbumin','azlCrp','azlScr','azlLabDate','azlFluidStatus','azlOtherFactors',
+     'azlSite','azlOrganism','azlSeverity','azlSourceControl',
+     'azlFeverTrend','azlAncTrend','azlLocalSymptom','azlImaging','azlMycology',
+     'azlIndication','azlFormulation','azlLoadingInfo','azlDoseAm','azlDosePm','azlTherapyStart','azlMissedDoses',
+     'azlTroughVal','azlTroughDate','azlCyp2c19','azlIsaReason',
+     'azlSxJaundice','azlSxDarkUrine','azlSxRuqPain','azlSxPruritus',
+     'azlSxPhotopsia','azlSxHallucination','azlSxConfusion','azlSxMyoclonus',
+     'azlSxPhotosensitivity','azlSxBonePain','azlSxHairNail','azlSxSkinLesion',
+     'azlSxHtn','azlSxEdema','azlSxWeakness','azlSxChills','azlSxDyspnea','azlSxHypotension',
+     'azlSxNausea','azlSxVomit','azlSxDiarrhea',
+     'azlConcomitant','azlTreatmentGoal','azlExpectedDuration','azlDoseConstraints','azlPriorAdr','azlOtherNotes'
+    ].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el){ el.addEventListener('input', renderAzole); el.addEventListener('change', renderAzole); }
+    });
+    document.getElementById('azlDrug').addEventListener('change', ()=>{ toggleAzoleDrugUI(); renderAzole(); });
+    document.getElementById('azlFreq').addEventListener('change', function(){ this.dataset.userTouched='1'; toggleAzoleFreqUI(); renderAzole(); });
+    document.getElementById('azlUseLoading').addEventListener('change', function(){
+      document.getElementById('azlLoadingRow').style.display = this.checked ? '' : 'none';
+      renderAzole();
+    });
+
+    document.getElementById('azlSavePatientBtn').addEventListener('click', savePatientFnAzl);
+    document.getElementById('azlLoadPatientBtn').addEventListener('click', loadPatientFnAzl);
+    document.getElementById('azlDeletePatientBtn').addEventListener('click', deletePatientFnAzl);
+    document.getElementById('azlExportPatientsBtn').addEventListener('click', exportPatientsFnAzl);
+    document.getElementById('azlImportPatientsBtn').addEventListener('click', ()=>{
+      document.getElementById('azlImportFileInput').click();
+    });
+    document.getElementById('azlImportFileInput').addEventListener('change', function(){
+      if(this.files && this.files[0]) importPatientsFnAzl(this.files[0]);
+      this.value = '';
+    });
+    refreshAzlPatientSelect();
+
+    document.getElementById('azlCopyPromptBtn').addEventListener('click', ()=>{
+      const ta = document.getElementById('azlAiPromptOut');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(()=>{
+        const s = document.getElementById('azlCopyStatus');
+        s.textContent = '已複製到剪貼簿';
+        setTimeout(()=>{ s.textContent=''; }, 2500);
+      }).catch(()=>{
+        document.execCommand('copy');
+        document.getElementById('azlCopyStatus').textContent = '已複製';
+      });
+    });
+
+    initDefaultsAzole();
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
