@@ -231,6 +231,19 @@
   .regimen-table input[type="radio"]{width:14px;height:14px;cursor:pointer;}
   svg.curve{width:100%;height:auto;display:block;cursor:crosshair;}
 
+  /* ---- 歷程趨勢（跨收案）: small-multiples trend chart, loop C ---- */
+  svg.trend{width:100%;height:auto;display:block;}
+  .trend-picker{
+    display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 0 12px;
+    padding:8px 10px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
+  }
+  .trend-picker label{
+    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+  }
+  .trend-picker input{margin:0;cursor:pointer;}
+  .trend-picker label.disabled{opacity:0.4;cursor:not-allowed;}
+  .trend-empty{font-size:11.5px;color:var(--ink-faint);padding:10px 0;}
+
   .param-grid{
     display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;
     background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
@@ -359,14 +372,19 @@
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="patientManagerCard">
         <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號分別儲存與載入，長期追蹤同一位病人時不用每次重新輸入。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</p>
+        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本（未來將用於趨勢圖）。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</p>
         <div class="field-row">
           <div class="field"><label>病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
+          <div class="field"><label>評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
+        </div>
+        <div class="field-row">
           <div class="field"><label>選擇已儲存的病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
+          <div class="field"><label>收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
         </div>
         <div class="btn-row">
-          <button class="btn primary small" id="savePatientBtn" type="button">儲存／更新此病人</button>
-          <button class="btn small" id="loadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button>
+          <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+          <button class="btn small" id="loadPatientBtn" type="button">載入</button>
           <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <div class="btn-row">
@@ -602,6 +620,13 @@
         <div class="flag-list" id="flagList"></div>
       </div>
 
+      <div class="section-block" id="vancoTrendBlock" style="display:none;">
+        <h3 style="color:var(--trace-strong);">歷程趨勢（跨收案）</h3>
+        <p class="hint" id="vancoTrendHint" style="margin-top:-4px;"></p>
+        <div class="trend-picker" id="vancoTrendPicker"></div>
+        <svg class="trend" id="vancoTrendSvg" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
         <p class="hint" id="regimenSectionHint" style="margin-top:-4px;">勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
@@ -654,14 +679,19 @@
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="amgPatientManagerCard">
         <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號分別儲存與載入，長期追蹤同一位病人時不用每次重新輸入。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
+        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
         <div class="field-row">
           <div class="field"><label>病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
+          <div class="field"><label>評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
+        </div>
+        <div class="field-row">
           <div class="field"><label>選擇已儲存的病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+          <div class="field"><label>收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
         </div>
         <div class="btn-row">
-          <button class="btn primary small" id="amgSavePatientBtn" type="button">儲存／更新此病人</button>
-          <button class="btn small" id="amgLoadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button>
+          <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+          <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
           <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <div class="btn-row">
@@ -952,14 +982,19 @@
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="azlPatientManagerCard">
         <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號分別儲存與載入。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
+        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
         <div class="field-row">
           <div class="field"><label>病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
+          <div class="field"><label>評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
+        </div>
+        <div class="field-row">
           <div class="field"><label>選擇已儲存的病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+          <div class="field"><label>收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
         </div>
         <div class="btn-row">
-          <button class="btn primary small" id="azlSavePatientBtn" type="button">儲存／更新此病人</button>
-          <button class="btn small" id="azlLoadPatientBtn" type="button">載入所選病人</button>
+          <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button>
+          <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+          <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
           <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <div class="btn-row">
@@ -1262,8 +1297,12 @@
   'use strict';
 
   // ---------------- patient records (this browser only, via localStorage) ----------------
-  const PATIENTS_KEY = 'vanco_tdm_patients_v1';
-  let currentPatientId = null;
+  // Versioned model (schemaVersion 2, loop B): each patient holds a timeline of dated visits.
+  // The per-module derived snapshots below are populated at the end of each render() and read
+  // by the shared store when a visit is saved (so we never recompute PK/rule outputs separately).
+  let lastVancoDerived = null;
+  let lastAmgDerived = null;
+  let lastAzoleDerived = null;
 
   // ---------------- regimen "what-if" single-select state (ephemeral, not saved to patient records) ----------------
   // Which candidate/custom row is picked, per module. Values: null | 'custom' | 'cand-<tau>'.
@@ -1791,8 +1830,10 @@
     // 病人存檔狀態(不影響已儲存的紀錄本身,只是離開目前這位病人)
     document.getElementById('patientLabel').value='';
     document.getElementById('patientSelect').value='';
+    document.getElementById('patientAsOf').value='';
     document.getElementById('patientMeta').textContent='';
-    currentPatientId = null;
+    vancoStore.clearCurrent();
+    vancoStore.refreshPatientSelect('');
 
     // 01 病人與腎功能
     document.getElementById('age').value='';
@@ -1949,109 +1990,444 @@
     render();
   }
 
-  function loadPatientsList(){
-    try{ const raw = localStorage.getItem(PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch(e){ return []; }
-  }
-  function savePatientsList(list){
-    try{ localStorage.setItem(PATIENTS_KEY, JSON.stringify(list)); return true; }
-    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
-  }
-  function genId(){ return 'p_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+  // ================= shared versioned patient store (loop B) =================
+  // One instance per drug module, wired via a config object. Owns the
+  // {currentPatientId, currentVisitId} session state, and turns "save" into an
+  // append-a-dated-visit operation (never an overwrite). "更新目前這筆 visit"
+  // overwrites only the currently-loaded visit. Import merges by patient id and,
+  // within a patient, by visitId — so re-importing a backup is safe & idempotent.
+  function makeVersionedPatientStore(cfg){
+    let currentPatientId = null;
+    let currentVisitId = null;
+    const $ = id => document.getElementById(id);
+    const pad = n => String(n).padStart(2,'0');
+    function loadList(){ try{ const raw = localStorage.getItem(cfg.key); return raw ? JSON.parse(raw) : []; } catch(e){ return []; } }
+    function saveList(list){ try{ localStorage.setItem(cfg.key, JSON.stringify(list)); return true; } catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; } }
+    function genId(pfx){ return pfx+'_'+Date.now()+'_'+Math.random().toString(36).slice(2,8); }
+    function fmtStamp(ms){ if(!isFinite(ms)) return '—'; const d=new Date(ms); return `${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function fmtAsOf(v){ if(!v) return '—'; const ms = typeof v==='number'?v:Date.parse(v); if(!isFinite(ms)) return String(v); const d=new Date(ms); return `${d.getFullYear()}/${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+    function visitSortKey(v){ const t = v.asOf ? Date.parse(v.asOf) : NaN; return isFinite(t) ? t : (v.savedAt||0); }
+    function visitStamp(v){ return v.asOf ? fmtAsOf(v.asOf) : fmtStamp(v.savedAt); }
+    function patientById(id){ return loadList().find(p=>p.id===id); }
+    function sortedVisits(p){ return (p.visits||[]).slice().sort((a,b)=>visitSortKey(b)-visitSortKey(a)); }
+    function latestVisit(p){ const s=sortedVisits(p); return s.length?s[0]:null; }
 
-  function refreshPatientSelect(selectAfter){
-    const list = loadPatientsList();
-    const sel = document.getElementById('patientSelect');
-    const keep = selectAfter!==undefined ? selectAfter : sel.value;
-    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
-    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
-      const d = new Date(p.savedAt);
-      const pad=n=>String(n).padStart(2,'0');
-      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
-      return `<option value="${p.id}">${label}</option>`;
-    }).join('');
-    if(keep) sel.value = keep;
-  }
+    function updateBtnState(){ const btn = cfg.updateBtnId ? $(cfg.updateBtnId) : null; if(btn) btn.disabled = !(currentPatientId && currentVisitId); }
 
-  function savePatientFn(){
-    const label = document.getElementById('patientLabel').value.trim();
-    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
-    const list = loadPatientsList();
-    const data = collectState();
-    const now = Date.now();
-    if(currentPatientId && list.some(p=>p.id===currentPatientId)){
-      const idx = list.findIndex(p=>p.id===currentPatientId);
-      list[idx] = {id:currentPatientId, label, savedAt:now, data};
-    } else {
-      const id = genId();
-      list.push({id, label, savedAt:now, data});
-      currentPatientId = id;
+    function refreshVisitSelect(){
+      const sel = cfg.visitSelectId ? $(cfg.visitSelectId) : null;
+      if(!sel) return;
+      const pid = $(cfg.patientSelectId).value;
+      const p = pid ? patientById(pid) : null;
+      if(!p || !(p.visits||[]).length){ sel.innerHTML = '<option value="">（選病人後顯示收案版本）</option>'; sel.disabled = true; updateBtnState(); if(cfg.onChanged) cfg.onChanged(); return; }
+      sel.disabled = false;
+      const s = sortedVisits(p);
+      sel.innerHTML = s.map((v,i)=>`<option value="${v.visitId}">${visitStamp(v)}${i===0?'（最新）':''}</option>`).join('');
+      if(currentVisitId && s.some(v=>v.visitId===currentVisitId)) sel.value = currentVisitId;
+      updateBtnState();
+      if(cfg.onChanged) cfg.onChanged();
     }
-    if(!savePatientsList(list)) return;
-    refreshPatientSelect(currentPatientId);
-    document.getElementById('patientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
+
+    function refreshPatientSelect(selectAfter){
+      const list = loadList();
+      const sel = $(cfg.patientSelectId);
+      const keep = selectAfter!==undefined ? selectAfter : sel.value;
+      const sorted = list.slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+      sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
+        const n = (p.visits||[]).length;
+        return `<option value="${p.id}">${p.label}（${n} 筆・更新 ${fmtStamp(p.updatedAt||0)}）</option>`;
+      }).join('');
+      if(keep) sel.value = keep;
+      refreshVisitSelect();
+    }
+
+    function resolveAsOf(){
+      const el = cfg.asOfId ? $(cfg.asOfId) : null;
+      const manual = el ? el.value.trim() : '';
+      if(manual) return manual;
+      return (cfg.getAsOfDefault ? cfg.getAsOfDefault() : '') || '';
+    }
+
+    function saveAsNewVisit(){
+      const label = $(cfg.labelId).value.trim();
+      if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+      const list = loadList();
+      const now = Date.now();
+      const visit = { visitId: genId('v'), savedAt: now, asOf: resolveAsOf(), data: cfg.collectState(), derived: (cfg.getDerived?cfg.getDerived():null) };
+      // Resolve the target patient by MRN, not by whatever happens to be loaded: the medical
+      // record number IS the patient's identity. Keying off currentPatientId instead would mean
+      // that loading patient A, then typing B's MRN and saving, silently renames A and appends
+      // B's visit onto A's timeline — corrupting the very trend history this model exists for.
+      let p = list.find(x=>x.label===label) || null;
+      if(p){ p.visits.push(visit); p.updatedAt = now; currentPatientId = p.id; }
+      else { const id = genId(cfg.idPrefix); p = { id, label, schemaVersion:2, createdAt:now, updatedAt:now, visits:[visit] }; list.push(p); currentPatientId = id; }
+      currentVisitId = visit.visitId;
+      if(!saveList(list)) return;
+      refreshPatientSelect(currentPatientId);
+      $(cfg.metaId).textContent = `已存為新收案：${label}（第 ${p.visits.length} 筆・評估時點 ${fmtAsOf(visit.asOf)}）`;
+      updateBtnState();
+    }
+
+    function updateCurrentVisit(){
+      if(!(currentPatientId && currentVisitId)){ alert('目前沒有載入中的收案版本可更新。請先「載入」某一筆，或改用「存為新收案」。'); return; }
+      const label = $(cfg.labelId).value.trim();
+      if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+      const list = loadList();
+      const p = list.find(x=>x.id===currentPatientId);
+      if(!p){ alert('找不到目前病人，可能已被刪除。'); refreshPatientSelect(''); return; }
+      const vst = (p.visits||[]).find(v=>v.visitId===currentVisitId);
+      if(!vst){ alert('找不到目前收案版本，可能已被刪除。'); refreshVisitSelect(); return; }
+      // Renaming the MRN here is legitimate (fixing a typo), but it must not silently merge
+      // this patient into a different, already-existing MRN.
+      if(label!==p.label && list.some(x=>x.id!==p.id && x.label===label)){
+        alert(`已有另一位病人使用病歷號「${label}」。請改用該病人的存檔，或先確認病歷號是否輸入錯誤。`);
+        return;
+      }
+      const now = Date.now();
+      vst.savedAt = now; vst.asOf = resolveAsOf(); vst.data = cfg.collectState(); vst.derived = cfg.getDerived?cfg.getDerived():null;
+      p.label = label; p.updatedAt = now;
+      if(!saveList(list)) return;
+      refreshPatientSelect(currentPatientId);
+      $(cfg.metaId).textContent = `已更新目前收案版本：${label}（評估時點 ${fmtAsOf(vst.asOf)}）`;
+    }
+
+    function loadSelected(){
+      const pid = $(cfg.patientSelectId).value;
+      if(!pid){ alert('請先在「已儲存的病人」選單選擇一位病人。'); return; }
+      const p = patientById(pid);
+      if(!p){ alert('找不到這位病人，可能已被刪除。'); refreshPatientSelect(''); return; }
+      const vSel = cfg.visitSelectId ? $(cfg.visitSelectId) : null;
+      let vst = (vSel && vSel.value) ? (p.visits||[]).find(v=>v.visitId===vSel.value) : null;
+      if(!vst) vst = latestVisit(p);
+      if(!vst){ alert('這位病人沒有任何收案版本。'); return; }
+      const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
+      if(!ok) return;
+      $(cfg.labelId).value = p.label;
+      cfg.applyState(vst.data);
+      currentPatientId = p.id; currentVisitId = vst.visitId;
+      if(cfg.asOfId && $(cfg.asOfId)) $(cfg.asOfId).value = (vst.asOf && isFinite(Date.parse(vst.asOf))) ? vst.asOf : '';
+      refreshPatientSelect(p.id);
+      if(vSel) vSel.value = vst.visitId;
+      $(cfg.metaId).textContent = `已載入：${p.label}（評估時點 ${fmtAsOf(vst.asOf)}・共 ${(p.visits||[]).length} 筆收案）`;
+      updateBtnState();
+    }
+
+    function deleteSelectedPatient(){
+      const pid = $(cfg.patientSelectId).value;
+      if(!pid){ alert('請先在選單選擇要刪除的病人。'); return; }
+      const p = patientById(pid);
+      if(!p) return;
+      const ok = confirm(`確定要刪除「${p.label}」的全部 ${(p.visits||[]).length} 筆收案存檔嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
+      if(!ok) return;
+      saveList(loadList().filter(x=>x.id!==pid));
+      if(currentPatientId===pid){ currentPatientId=null; currentVisitId=null; }
+      refreshPatientSelect('');
+      $(cfg.metaId).textContent = `已刪除：${p.label}`;
+      updateBtnState();
+    }
+
+    function exportAll(){
+      const list = loadList();
+      if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
+      const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const d = new Date();
+      a.href = url;
+      a.download = `${cfg.exportName}_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    }
+
+    // Accept either a v2 record ({visits:[...]}) or a legacy single-snapshot ({data:{...}})
+    // backup file, wrapping the latter into a one-visit patient so old backups aren't lost.
+    function normalizeVisits(p){
+      if(Array.isArray(p.visits)) return p.visits.filter(v=>v && v.visitId && v.data);
+      if(p.data) return [{ visitId: genId('v'), savedAt: p.savedAt||Date.now(), asOf:'', data:p.data, derived:p.derived||null }];
+      return [];
+    }
+
+    function importMerge(file){
+      const reader = new FileReader();
+      reader.onload = function(){
+        let imported;
+        try{ imported = JSON.parse(reader.result); }
+        catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
+        if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
+        const existing = loadList();
+        const map = new Map(existing.map(p=>[p.id,p]));
+        let pCount=0, vCount=0;
+        imported.forEach(p=>{
+          if(!p || !p.id || !p.label) return;
+          const inVisits = normalizeVisits(p);
+          if(!inVisits.length) return;
+          if(map.has(p.id)){
+            const cur = map.get(p.id);
+            if(!Array.isArray(cur.visits)) cur.visits = [];
+            const seen = new Set(cur.visits.map(v=>v.visitId));
+            inVisits.forEach(v=>{ if(!seen.has(v.visitId)){ cur.visits.push(v); vCount++; } });
+            cur.updatedAt = Math.max(cur.updatedAt||0, p.updatedAt||0, ...cur.visits.map(v=>v.savedAt||0));
+          } else {
+            map.set(p.id, { id:p.id, label:p.label, schemaVersion:2, createdAt:p.createdAt||Date.now(), updatedAt:p.updatedAt||Date.now(), visits:inVisits });
+            pCount++; vCount += inVisits.length;
+          }
+        });
+        saveList(Array.from(map.values()));
+        refreshPatientSelect();
+        $(cfg.metaId).textContent = `已匯入：新增 ${pCount} 位病人、合併 ${vCount} 筆收案（依 id／visitId 去重，可安全重複匯入）。`;
+      };
+      reader.readAsText(file);
+    }
+
+    function clearCurrent(){ currentPatientId=null; currentVisitId=null; updateBtnState(); }
+
+    // Lets a module hang a longitudinal view (e.g. the trend chart) off the store without the
+    // store needing to know anything about charting.
+    function getSelectedPatient(){ const id = $(cfg.patientSelectId).value; return id ? patientById(id) : null; }
+
+    return { refreshPatientSelect, refreshVisitSelect, saveAsNewVisit, updateCurrentVisit,
+             loadSelected, deleteSelectedPatient, exportAll, importMerge, clearCurrent, updateBtnState,
+             getSelectedPatient, getList: loadList,
+             _debug: ()=>({currentPatientId, currentVisitId}) };
   }
 
-  function loadPatientFn(){
-    const id = document.getElementById('patientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
-    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
-    if(!ok) return;
-    const list = loadPatientsList();
-    const rec = list.find(p=>p.id===id);
-    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshPatientSelect(''); return; }
-    document.getElementById('patientLabel').value = rec.label;
-    applyState(rec.data);
-    currentPatientId = rec.id;
-    document.getElementById('patientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
+  // datetime-local default for a vanco visit's "評估時點": latest level date, else latest dose date, else now.
+  function vancoAsOfDefault(){
+    const levels = Array.from(document.querySelectorAll('#levelTable .entry-row')).map(r=>r.querySelector('.level-date').value).filter(Boolean).sort();
+    if(levels.length) return levels[levels.length-1];
+    const doses = Array.from(document.querySelectorAll('#doseTable .entry-row')).map(r=>r.querySelector('.dose-date').value).filter(Boolean).sort();
+    if(doses.length) return doses[doses.length-1];
+    return toLocalInputValue(new Date());
   }
 
-  function deletePatientFn(){
-    const id = document.getElementById('patientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇要刪除的病人。'); return; }
-    const list = loadPatientsList();
-    const rec = list.find(p=>p.id===id);
-    if(!rec) return;
-    const ok = confirm(`確定要刪除「${rec.label}」的儲存資料嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
-    if(!ok) return;
-    savePatientsList(list.filter(p=>p.id!==id));
-    if(currentPatientId===id) currentPatientId=null;
-    refreshPatientSelect('');
-    document.getElementById('patientMeta').textContent = `已刪除：${rec.label}`;
+  const vancoStore = makeVersionedPatientStore({
+    key:'vanco_tdm_patients_v2', idPrefix:'p', exportName:'vancomycin_tdm_patients',
+    labelId:'patientLabel', patientSelectId:'patientSelect', visitSelectId:'patientVisitSelect',
+    metaId:'patientMeta', asOfId:'patientAsOf', updateBtnId:'updateVisitBtn',
+    collectState, applyState, getDerived:()=>lastVancoDerived, getAsOfDefault:vancoAsOfDefault,
+    onChanged: ()=>{ try{ renderVancoTrend(); }catch(e){ /* a chart failure must never block saving */ } }
+  });
+
+  // ================= 歷程趨勢（跨收案）trend chart — loop C =================
+  // Small multiples: every enabled series gets its own horizontal band with its own Y scale,
+  // all sharing one real-calendar X axis. Chosen over a shared/dual Y axis because the series
+  // carry incompatible units (µg/mL vs mg·h/L vs mg vs mL/min) — stacking them on one scale
+  // would either flatten them into unreadability or invite misreading one series' band as
+  // another's. The X domain is computed from ALL available data, not just the enabled series,
+  // so toggling a checkbox never shifts the time axis under the reader.
+  const TREND_PREF_KEY = 'tdm_trend_series_v1';
+  function loadTrendPrefs(){ try{ const raw = localStorage.getItem(TREND_PREF_KEY); return raw ? JSON.parse(raw) : {}; } catch(e){ return {}; } }
+  function saveTrendPrefs(p){ try{ localStorage.setItem(TREND_PREF_KEY, JSON.stringify(p)); } catch(e){} }
+  function visitTimeMs(v){ const t = v.asOf ? Date.parse(v.asOf) : NaN; return isFinite(t) ? t : (v.savedAt||0); }
+
+  function drawTrendChart(cfg){
+    const svg = document.getElementById(cfg.svgId);
+    if(!svg) return;
+    const active = cfg.series.filter(s=>cfg.enabled.indexOf(s.id)>=0 && s.points.length>0);
+    if(!active.length || !isFinite(cfg.domain.t0)){ svg.innerHTML=''; svg.setAttribute('viewBox','0 0 920 1'); return; }
+
+    const W=920, ML=58, MR=20, MT=12, MB=28, BH=104, GAP=18;
+    const H = MT + active.length*BH + (active.length-1)*GAP + MB;
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    const plotW = W-ML-MR;
+    let {t0, t1} = cfg.domain;
+    if(t1-t0 < 3600000){ t0 -= 43200000; t1 += 43200000; } // single-instant domain: give it a readable ±12h
+    const pad = (t1-t0)*0.04;
+    t0 -= pad; t1 += pad;
+    const span = Math.max(1, t1-t0);
+    const xS = t => ML + (t-t0)/span*plotW;
+    const parts = [];
+
+    // --- shared X gridlines, snapped to local midnight ---
+    const dayMs = 86400000;
+    const stepDays = [1,2,3,7,14,28,56].find(d=>d >= (span/dayMs)/6) || 112;
+    const first = new Date(t0); first.setHours(0,0,0,0);
+    const ticks = [];
+    for(let ms=first.getTime(); ms<=t1; ms+=stepDays*dayMs){ if(ms>=t0) ticks.push(ms); }
+
+    active.forEach((s, i)=>{
+      const top = MT + i*(BH+GAP);
+      const bot = top + BH;
+      // Y domain: include the series' own reference band/line so it never renders off-band.
+      let lo = Math.min(...s.points.map(p=>p.y));
+      let hi = Math.max(...s.points.map(p=>p.y));
+      if(s.band){ lo = Math.min(lo, s.band.lo); hi = Math.max(hi, s.band.hi); }
+      if(s.refLine!=null){ hi = Math.max(hi, s.refLine); lo = Math.min(lo, s.refLine); }
+      if(s.baseZero) lo = Math.min(lo, 0);
+      if(hi-lo < 1e-9){ hi = lo + 1; }
+      const m = (hi-lo)*0.12; lo -= m; hi += m;
+      const yS = v => bot - (v-lo)/(hi-lo)*BH;
+
+      parts.push(`<rect x="${ML}" y="${top}" width="${plotW}" height="${BH}" fill="var(--card)" stroke="var(--line)" stroke-width="1"/>`);
+      ticks.forEach(ms=>{ const x=xS(ms); parts.push(`<line x1="${x}" y1="${top}" x2="${x}" y2="${bot}" stroke="var(--line)" stroke-width="1"/>`); });
+
+      if(s.band){
+        const yLo=yS(s.band.lo), yHi=yS(s.band.hi);
+        parts.push(`<rect x="${ML}" y="${yHi}" width="${plotW}" height="${Math.max(0,yLo-yHi)}" fill="var(--amber-soft)" opacity="0.5"/>`);
+        // Keep the band label clear of the series title (which occupies the first ~16px of
+        // the band) and inside the band's own box, whatever the Y scale works out to.
+        const yBandLabel = Math.min(Math.max(yHi-4, top+26), bot-4);
+        parts.push(`<text x="${ML+6}" y="${yBandLabel}" font-family="var(--sans)" font-size="9.5" fill="var(--amber)">${s.band.label}</text>`);
+      }
+      if(s.refLine!=null){
+        const yR=yS(s.refLine);
+        parts.push(`<line x1="${ML}" y1="${yR}" x2="${W-MR}" y2="${yR}" stroke="var(--crimson)" stroke-width="1.2" stroke-dasharray="5,4"/>`);
+        const yRefLabel = Math.min(Math.max(yR-4, top+10), bot-4);
+        parts.push(`<text x="${W-MR-2}" y="${yRefLabel}" font-family="var(--sans)" font-size="9.5" fill="var(--crimson)" text-anchor="end">${s.refLabel||''}</text>`);
+      }
+
+      // Y ticks: just low/high/mid — the point is trend shape, not precise readout
+      [lo+m, (lo+hi)/2, hi-m].forEach(v=>{
+        const y=yS(v);
+        parts.push(`<text x="${ML-7}" y="${y+3.5}" font-family="var(--mono)" font-size="9.5" fill="var(--ink-faint)" text-anchor="end">${Math.abs(v)>=100?v.toFixed(0):v.toFixed(1)}</text>`);
+      });
+      parts.push(`<text x="${ML+6}" y="${top+12}" font-family="var(--sans)" font-size="10.5" font-weight="600" fill="var(--trace-strong)">${s.label}<tspan font-weight="400" fill="var(--ink-faint)"> ${s.unit}</tspan></text>`);
+
+      const pts = s.points.slice().sort((a,b)=>a.t-b.t);
+      if(s.type==='step'){
+        let d='';
+        pts.forEach((p,k)=>{
+          const x=xS(p.t), y=yS(p.y);
+          if(k===0) d += `M ${x} ${y}`;
+          else { d += ` L ${x} ${yS(pts[k-1].y)} L ${x} ${y}`; }
+        });
+        const last = pts[pts.length-1];
+        d += ` L ${xS(Math.min(t1, last.t + dayMs*0.5))} ${yS(last.y)}`;
+        parts.push(`<path d="${d}" fill="none" stroke="var(--ink-faint)" stroke-width="1.8"/>`);
+        pts.forEach(p=>parts.push(`<circle cx="${xS(p.t)}" cy="${yS(p.y)}" r="2.4" fill="var(--ink-soft)"/>`));
+      } else {
+        if(pts.length>1){
+          const d = pts.map((p,k)=>`${k?'L':'M'} ${xS(p.t)} ${yS(p.y)}`).join(' ');
+          parts.push(`<path d="${d}" fill="none" stroke="var(--trace)" stroke-width="2" opacity="${s.connect===false?0.25:0.9}"${s.connect===false?' stroke-dasharray="3,3"':''}/>`);
+        }
+        pts.forEach(p=>{
+          parts.push(`<circle cx="${xS(p.t)}" cy="${yS(p.y)}" r="3.2" fill="var(--card)" stroke="var(--trace)" stroke-width="1.8"/>`);
+        });
+      }
+    });
+
+    // --- shared X axis labels (drawn once, at the bottom) ---
+    const bottom = MT + active.length*BH + (active.length-1)*GAP;
+    ticks.forEach(ms=>{
+      const x=xS(ms);
+      parts.push(`<text x="${x}" y="${bottom+18}" font-family="var(--mono)" font-size="10" fill="var(--ink-faint)" text-anchor="middle">${fmtAxisDate(ms)}</text>`);
+    });
+    svg.innerHTML = parts.join('');
   }
 
-  function exportPatientsFn(){
-    const list = loadPatientsList();
-    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
-    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const pad=n=>String(n).padStart(2,'0');
-    a.href = url;
-    a.download = `vancomycin_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+  // Build the vancomycin trend series from a patient's visit timeline. A series is only
+  // offered when it actually has data — that is what makes HD patients work without any
+  // special-casing: they have no AUC24 to plot (the HD module is pre-HD-trough-guided, not
+  // AUC-guided), so the AUC series simply never appears, and the pre-HD trough series does.
+  function buildVancoTrendSeries(patient){
+    const visits = (patient.visits||[]).slice().sort((a,b)=>visitTimeMs(a)-visitTimeMs(b));
+    const latest = visits[visits.length-1];
+    const latestData = (latest && latest.data) || {};
+
+    // measured levels: flattened across every visit and de-duplicated, so the same draw
+    // captured in several successive snapshots plots once, at its real clinical time.
+    const levelMap = new Map();
+    const doseMap = new Map();
+    const scrMap = new Map();
+    visits.forEach(v=>{
+      const d = v.data || {};
+      (d.levelRows||[]).forEach(r=>{
+        const t=Date.parse(r.date), y=parseFloat(r.conc);
+        if(isFinite(t) && isFinite(y)) levelMap.set(t+'|'+y, {t, y});
+      });
+      (d.doseRows||[]).forEach(r=>{
+        const t=Date.parse(r.date), y=parseFloat(r.doseMg);
+        if(isFinite(t) && isFinite(y)) doseMap.set(t+'|'+y, {t, y});
+      });
+      (d.scrRows||[]).forEach(r=>{
+        const t=Date.parse(r.date), y=parseFloat(r.val);
+        if(isFinite(t) && isFinite(y)) scrMap.set(t+'|'+y, {t, y});
+      });
+    });
+    const levels = Array.from(levelMap.values());
+    const doses = Array.from(doseMap.values());
+    const scrs = Array.from(scrMap.values());
+
+    const perVisit = (pick) => visits.map(v=>{
+      const y = v.derived ? pick(v.derived) : null;
+      return (y!=null && isFinite(y)) ? {t: visitTimeMs(v), y} : null;
+    }).filter(Boolean);
+
+    // AUC target band comes from the tool's own documented 400–600 range (see the
+    // "目標建議落在 400–600" hint next to the 目標 AUC₂₄ input) — not invented here.
+    const aucPts = perVisit(d=>d.auc24Actual!=null ? d.auc24Actual : d.auc24ss);
+    const preTroughPts = perVisit(d=>d.preHdTroughMeasured);
+
+    // Concentration reference lines follow the SAME rules the main curve already uses for
+    // this patient (nephrotoxicity concern at 20; the 10–15 band only under the explicit
+    // alternative-trough strategy). Deliberately NOT a 15–20 "target band": this module is
+    // AUC-guided and free-sampled, so an arbitrary-time level has no 15–20 target to sit in.
+    const altTrough = !!latestData.altTroughStrategy;
+
+    const series = [];
+    if(levels.length) series.push({
+      id:'conc', label:'血中濃度（實測）', unit:'µg/mL', type:'point', points:levels,
+      refLine:20, refLabel:'腎毒性關切 20',
+      band: altTrough ? {lo:10, hi:15, label:'替代 trough 目標 10–15'} : null
+    });
+    if(preTroughPts.length) series.push({
+      id:'pretrough', label:'Pre-HD trough（實測）', unit:'µg/mL', type:'point', points:preTroughPts,
+      band:{lo:15, hi:20, label:'Pre-HD trough 目標 15–20'}
+    });
+    if(aucPts.length) series.push({
+      id:'auc', label:'AUC₂₄', unit:'mg·h/L', type:'point', points:aucPts,
+      band:{lo:400, hi:600, label:'目標 400–600'}
+    });
+    if(doses.length) series.push({ id:'dose', label:'給藥劑量', unit:'mg', type:'step', points:doses, baseZero:true });
+    const crclPts = perVisit(d=>d.crcl);
+    if(crclPts.length) series.push({ id:'crcl', label:'腎功能 CrCl', unit:'mL/min', type:'point', points:crclPts, baseZero:true });
+    if(scrs.length) series.push({ id:'scr', label:'血清肌酸酐 SCr', unit:'mg/dL', type:'point', points:scrs, baseZero:true });
+    const clPts = perVisit(d=>d.cl);
+    if(clPts.length) series.push({ id:'cl', label:'清除率 CL', unit:'L/hr', type:'point', points:clPts, baseZero:true });
+
+    // Stable X domain across every available point, so toggling series never moves the axis.
+    const allT = [];
+    series.forEach(s=>s.points.forEach(p=>allT.push(p.t)));
+    visits.forEach(v=>allT.push(visitTimeMs(v)));
+    const domain = allT.length ? {t0: Math.min(...allT), t1: Math.max(...allT)} : {t0: NaN, t1: NaN};
+    return { series, domain, visits };
   }
 
-  function importPatientsFn(file){
-    const reader = new FileReader();
-    reader.onload = function(){
-      let imported;
-      try{ imported = JSON.parse(reader.result); }
-      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
-      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
-      const existing = loadPatientsList();
-      const map = new Map(existing.map(p=>[p.id,p]));
-      let count=0;
-      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
-      savePatientsList(Array.from(map.values()));
-      refreshPatientSelect();
-      document.getElementById('patientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
-    };
-    reader.readAsText(file);
+  function renderVancoTrend(){
+    const block = document.getElementById('vancoTrendBlock');
+    const p = vancoStore.getSelectedPatient();
+    if(!p || (p.visits||[]).length < 2){ block.style.display='none'; return; }
+
+    const {series, domain, visits} = buildVancoTrendSeries(p);
+    if(!series.length){ block.style.display='none'; return; }
+    block.style.display='';
+
+    const prefs = loadTrendPrefs();
+    const saved = prefs.vanco;
+    // Default: concentration + the outcome series that actually exists for this patient
+    // (AUC24 normally; pre-HD trough for an HD patient, who has no AUC by design).
+    const defaults = ['conc', series.some(s=>s.id==='auc') ? 'auc' : 'pretrough']
+      .filter(id=>series.some(s=>s.id===id));
+    let enabled = Array.isArray(saved) ? saved.filter(id=>series.some(s=>s.id===id)) : defaults;
+    if(!enabled.length) enabled = defaults;
+
+    document.getElementById('vancoTrendPicker').innerHTML = series.map(s=>
+      `<label><input type="checkbox" data-series="${s.id}"${enabled.indexOf(s.id)>=0?' checked':''}> ${s.label}</label>`
+    ).join('');
+
+    const span = (domain.t1-domain.t0)/86400000;
+    document.getElementById('vancoTrendHint').textContent =
+      `${p.label}：${visits.length} 筆收案，橫跨 ${span>=1?span.toFixed(0)+' 天':'不到 1 天'}（${fmtAxisDate(domain.t0)}–${fmtAxisDate(domain.t1)}）。` +
+      `X 軸為真實臨床時間；每條序列各有自己的縱軸刻度，勾選以下項目切換顯示。此圖為跨收案歷程，與上方「擬合結果」的單次收案濃度-時間曲線（橫軸為小時）並非同一件事。`;
+
+    drawTrendChart({ svgId:'vancoTrendSvg', series, enabled, domain });
+
+    document.getElementById('vancoTrendPicker').querySelectorAll('input[data-series]').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const next = Array.from(document.getElementById('vancoTrendPicker').querySelectorAll('input[data-series]:checked')).map(x=>x.dataset.series);
+        const pr = loadTrendPrefs(); pr.vanco = next; saveTrendPrefs(pr);
+        drawTrendChart({ svgId:'vancoTrendSvg', series, enabled: next, domain });
+      });
+    });
   }
 
   function updateCustomRow(CL, ke, mic){
@@ -2890,6 +3266,20 @@ ${decidedTextP}
 
     setHeaderMeta('drug-vancomycin', `HD 病人 ・ 透析間期 CL ${CL.toFixed(2)} L/hr ・ ${measuredPreHDTrough!=null?'實測':'預測'} trough ${referenceTrough.toFixed(1)}`);
 
+    // --- capture derived outputs for versioned patient snapshot (loop B) ---
+    // HD patients take this separate render path, so they need their own capture or their
+    // visits would save with an empty derived payload. Deliberately AUC-free: the HD module
+    // is pre-HD-trough-guided by design (Lewis & Nolin), so no AUC24 is fabricated here.
+    lastVancoDerived = {
+      mode:'hd', ke, vd:V, cl:CL, tHalf, crcl:null,
+      auc24ss:null, cmaxSs:null, cminSs:null, auc24Actual:null,
+      preHdTroughMeasured: measuredPreHDTrough!=null ? measuredPreHDTrough : null,
+      preHdTroughPredicted: isFinite(predictedNextTrough) ? predictedNextTrough : null,
+      referenceTrough: isFinite(referenceTrough) ? referenceTrough : null,
+      hasMeasuredLevels: !!(windowLevelRows && windowLevelRows.length),
+      recDose: isFinite(suggestedDose) ? suggestedDose : null, recInterval: null
+    };
+
     buildAiPromptHD({
       age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, scrRows, flux: fluxLabel,
       hdSessions, nextSession,
@@ -3035,6 +3425,7 @@ ${flagText || '（無特別旗標）'}
     // existing dose row's date (which can reorder it relative to its neighbors)
     // never leaves the on-screen numbering stale relative to what the engine uses.
     renumberDoseRows();
+    lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
 
     const dialysis0 = document.getElementById('dialysis').value;
     if(dialysis0 === 'HD'){
@@ -3298,6 +3689,15 @@ ${flagText || '（無特別旗標）'}
     // --- 11. header meta ---
     setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ AUC₂₄ ${AUC24ss.toFixed(0)}`);
 
+    // --- capture derived outputs for versioned patient snapshot (loop B) ---
+    lastVancoDerived = {
+      mode:'standard',
+      ke, vd:V, cl:CL, tHalf, auc24ss:AUC24ss, cmaxSs:CmaxSS, cminSs:CminSS,
+      aucOverMic:AUCoverMIC, auc24Actual, crcl,
+      hasMeasuredLevels: !!(levelRowsMs && levelRowsMs.length),
+      recDose: whatIf ? whatIf.doseMg : null, recInterval: whatIf ? whatIf.tau : null
+    };
+
     // --- 12. AI prompt ---
     buildAiPrompt({
       age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, ibw, cgMethod, crcl, dialysis, scrRows,
@@ -3402,8 +3802,7 @@ ${flagText || '（無特別旗標）'}
   // are aminoglycoside-specific and defined fresh below.
   // ==================================================================
 
-  const AMINO_PATIENTS_KEY = 'amino_tdm_patients_v1';
-  let currentAmgPatientId = null;
+  // (aminoglycoside patient records now use the shared versioned store defined below)
 
   // ---------------- target lookup (µg/mL) — from references/aminoglycoside.md ----------------
   // Gentamicin and tobramycin share the same table (tobramycin has no separately
@@ -3753,8 +4152,10 @@ ${flagText || '（無特別旗標）'}
 
     document.getElementById('amgPatientLabel').value='';
     document.getElementById('amgPatientSelect').value='';
+    document.getElementById('amgPatientAsOf').value='';
     document.getElementById('amgPatientMeta').textContent='';
-    currentAmgPatientId = null;
+    amgStore.clearCurrent();
+    amgStore.refreshPatientSelect('');
 
     document.getElementById('amgAge').value='';
     document.getElementById('amgSex').value='M';
@@ -3905,103 +4306,20 @@ ${flagText || '（無特別旗標）'}
 
     renderAmino();
   }
-  function loadAmgPatientsList(){
-    try{ const raw = localStorage.getItem(AMINO_PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch(e){ return []; }
+  function amgAsOfDefault(){
+    const levels = Array.from(document.querySelectorAll('#amgLevelTable .entry-row')).map(r=>r.querySelector('.level-date').value).filter(Boolean).sort();
+    if(levels.length) return levels[levels.length-1];
+    const doses = Array.from(document.querySelectorAll('#amgDoseTable .entry-row')).map(r=>r.querySelector('.dose-date').value).filter(Boolean).sort();
+    if(doses.length) return doses[doses.length-1];
+    return toLocalInputValue(new Date());
   }
-  function saveAmgPatientsList(list){
-    try{ localStorage.setItem(AMINO_PATIENTS_KEY, JSON.stringify(list)); return true; }
-    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
-  }
-  function refreshAmgPatientSelect(selectAfter){
-    const list = loadAmgPatientsList();
-    const sel = document.getElementById('amgPatientSelect');
-    const keep = selectAfter!==undefined ? selectAfter : sel.value;
-    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
-    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
-      const d = new Date(p.savedAt);
-      const pad=n=>String(n).padStart(2,'0');
-      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
-      return `<option value="${p.id}">${label}</option>`;
-    }).join('');
-    if(keep) sel.value = keep;
-  }
-  function savePatientFnAmg(){
-    const label = document.getElementById('amgPatientLabel').value.trim();
-    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
-    const list = loadAmgPatientsList();
-    const data = collectStateAmg();
-    const now = Date.now();
-    if(currentAmgPatientId && list.some(p=>p.id===currentAmgPatientId)){
-      const idx = list.findIndex(p=>p.id===currentAmgPatientId);
-      list[idx] = {id:currentAmgPatientId, label, savedAt:now, data};
-    } else {
-      const id = 'amg_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-      list.push({id, label, savedAt:now, data});
-      currentAmgPatientId = id;
-    }
-    if(!saveAmgPatientsList(list)) return;
-    refreshAmgPatientSelect(currentAmgPatientId);
-    document.getElementById('amgPatientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
-  }
-  function loadPatientFnAmg(){
-    const id = document.getElementById('amgPatientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
-    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
-    if(!ok) return;
-    const list = loadAmgPatientsList();
-    const rec = list.find(p=>p.id===id);
-    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshAmgPatientSelect(''); return; }
-    document.getElementById('amgPatientLabel').value = rec.label;
-    applyStateAmg(rec.data);
-    currentAmgPatientId = rec.id;
-    document.getElementById('amgPatientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
-  }
-  function deletePatientFnAmg(){
-    const id = document.getElementById('amgPatientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇要刪除的病人。'); return; }
-    const list = loadAmgPatientsList();
-    const rec = list.find(p=>p.id===id);
-    if(!rec) return;
-    const ok = confirm(`確定要刪除「${rec.label}」的儲存資料嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
-    if(!ok) return;
-    saveAmgPatientsList(list.filter(p=>p.id!==id));
-    if(currentAmgPatientId===id) currentAmgPatientId=null;
-    refreshAmgPatientSelect('');
-    document.getElementById('amgPatientMeta').textContent = `已刪除：${rec.label}`;
-  }
-  function exportPatientsFnAmg(){
-    const list = loadAmgPatientsList();
-    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
-    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const pad=n=>String(n).padStart(2,'0');
-    a.href = url;
-    a.download = `aminoglycoside_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-  function importPatientsFnAmg(file){
-    const reader = new FileReader();
-    reader.onload = function(){
-      let imported;
-      try{ imported = JSON.parse(reader.result); }
-      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
-      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
-      const existing = loadAmgPatientsList();
-      const map = new Map(existing.map(p=>[p.id,p]));
-      let count=0;
-      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
-      saveAmgPatientsList(Array.from(map.values()));
-      refreshAmgPatientSelect();
-      document.getElementById('amgPatientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
-    };
-    reader.readAsText(file);
-  }
+
+  const amgStore = makeVersionedPatientStore({
+    key:'amino_tdm_patients_v2', idPrefix:'amg', exportName:'aminoglycoside_tdm_patients',
+    labelId:'amgPatientLabel', patientSelectId:'amgPatientSelect', visitSelectId:'amgPatientVisitSelect',
+    metaId:'amgPatientMeta', asOfId:'amgPatientAsOf', updateBtnId:'amgUpdateVisitBtn',
+    collectState: collectStateAmg, applyState: applyStateAmg, getDerived:()=>lastAmgDerived, getAsOfDefault:amgAsOfDefault
+  });
 
   function updateCustomRowAmg(CL, ke, target, mic){
     const dose = parseFloat(document.getElementById('amgCustomDose').value);
@@ -4240,6 +4558,7 @@ ${flagText || '（無特別旗標）'}
     // every render — see the matching comment in render() for why this can't rely
     // solely on the expand/add/prune call sites.
     renumberDoseRowsAmg();
+    lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
 
     const age = parseFloat(document.getElementById('amgAge').value);
     const sex = document.getElementById('amgSex').value;
@@ -4515,6 +4834,17 @@ ${flagText || '（無特別旗標）'}
     updateWhatIfReadout('amg', amgWhatIf, CL, ke);
 
     setHeaderMeta('drug-aminoglycoside', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ ${scheduleType==='tiw'?'Peak':'Cmax'} ${CmaxSS.toFixed(1)}／${scheduleType==='tiw'?'下次前Trough':'Cmin'} ${CminSS.toFixed(1)}`);
+
+    // --- capture derived outputs for versioned patient snapshot (loop B) ---
+    lastAmgDerived = {
+      ke, vd:V, cl:CL, tHalf, cmaxSs:CmaxSS, cminSs:CminSS, crcl,
+      scheduleType, micRatio: (isFinite(mic) && mic>0) ? CmaxSS/mic : null,
+      peakTargetLo: (target && target.peak) ? target.peak[0] : null,
+      peakTargetHi: (target && target.peak) ? target.peak[1] : null,
+      troughHi: target ? target.troughHi : null,
+      hasMeasuredLevels: !!(levelRowsMs && levelRowsMs.length),
+      recDose: amgWhatIf ? amgWhatIf.doseMg : null, recInterval: amgWhatIf ? amgWhatIf.tau : null
+    };
 
     buildAiPromptAmino({
       age, sex, height, tbw, dryWeight: useDryWeight?dryWeight:null, ibw, cgMethod, crcl, dialysis, scrRows,
@@ -5145,11 +5475,28 @@ ${flagText||'（無）'}
       steadyText, flags, treatmentGoal: document.getElementById('azlTreatmentGoal').value
     };
     document.getElementById('azlAiPromptOut').value = buildAiPromptAzole(aiData);
+
+    // --- capture derived outputs for versioned patient snapshot (loop B) ---
+    // Azole has no PK fitting by design; the "derived" payload is the rule-engine's
+    // judgement instead — trough tag, inferred infection trend, toxicity tier, and the
+    // "read the patient" cross-check outcome.
+    lastAzoleDerived = {
+      drug, indicationId,
+      trough: isFinite(trough) ? trough : null,
+      troughTag: troughResult.tag,
+      troughLow: !!troughResult.lowFlag, troughHigh: !!troughResult.highFlag,
+      isSteady: steady.applicable===false ? null : steady.isSteady,
+      infectionTrend: infectionTrend.trend,
+      infectionReasons: infectionTrend.reasons.slice(),
+      toxicityHasAlert: !!toxicity.hasAlert,
+      toxicityAlerts: toxicity.alerts.slice(),
+      crossCheckLevels: crossCheckMsgs.map(m=>m.level),
+      interactionCount: interactionHits.length
+    };
   }
 
   // ---------------- azole patient records ----------------
-  const AZOLE_PATIENTS_KEY = 'azole_tdm_patients_v1';
-  let currentAzlPatientId = null;
+  // (now uses the shared versioned store defined below, after collectStateAzole/applyStateAzole)
 
   function collectStateAzole(){
     const v = id => document.getElementById(id).value;
@@ -5215,103 +5562,23 @@ ${flagText||'（無）'}
     setVal('azlOtherNotes', s.otherNotes);
     renderAzole();
   }
-  function loadAzlPatientsList(){
-    try{ const raw = localStorage.getItem(AZOLE_PATIENTS_KEY); return raw ? JSON.parse(raw) : []; }
-    catch(e){ return []; }
+  function azoleAsOfDefault(){
+    const td = document.getElementById('azlTroughDate').value;
+    if(td) return td;
+    // azlLabDate is a date-only input; pad it to datetime-local shape so it round-trips
+    // back into the asOf field on load instead of being silently rejected.
+    const ld = document.getElementById('azlLabDate').value;
+    if(ld) return ld + 'T00:00';
+    return toLocalInputValue(new Date());
   }
-  function saveAzlPatientsList(list){
-    try{ localStorage.setItem(AZOLE_PATIENTS_KEY, JSON.stringify(list)); return true; }
-    catch(e){ alert('儲存到本機失敗（可能是瀏覽器儲存空間已滿，或此瀏覽器不允許本機儲存）：'+e.message); return false; }
-  }
-  function refreshAzlPatientSelect(selectAfter){
-    const list = loadAzlPatientsList();
-    const sel = document.getElementById('azlPatientSelect');
-    const keep = selectAfter!==undefined ? selectAfter : sel.value;
-    const sorted = list.slice().sort((a,b)=>b.savedAt-a.savedAt);
-    sel.innerHTML = '<option value="">（新病人／未選擇）</option>' + sorted.map(p=>{
-      const d = new Date(p.savedAt);
-      const pad=n=>String(n).padStart(2,'0');
-      const label = `${p.label}（${d.getMonth()+1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}）`;
-      return `<option value="${p.id}">${label}</option>`;
-    }).join('');
-    if(keep) sel.value = keep;
-  }
-  function savePatientFnAzl(){
-    const label = document.getElementById('azlPatientLabel').value.trim();
-    if(!label){ alert('請先輸入病歷號再儲存。'); return; }
-    const list = loadAzlPatientsList();
-    const data = collectStateAzole();
-    const now = Date.now();
-    if(currentAzlPatientId && list.some(p=>p.id===currentAzlPatientId)){
-      const idx = list.findIndex(p=>p.id===currentAzlPatientId);
-      list[idx] = {id:currentAzlPatientId, label, savedAt:now, data};
-    } else {
-      const id = 'azl_'+Date.now()+'_'+Math.random().toString(36).slice(2,8);
-      list.push({id, label, savedAt:now, data});
-      currentAzlPatientId = id;
-    }
-    if(!saveAzlPatientsList(list)) return;
-    refreshAzlPatientSelect(currentAzlPatientId);
-    document.getElementById('azlPatientMeta').textContent = `已儲存：${label}（${new Date(now).toLocaleString('zh-TW')}）`;
-  }
-  function loadPatientFnAzl(){
-    const id = document.getElementById('azlPatientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
-    const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
-    if(!ok) return;
-    const list = loadAzlPatientsList();
-    const rec = list.find(p=>p.id===id);
-    if(!rec){ alert('找不到這筆資料，可能已被刪除。'); refreshAzlPatientSelect(''); return; }
-    document.getElementById('azlPatientLabel').value = rec.label;
-    applyStateAzole(rec.data);
-    currentAzlPatientId = rec.id;
-    document.getElementById('azlPatientMeta').textContent = `已載入：${rec.label}（原存於 ${new Date(rec.savedAt).toLocaleString('zh-TW')}）`;
-  }
-  function deletePatientFnAzl(){
-    const id = document.getElementById('azlPatientSelect').value;
-    if(!id){ alert('請先在下拉選單選擇一位已儲存的病人。'); return; }
-    const ok = confirm('確定要刪除這位病人的存檔嗎？此動作無法復原。');
-    if(!ok) return;
-    let list = loadAzlPatientsList();
-    list = list.filter(p=>p.id!==id);
-    if(!saveAzlPatientsList(list)) return;
-    if(currentAzlPatientId===id) currentAzlPatientId=null;
-    document.getElementById('azlPatientLabel').value='';
-    refreshAzlPatientSelect('');
-    document.getElementById('azlPatientMeta').textContent = '已刪除。';
-  }
-  function exportPatientsFnAzl(){
-    const list = loadAzlPatientsList();
-    if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
-    const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    const d = new Date();
-    const pad=n=>String(n).padStart(2,'0');
-    a.href = url;
-    a.download = `azole_tdm_patients_${d.getFullYear()}${pad(d.getMonth()+1)}${pad(d.getDate())}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  }
-  function importPatientsFnAzl(file){
-    const reader = new FileReader();
-    reader.onload = function(){
-      let imported;
-      try{ imported = JSON.parse(reader.result); }
-      catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
-      if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
-      const existing = loadAzlPatientsList();
-      const map = new Map(existing.map(p=>[p.id,p]));
-      let count=0;
-      imported.forEach(p=>{ if(p && p.id && p.label && p.data){ map.set(p.id, p); count++; } });
-      saveAzlPatientsList(Array.from(map.values()));
-      refreshAzlPatientSelect();
-      document.getElementById('azlPatientMeta').textContent = `已匯入 ${count} 筆病人資料（與現有清單合併）。`;
-    };
-    reader.readAsText(file);
-  }
+
+  const azoleStore = makeVersionedPatientStore({
+    key:'azole_tdm_patients_v2', idPrefix:'azl', exportName:'azole_tdm_patients',
+    labelId:'azlPatientLabel', patientSelectId:'azlPatientSelect', visitSelectId:'azlPatientVisitSelect',
+    metaId:'azlPatientMeta', asOfId:'azlPatientAsOf', updateBtnId:'azlUpdateVisitBtn',
+    collectState: collectStateAzole, applyState: applyStateAzole, getDerived:()=>lastAzoleDerived, getAsOfDefault:azoleAsOfDefault
+  });
+
   function clearAllFnAzl(){
     const ok = confirm('確定要清空目前畫面上的 azole 資料嗎？已儲存的病人存檔不會受影響。');
     if(!ok) return;
@@ -5322,7 +5589,11 @@ ${flagText||'（無）'}
     document.getElementById('azlFreq').dataset.userTouched='';
     toggleAzoleDrugUI();
     document.getElementById('azlPatientLabel').value='';
-    currentAzlPatientId = null;
+    document.getElementById('azlPatientAsOf').value='';
+    document.getElementById('azlPatientSelect').value='';
+    document.getElementById('azlPatientMeta').textContent='';
+    azoleStore.clearCurrent();
+    azoleStore.refreshPatientSelect('');
     renderAzole();
   }
 
@@ -5458,18 +5729,20 @@ ${flagText||'（無）'}
     document.getElementById('pruneBeforeBtn').addEventListener('click', pruneDosesBeforeFn);
     document.getElementById('clearAllBtn').addEventListener('click', ()=>clearCurrentDrug());
 
-    document.getElementById('savePatientBtn').addEventListener('click', savePatientFn);
-    document.getElementById('loadPatientBtn').addEventListener('click', loadPatientFn);
-    document.getElementById('deletePatientBtn').addEventListener('click', deletePatientFn);
-    document.getElementById('exportPatientsBtn').addEventListener('click', exportPatientsFn);
+    document.getElementById('savePatientBtn').addEventListener('click', ()=>vancoStore.saveAsNewVisit());
+    document.getElementById('updateVisitBtn').addEventListener('click', ()=>vancoStore.updateCurrentVisit());
+    document.getElementById('loadPatientBtn').addEventListener('click', ()=>vancoStore.loadSelected());
+    document.getElementById('deletePatientBtn').addEventListener('click', ()=>vancoStore.deleteSelectedPatient());
+    document.getElementById('patientSelect').addEventListener('change', ()=>vancoStore.refreshVisitSelect());
+    document.getElementById('exportPatientsBtn').addEventListener('click', ()=>vancoStore.exportAll());
     document.getElementById('importPatientsBtn').addEventListener('click', ()=>{
       document.getElementById('importFileInput').click();
     });
     document.getElementById('importFileInput').addEventListener('change', function(){
-      if(this.files && this.files[0]) importPatientsFn(this.files[0]);
+      if(this.files && this.files[0]) vancoStore.importMerge(this.files[0]);
       this.value = '';
     });
-    refreshPatientSelect();
+    vancoStore.refreshPatientSelect();
 
     document.getElementById('copyPromptBtn').addEventListener('click', ()=>{
       const ta = document.getElementById('aiPromptOut');
@@ -5552,18 +5825,20 @@ ${flagText||'（無）'}
     document.getElementById('amgExpandDoses').addEventListener('click', expandDosesFnAmg);
     document.getElementById('amgPruneBeforeBtn').addEventListener('click', pruneDosesBeforeFnAmg);
 
-    document.getElementById('amgSavePatientBtn').addEventListener('click', savePatientFnAmg);
-    document.getElementById('amgLoadPatientBtn').addEventListener('click', loadPatientFnAmg);
-    document.getElementById('amgDeletePatientBtn').addEventListener('click', deletePatientFnAmg);
-    document.getElementById('amgExportPatientsBtn').addEventListener('click', exportPatientsFnAmg);
+    document.getElementById('amgSavePatientBtn').addEventListener('click', ()=>amgStore.saveAsNewVisit());
+    document.getElementById('amgUpdateVisitBtn').addEventListener('click', ()=>amgStore.updateCurrentVisit());
+    document.getElementById('amgLoadPatientBtn').addEventListener('click', ()=>amgStore.loadSelected());
+    document.getElementById('amgDeletePatientBtn').addEventListener('click', ()=>amgStore.deleteSelectedPatient());
+    document.getElementById('amgPatientSelect').addEventListener('change', ()=>amgStore.refreshVisitSelect());
+    document.getElementById('amgExportPatientsBtn').addEventListener('click', ()=>amgStore.exportAll());
     document.getElementById('amgImportPatientsBtn').addEventListener('click', ()=>{
       document.getElementById('amgImportFileInput').click();
     });
     document.getElementById('amgImportFileInput').addEventListener('change', function(){
-      if(this.files && this.files[0]) importPatientsFnAmg(this.files[0]);
+      if(this.files && this.files[0]) amgStore.importMerge(this.files[0]);
       this.value = '';
     });
-    refreshAmgPatientSelect();
+    amgStore.refreshPatientSelect();
 
     document.getElementById('amgCopyPromptBtn').addEventListener('click', ()=>{
       const ta = document.getElementById('amgAiPromptOut');
@@ -5604,18 +5879,20 @@ ${flagText||'（無）'}
       renderAzole();
     });
 
-    document.getElementById('azlSavePatientBtn').addEventListener('click', savePatientFnAzl);
-    document.getElementById('azlLoadPatientBtn').addEventListener('click', loadPatientFnAzl);
-    document.getElementById('azlDeletePatientBtn').addEventListener('click', deletePatientFnAzl);
-    document.getElementById('azlExportPatientsBtn').addEventListener('click', exportPatientsFnAzl);
+    document.getElementById('azlSavePatientBtn').addEventListener('click', ()=>azoleStore.saveAsNewVisit());
+    document.getElementById('azlUpdateVisitBtn').addEventListener('click', ()=>azoleStore.updateCurrentVisit());
+    document.getElementById('azlLoadPatientBtn').addEventListener('click', ()=>azoleStore.loadSelected());
+    document.getElementById('azlDeletePatientBtn').addEventListener('click', ()=>azoleStore.deleteSelectedPatient());
+    document.getElementById('azlPatientSelect').addEventListener('change', ()=>azoleStore.refreshVisitSelect());
+    document.getElementById('azlExportPatientsBtn').addEventListener('click', ()=>azoleStore.exportAll());
     document.getElementById('azlImportPatientsBtn').addEventListener('click', ()=>{
       document.getElementById('azlImportFileInput').click();
     });
     document.getElementById('azlImportFileInput').addEventListener('change', function(){
-      if(this.files && this.files[0]) importPatientsFnAzl(this.files[0]);
+      if(this.files && this.files[0]) azoleStore.importMerge(this.files[0]);
       this.value = '';
     });
-    refreshAzlPatientSelect();
+    azoleStore.refreshPatientSelect();
 
     document.getElementById('azlCopyPromptBtn').addEventListener('click', ()=>{
       const ta = document.getElementById('azlAiPromptOut');
