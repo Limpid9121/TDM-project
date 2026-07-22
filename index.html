@@ -121,6 +121,39 @@
     font-family:var(--mono);font-size:11px;color:var(--trace);background:var(--trace-soft);
     padding:1px 6px;border-radius:4px;font-weight:600;
   }
+
+  /* ---- collapsible input cards (left column) ----
+     Height is animated via grid-template-rows 1fr->0fr rather than max-height, so the
+     easing stays smooth regardless of how tall a card's content is (no guessed maximum,
+     no dead time on short cards). Collapsing is purely visual: content stays in the DOM,
+     so every getElementById lookup and every calculation is untouched. */
+  .card h2.card-head{cursor:pointer;user-select:none;}
+  .card h2.card-head:hover{color:var(--trace-strong);}
+  .card h2.card-head:focus-visible{outline:2px solid var(--trace);outline-offset:4px;border-radius:4px;}
+  .card-chev{
+    margin-left:auto;flex:0 0 auto;width:11px;height:7px;color:var(--ink-faint);
+    transition:transform 200ms ease;
+  }
+  .card.collapsed .card-chev{transform:rotate(-90deg);}
+  .card-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows 200ms ease;}
+  .card-body > .card-body-inner{overflow:hidden;min-height:0;}
+  .card.collapsed > .card-body{grid-template-rows:0fr;}
+  /* hide only after the collapse finishes, so collapsed fields can't be reached by Tab
+     while still animating (and can't be focus-scrolled into an invisible area) */
+  .card.collapsed > .card-body > .card-body-inner{visibility:hidden;transition:visibility 0s linear 200ms;}
+  .card{transition:padding-bottom 200ms ease;}
+  .card.collapsed{padding-bottom:14px;}
+  .panel-tools{display:flex;justify-content:flex-end;margin-bottom:-8px;}
+  @media (prefers-reduced-motion:reduce){
+    .card, .card-body, .card-chev{transition:none;}
+  }
+  @media print{
+    /* never print a collapsed card as a bare title */
+    .card.collapsed > .card-body{grid-template-rows:1fr;}
+    .card.collapsed > .card-body > .card-body-inner{visibility:visible;}
+    .card.collapsed{padding-bottom:20px;}
+    .panel-tools, .card-chev{display:none;}
+  }
   .card .hint{font-size:12px;color:var(--ink-faint);margin:0 0 14px;}
 
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
@@ -244,12 +277,25 @@
   .trend-picker label.disabled{opacity:0.4;cursor:not-allowed;}
   .trend-empty{font-size:11.5px;color:var(--ink-faint);padding:10px 0;}
 
+  /* Hairlines are drawn by each cell's own right/bottom border rather than by a grey
+     container background showing through a 1px gap. With the old approach, any row that
+     wasn't completely filled (azole has only 2 cells; vanco/AMG leave 2-3 empty at the
+     end) rendered the leftover tracks as a solid grey block, which read as a broken or
+     unfinished row. Cell-drawn borders leave that space plain card-white instead.
+     The -1px bottom margin collapses the last row's border into the following
+     .section-block's border-top so the seam stays a single hairline. */
   .param-grid{
-    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1px;
-    background:var(--line);border-top:1px solid var(--line);border-bottom:1px solid var(--line);
-    margin:16px 0 0;
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:0;
+    background:var(--card);border-top:1px solid var(--line);
+    margin:16px 0 -1px;
   }
-  .param-cell{background:var(--card);padding:12px 14px;}
+  .param-cell{
+    background:var(--card);padding:12px 14px;
+    border-right:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  /* the final cell is followed by empty space, not another cell — a right border there
+     would dangle in the middle of the row */
+  .param-grid > .param-cell:last-child{border-right:none;}
   .param-cell .label{font-size:11px;color:var(--ink-faint);margin-bottom:3px;}
   .param-cell .value{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--ink);}
   .param-cell .value .unit{font-size:12px;font-weight:500;color:var(--ink-soft);margin-left:2px;}
@@ -310,7 +356,7 @@
   .monitor-grid p, .monitor-grid ul{font-size:12.5px;margin:0;padding-left:18px;}
   .monitor-grid li{margin-bottom:4px;}
 
-  textarea#aiPromptOut, textarea#amgAiPromptOut{
+  textarea#aiPromptOut, textarea#amgAiPromptOut, textarea#azlAiPromptOut{
     width:100%;min-height:220px;font-family:var(--mono);font-size:11.5px;line-height:1.6;
     background:#FBFBF9;border:1px solid var(--line-strong);border-radius:8px;padding:12px;color:var(--ink);
     white-space:pre-wrap;
@@ -934,7 +980,7 @@
         <h3><span class="idx">B</span>劑量調整建議</h3>
         <p class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
         <div class="table-scroll"><table class="regimen-table" id="amgRegimenTable">
-          <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
+          <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak，輸注後30分)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
           <tfoot>
             <tr class="custom-row">
@@ -1255,7 +1301,7 @@
         <div class="flag-list" id="azlFlagList"></div>
       </div>
 
-      <div class="section-block" id="azlDoseSuggestBlock" style="display:none;">
+      <div class="section-block" id="azlDoseSuggestBlock">
         <h3><span class="idx">B</span>劑量調整建議（已依本院整顆／半顆限制捨入）</h3>
         <div class="flag-list" id="azlDoseSuggestList"></div>
       </div>
@@ -1266,7 +1312,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt</h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）</h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="azlAiPromptOut" readonly></textarea>
         <div class="btn-row">
@@ -1988,6 +2034,106 @@
     setVal('customDose', s.customDose); setVal('customInf', s.customInf); setVal('customTau', s.customTau);
 
     render();
+  }
+
+  // ================= collapsible input cards (left column) =================
+  // Wiring is done at startup by wrapping each card's own content, so no per-card markup
+  // is required and any card added later (e.g. a future AED module) inherits this for
+  // free. Nothing is removed from the DOM — collapsing only drives CSS — so field values,
+  // getElementById lookups and every downstream calculation behave exactly as before.
+  const CARD_COLLAPSE_KEY = 'tdm_card_collapse_v1';
+  function loadCollapsePrefs(){ try{ const r = localStorage.getItem(CARD_COLLAPSE_KEY); return r ? JSON.parse(r) : {}; } catch(e){ return {}; } }
+  function saveCollapsePrefs(p){ try{ localStorage.setItem(CARD_COLLAPSE_KEY, JSON.stringify(p)); } catch(e){} }
+
+  const CHEV_SVG = '<svg class="card-chev" viewBox="0 0 11 7" aria-hidden="true"><path d="M1.2 1.4L5.5 5.6L9.8 1.4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  function initCollapsibleCards(){
+    const panels = [
+      {id:'inputPanel',    mod:'vanco'},
+      {id:'amgInputPanel', mod:'amg'},
+      {id:'azlInputPanel', mod:'azole'}
+    ];
+    const prefs = loadCollapsePrefs();
+
+    panels.forEach(({id, mod})=>{
+      const panel = document.getElementById(id);
+      if(!panel) return;
+      const cards = Array.from(panel.children).filter(el=>el.classList && el.classList.contains('card'));
+      if(!cards.length) return;
+
+      const keyFor = (card, i) => mod + ':' + (card.id || ('i'+i));
+
+      function setCollapsed(card, h2, collapsed){
+        card.classList.toggle('collapsed', collapsed);
+        h2.setAttribute('aria-expanded', String(!collapsed));
+      }
+
+      cards.forEach((card, i)=>{
+        const h2 = card.querySelector('h2');
+        if(!h2 || card.dataset.collapsibleReady) return;
+
+        // move everything after the heading into an animatable wrapper
+        const body = document.createElement('div');
+        body.className = 'card-body';
+        const inner = document.createElement('div');
+        inner.className = 'card-body-inner';
+        let n = h2.nextSibling;
+        while(n){ const next = n.nextSibling; inner.appendChild(n); n = next; }
+        body.appendChild(inner);
+        card.appendChild(body);
+
+        h2.classList.add('card-head');
+        h2.setAttribute('role', 'button');
+        h2.setAttribute('tabindex', '0');
+        h2.insertAdjacentHTML('beforeend', CHEV_SVG);
+
+        const toggle = ()=>{
+          const next = !card.classList.contains('collapsed');
+          setCollapsed(card, h2, next);
+          const p = loadCollapsePrefs();
+          p[keyFor(card, i)] = next;
+          saveCollapsePrefs(p);
+          syncBulk();
+        };
+        h2.addEventListener('click', toggle);
+        h2.addEventListener('keydown', e=>{
+          if(e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar'){ e.preventDefault(); toggle(); }
+        });
+
+        setCollapsed(card, h2, !!prefs[keyFor(card, i)]);
+        card.dataset.collapsibleReady = '1';
+      });
+
+      // bulk control — the point of the feature is fast navigation, which only really
+      // works when every card can be folded away in one action
+      let bulkBtn = null;
+      function syncBulk(){
+        if(!bulkBtn) return;
+        const anyOpen = cards.some(c=>!c.classList.contains('collapsed'));
+        bulkBtn.textContent = anyOpen ? '全部收起' : '全部展開';
+      }
+      if(!panel.querySelector('.panel-tools')){
+        const tools = document.createElement('div');
+        tools.className = 'panel-tools';
+        bulkBtn = document.createElement('button');
+        bulkBtn.type = 'button';
+        bulkBtn.className = 'btn small';
+        bulkBtn.addEventListener('click', ()=>{
+          const collapseAll = cards.some(c=>!c.classList.contains('collapsed'));
+          const p = loadCollapsePrefs();
+          cards.forEach((c, i)=>{
+            const h = c.querySelector('h2.card-head');
+            if(h) setCollapsed(c, h, collapseAll);
+            p[keyFor(c, i)] = collapseAll;
+          });
+          saveCollapsePrefs(p);
+          syncBulk();
+        });
+        tools.appendChild(bulkBtn);
+        panel.insertBefore(tools, panel.firstChild);
+      }
+      syncBulk();
+    });
   }
 
   // ================= shared versioned patient store (loop B) =================
@@ -4314,6 +4460,30 @@ ${flagText || '（無特別旗標）'}
     return toLocalInputValue(new Date());
   }
 
+  // Steady-state concentration at an arbitrary time t (hours, relative to a given dose's
+  // OWN infusion start) for a periodic aminoglycoside regimen — reference-only companion
+  // to the clinical "peak, 30 min post-infusion-end" convention already used everywhere
+  // else in this module for target-band judgement, dose-solving, and Cmax/MIC.
+  //
+  // Added per 讀書會共識 (2026-07): some literature (e.g. Sarubbi & Hull 1978; UNC Peds
+  // 2022; SIU Med 2017) instead draws "peak" at a fixed 1 hour after infusion START. That
+  // convention is not adopted as the basis for any tagging/dosing logic here — it is
+  // surfaced as a second, clearly-labeled number so a level actually drawn at T1 can be
+  // compared against a prediction for that same time point.
+  //
+  // Superposition algebra (verified against the existing post-infusion-end formula: both
+  // reduce to the identical value at t = infHr):
+  //   during infusion   (t <= infHr):  C(t) = cTroughSs*e^(-ke*t) + (R/CL)*(1-e^(-ke*t))
+  //   after infusion ends (t > infHr): C(t) = cMaxAtInfusionEnd*e^(-ke*(t-infHr))
+  // The first branch matters for infusions running >=1hr (e.g. high-dose amikacin over 60
+  // min): T1 can then fall DURING the infusion, where the "post-end decay" formula would
+  // not apply and must not be used.
+  function ssConcAtT1(R, CL, ke, infHr, cMaxAtInfusionEnd, cTroughSs, t){
+    t = (t===undefined) ? 1 : t; // T1 = 1hr after this dose's own infusion start, by default
+    if(t <= infHr) return cTroughSs*Math.exp(-ke*t) + (R/CL)*(1-Math.exp(-ke*t));
+    return cMaxAtInfusionEnd*Math.exp(-ke*(t-infHr));
+  }
+
   const amgStore = makeVersionedPatientStore({
     key:'amino_tdm_patients_v2', idPrefix:'amg', exportName:'aminoglycoside_tdm_patients',
     labelId:'amgPatientLabel', patientSelectId:'amgPatientSelect', visitSelectId:'amgPatientVisitSelect',
@@ -4341,12 +4511,13 @@ ${flagText || '（無特別旗標）'}
     // the compared value matches what would actually be measured.
     const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5);
     const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(tauC-infHr));
+    const cmaxT1 = ssConcAtT1(R, CL, ke, infHr, cmaxAtInfusionEnd, cmin);
     const {tag, tagText} = regimenTagAmino(cmax, cmin, target, mic);
-    cmaxEl.textContent = cmax.toFixed(1);
+    cmaxEl.innerHTML = `${cmax.toFixed(1)}<br><span class="hint" style="font-size:10px;">參考 T1 ${cmaxT1.toFixed(1)}</span>`;
     cminEl.textContent = cmin.toFixed(1);
     ratioEl.textContent = (isFinite(mic)&&mic>0) ? (cmax/mic).toFixed(1) : '—';
     reasonEl.innerHTML = `${tagText}<span class="tag ${tag}">${tag==='ok'?'OK':(tag==='warn'?'留意':'風險')}</span>`;
-    return {dose, infMin, tauC, cmax, cmin, tag, tagText};
+    return {dose, infMin, tauC, cmax, cmaxT1, cmin, tag, tagText};
   }
 
   function computeCandidateAmino(candTau, CL, ke, infHrCurrent, target, dailyDoseNow, mic, drug){
@@ -4368,6 +4539,7 @@ ${flagText || '（無特別旗標）'}
     const cmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
     const cmax = cmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
     const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(candTau-infHrC));
+    const cmaxT1 = ssConcAtT1(R, CL, ke, infHrC, cmaxAtInfusionEnd, cmin);
     const {tag, tagText} = regimenTagAmino(cmax, cmin, target, mic);
     // when there's no established peak target, the dose above is derived by scaling
     // the CURRENTLY ENTERED dose proportionally (not solved from CL/V+target) — make
@@ -4375,7 +4547,7 @@ ${flagText || '（無特別旗標）'}
     // against (this indication genuinely has none in the literature reference used)
     const finalTagText = (!target || !target.peak) ? `${tagText}（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）` : tagText;
     const ratio = (isFinite(mic)&&mic>0) ? cmax/mic : null;
-    return {candTau, roundedDose, doseMl, vialLabel, infMinC: Math.round(infHrC*60), cmax, cmin, ratio, tag, tagText: finalTagText};
+    return {candTau, roundedDose, doseMl, vialLabel, infMinC: Math.round(infHrC*60), cmax, cmaxT1, cmin, ratio, tag, tagText: finalTagText};
   }
 
   function renderRegimenTableAmino(regimenRows, currentTau, suggestedTau){
@@ -4389,7 +4561,7 @@ ${flagText || '（無特別旗標）'}
         <td>q${r.candTau}h${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}${suggestedTau!=null && r.candTau===suggestedTau?' <span class="tag ok">建議</span>':''}</td>
         <td>${doseText}／${r.infMinC} min輸注</td>
         <td>q${r.candTau}h</td>
-        <td>${fmt1(r.cmax)}</td>
+        <td>${fmt1(r.cmax)}<br><span class="hint" style="font-size:10px;">參考 T1 ${fmt1(r.cmaxT1)}</span></td>
         <td>${fmt1(r.cmin)}</td>
         <td>${r.ratio!=null?fmt1(r.ratio):'—'}</td>
         <td class="reason">${r.tagText}<span class="tag ${r.tag}">${r.tag==='ok'?'OK':(r.tag==='warn'?'留意':'風險')}</span></td>
@@ -4436,7 +4608,7 @@ ${flagText || '（無特別旗標）'}
 
     flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
 
-    let CmaxSS, CminSS, tauForCurve, virtualDoses = [], cursor = 0, cmaxLabel, cminLabel, cmaxSub, cminSub;
+    let CmaxSS, CminSS, cmaxT1, tauForCurve, virtualDoses = [], cursor = 0, cmaxLabel, cminLabel, cmaxSub, cminSub;
 
     if(scheduleType==='tiw'){
       const timeStr = document.getElementById('amgTiwTime').value || '09:00';
@@ -4460,12 +4632,13 @@ ${flagText || '（無特別旗標）'}
       const refDose = virtualDoses[refIdx];
       const dosesForPred = virtualDoses.map(dd=>({tHr:dd.t_rel, doseMg:dd.doseMg, infHr:dd.infHr}));
       CmaxSS = predictConc(refDose.t_rel + refDose.infHr + 0.5, dosesForPred, CLpop, Vpop);
+      cmaxT1 = predictConc(refDose.t_rel + 1, dosesForPred, CLpop, Vpop);
       CminSS = (refIdx+1 < virtualDoses.length)
         ? predictConc(virtualDoses[refIdx+1].t_rel, dosesForPred, CLpop, Vpop)
         : predictConc(refDose.t_rel + 72, dosesForPred, CLpop, Vpop);
       tauForCurve = virtualDoses.length>1 ? (virtualDoses[1].t_rel - virtualDoses[0].t_rel) : 72;
       cursor = virtualDoses[virtualDoses.length-1].t_rel + maintInfHr;
-      cmaxLabel = `預測 Peak（第 ${refIdx+1} 劑後）`; cminLabel = '預測 Trough（下一劑前）';
+      cmaxLabel = `預測 Peak（第 ${refIdx+1} 劑後，輸注後 30 分）`; cminLabel = '預測 Trough（下一劑前）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
       cminSub = target?`目標 <${target.troughHi}（依排定星期推算，非固定間隔公式）`:'';
       flags.push({level:'ok', text:`計畫排程為「每週固定星期」，非等距間隔；預測 Peak／Trough 改以你勾選的星期模擬出的給藥序列直接推算（約第 ${refIdx+1} 劑，反映初步累積後的濃度），並非固定間隔穩態公式。`});
@@ -4474,6 +4647,7 @@ ${flagText || '（無特別旗標）'}
       const CmaxAtInfusionEnd = (R/CLpop)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
       CmaxSS = CmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
       CminSS = CmaxAtInfusionEnd*Math.exp(-ke*(tau-maintInfHr));
+      cmaxT1 = ssConcAtT1(R, CLpop, ke, maintInfHr, CmaxAtInfusionEnd, CminSS);
       tauForCurve = tau;
       cmaxLabel = '預測 Cmax,ss（peak，輸注後 30 分）'; cminLabel = '預測 Cmin,ss（trough）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
@@ -4493,6 +4667,7 @@ ${flagText || '（無特別旗標）'}
       ['CL（族群估算）', fmt2(CLpop), 'L/hr', ''],
       ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
       [cmaxLabel, fmt1(CmaxSS), 'µg/mL', cmaxSub],
+      ['參考：Cmax(T1，開始輸注後 1 小時)', fmt1(cmaxT1), 'µg/mL', '讀書會共識時點；僅供對照，不納入判讀'],
       [cminLabel, fmt1(CminSS), 'µg/mL', cminSub]
     ];
     const micApplicable = target && target.micRatioApplicable;
@@ -4731,7 +4906,7 @@ ${flagText || '（無特別旗標）'}
     const windowStart = Math.max(0, lastEventRel-24);
     const auc24Actual = integrateTrapz(t=>predictConc(t,dosesForFit,CL,V), windowStart, lastEventRel, 480);
 
-    let tau, CmaxSS, CminSS, dailyDoseNow, tauForCurve, cmaxLabel, cminLabel, cmaxSub, cminSub;
+    let tau, CmaxSS, CminSS, cmaxT1, dailyDoseNow, tauForCurve, cmaxLabel, cminLabel, cmaxSub, cminSub;
     let candTaus = [], regimenRows = [];
 
     if(scheduleType==='tiw'){
@@ -4742,6 +4917,7 @@ ${flagText || '（無特別旗標）'}
       const lastDose = doses[doses.length-1];
       // most recent actual peak: 30 min after the most recently GIVEN dose's infusion ends
       CmaxSS = predictConc(lastDose.t_rel + lastDose.infHr + 0.5, dosesForFit, CL, V);
+      cmaxT1 = predictConc(lastDose.t_rel + 1, dosesForFit, CL, V);
       // predicted trough right before the next scheduled (not-yet-given) dose
       const nextDoseAbsMs = checkedDays.length ? findNextTiwDoseTime(lastDoseAbsMs, checkedDays, hh, mm) : null;
       if(nextDoseAbsMs){
@@ -4753,7 +4929,7 @@ ${flagText || '（無特別旗標）'}
         tauForCurve = 72;
       }
       tau = tauForCurve; // used only for candidate-table "current interval" tag, harmless for tiw (no candidates rendered)
-      cmaxLabel = 'Peak（最近一劑後實測推算）'; cminLabel = 'Trough（下次排定劑量前預測）';
+      cmaxLabel = 'Peak（最近一劑後實測推算，輸注後 30 分）'; cminLabel = 'Trough（下次排定劑量前預測）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
       cminSub = target?`目標 <${target.troughHi}（依實際給藥史推算，非固定間隔公式）`:'依實際給藥史推算，非固定間隔公式';
       flags.push({level:'ok', text:`目前為「每週固定星期」排程，非等距間隔，穩態相關數字已改以你目前輸入的實際給藥史直接推算——Peak 取自最近一劑後，Trough 取自下一次排定劑量前，而非固定間隔穩態公式；候選給藥間隔比較亦不適用，如需測試不同劑量請用下方「自訂」列。`});
@@ -4764,6 +4940,7 @@ ${flagText || '（無特別旗標）'}
       const CmaxAtInfusionEnd = (R/CL)*(1-Math.exp(-ke*maintInfHr))/(1-Math.exp(-ke*tau));
       CmaxSS = CmaxAtInfusionEnd * Math.exp(-ke*0.5); // clinical peak: 30min post-infusion-end
       CminSS = CmaxAtInfusionEnd*Math.exp(-ke*(tau-maintInfHr));
+      cmaxT1 = ssConcAtT1(R, CL, ke, maintInfHr, CmaxAtInfusionEnd, CminSS);
       dailyDoseNow = maintDose*(24/tau);
       cmaxLabel = 'Cmax,ss（現行處方推算，peak，輸注後 30 分）'; cminLabel = 'Cmin,ss（現行處方推算，trough）';
       cmaxSub = target&&target.peak?`目標 ${target.peak[0]}–${target.peak[1]}`:'此適應症無明訂 peak 目標';
@@ -4782,6 +4959,7 @@ ${flagText || '（無特別旗標）'}
       ['CL（清除率）', fmt2(CL), 'L/hr', ''],
       ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
       [cmaxLabel, fmt1(CmaxSS), 'µg/mL', cmaxSub],
+      ['參考：Cmax(T1，開始輸注後 1 小時)', fmt1(cmaxT1), 'µg/mL', '讀書會共識時點；僅供對照，不納入判讀'],
       [cminLabel, fmt1(CminSS), 'µg/mL', cminSub],
       ['近 24h 實際 AUC（依已發生給藥推算）', fmt0(auc24Actual), 'mg·hr/L', '輔助參考，本藥物主要仍以 peak/trough 為準']
     ];
@@ -5421,37 +5599,55 @@ ${flagText||'（無）'}
     const freq = document.getElementById('azlFreq').value;
     const amMg = parseFloat(document.getElementById('azlDoseAm').value);
     const pmMg = parseFloat(document.getElementById('azlDosePm').value);
-    if(drug!=='isavuconazole' && isFinite(trough) && (troughResult.lowFlag||troughResult.highFlag) && !knownNotSteady){
+    // Section B is always rendered, so the A/B/C/D lettering never skips a letter. When a
+    // dose-magnitude suggestion is NOT appropriate, the block explains why rather than
+    // disappearing — and still emits no dose magnitude whatsoever. That is what keeps the
+    // isavuconazole rule intact (TDM not routine; no established concentration-response
+    // relationship to adjust against), rather than relying on the block being hidden.
+    doseSuggestBlock.style.display='';
+    const noteB = (text) => `<div class="flag-item"><span class="dot"></span><span>${text}</span></div>`;
+    // An in-range trough must never read as blanket reassurance when the clinical
+    // cross-check has fired at danger level — point back to section A instead
+    // (「讀病人，不是讀數據」).
+    const crossDangerB = crossCheckMsgs.some(m=>m.level==='danger');
+    const crossPointerB = crossDangerB
+      ? '但上方 A 區的臨床交叉檢查已有需關注的發現，請一併判斷，勿僅以「濃度落在區間內」作為不需處置的依據。'
+      : '';
+
+    if(drug==='isavuconazole'){
+      doseSuggestList.innerHTML = noteB('本工具不提供 isavuconazole 的劑量調整幅度建議：此藥 TDM 非常規，且尚無可據以調整劑量的濃度—效應關係。濃度異常時請以臨床評估為主，必要時與感染科討論。');
+    } else if(!isFinite(trough)){
+      doseSuggestList.innerHTML = noteB('尚未輸入 trough 濃度，無法評估是否需要調整劑量。');
+    } else if(knownNotSteady){
+      doseSuggestList.innerHTML = noteB('尚未達穩態，此時的濃度不宜作為劑量調整依據；建議先讓現行處方達穩態後再複測，再據以調整。');
+    } else if(!(troughResult.lowFlag||troughResult.highFlag)){
+      doseSuggestList.innerHTML = noteB(`濃度落在目標區間內，本工具未提出劑量調整建議。${crossPointerB}`);
+    } else if(formulation==='iv'){
+      const currentTotal = (amMg||0) + (freq==='bid'?(pmMg||0):0);
       const direction = troughResult.lowFlag ? 'increase' : 'decrease';
-      if(formulation==='iv'){
-        const currentTotal = (amMg||0) + (freq==='bid'?(pmMg||0):0);
-        const lo = direction==='increase'?currentTotal*1.25:currentTotal*0.5;
-        const hi = direction==='increase'?currentTotal*1.5:currentTotal*0.75;
-        doseSuggestBlock.style.display='';
-        doseSuggestList.innerHTML = isFinite(currentTotal)&&currentTotal>0
-          ? `<div class="flag-item"><span class="dot"></span><span>IV 途徑可依配製後濃度直接抽取計算劑量，不受整顆限制。理論目標總日劑量約 ${lo.toFixed(0)}–${hi.toFixed(0)} mg（現行 ${currentTotal.toFixed(0)} mg／日，${direction==='increase'?'增量':'減量'} 25–50%）。</span></div>`
-          : `<div class="flag-item"><span class="dot"></span><span>請先輸入目前劑量才能計算建議調整範圍。</span></div>`;
-      } else {
-        const result = suggestPoDoseAzole(drug, amMg, pmMg, freq, direction);
-        if(result && result.candidates.length){
-          const unit = result.unit;
-          doseSuggestBlock.style.display='';
-          doseSuggestList.innerHTML = result.candidates.map(c=>{
-            const desc = (freq==='bid' && c.pmMg!=null)
-              ? `早上 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）／晚上 ${(c.pmMg/unit).toFixed(1)} 顆（${c.pmMg}mg）`
-              : `每日一次 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）`;
-            const note = c.symmetric ? '對稱' : '不對稱（早晚不同，多出的一份預設放早上，如貴科習慣相反可自行調換）';
-            const rangeNote = c.outOfIdealRange ? '（理論區間內無可行整顆／半顆倍數解，取最接近值供參考）' : '';
-            return `<div class="flag-item"><span class="dot"></span><span>總日劑量 ${c.totalMg}mg（${note}）：${desc}${rangeNote}</span></div>`;
-          }).join('');
-        } else {
-          doseSuggestBlock.style.display='none';
-          doseSuggestList.innerHTML='';
-        }
-      }
+      const lo = direction==='increase'?currentTotal*1.25:currentTotal*0.5;
+      const hi = direction==='increase'?currentTotal*1.5:currentTotal*0.75;
+      doseSuggestList.innerHTML = isFinite(currentTotal)&&currentTotal>0
+        ? noteB(`IV 途徑可依配製後濃度直接抽取計算劑量，不受整顆限制。理論目標總日劑量約 ${lo.toFixed(0)}–${hi.toFixed(0)} mg（現行 ${currentTotal.toFixed(0)} mg／日，${direction==='increase'?'增量':'減量'} 25–50%）。`)
+        : noteB('請先輸入目前劑量才能計算建議調整範圍。');
     } else {
-      doseSuggestBlock.style.display='none';
-      doseSuggestList.innerHTML='';
+      const direction = troughResult.lowFlag ? 'increase' : 'decrease';
+      const result = suggestPoDoseAzole(drug, amMg, pmMg, freq, direction);
+      if(result && result.candidates.length){
+        const unit = result.unit;
+        doseSuggestList.innerHTML = result.candidates.map(c=>{
+          const desc = (freq==='bid' && c.pmMg!=null)
+            ? `早上 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）／晚上 ${(c.pmMg/unit).toFixed(1)} 顆（${c.pmMg}mg）`
+            : `每日一次 ${(c.amMg/unit).toFixed(1)} 顆（${c.amMg}mg）`;
+          const note = c.symmetric ? '對稱' : '不對稱（早晚不同，多出的一份預設放早上，如貴科習慣相反可自行調換）';
+          const rangeNote = c.outOfIdealRange ? '（理論區間內無可行整顆／半顆倍數解，取最接近值供參考）' : '';
+          return `<div class="flag-item"><span class="dot"></span><span>總日劑量 ${c.totalMg}mg（${note}）：${desc}${rangeNote}</span></div>`;
+        }).join('');
+      } else if(!(isFinite(amMg) && amMg>0)){
+        doseSuggestList.innerHTML = noteB('請先輸入目前劑量才能計算建議調整範圍。');
+      } else {
+        doseSuggestList.innerHTML = noteB('在本院可取得的劑型與整顆／半顆分割限制下，理論調整區間內找不到可行的劑量組合，請個別評估（例如改變給藥頻次或劑型）。');
+      }
     }
 
     document.getElementById('azlMonitorGrid').innerHTML = buildAzoleMonitorGrid(drug);
@@ -5908,6 +6104,8 @@ ${flagText||'（無）'}
     });
 
     initDefaultsAzole();
+
+    initCollapsibleCards();
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
