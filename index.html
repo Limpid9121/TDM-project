@@ -1564,6 +1564,71 @@
     return {CL:Math.exp(res.x[0]), V:Math.exp(res.x[1]), mode:`joint (n=${n})`};
   }
 
+  // ---- fit quality guards (added after an external audit + empirical probing) ----
+  //
+  // These are DATA-ENTRY ERROR DETECTORS, not clinical decision thresholds. The optimizer
+  // searches (ln CL, ln V) without bounds, so a mistyped concentration (248 for 24.8) or a
+  // wrong sampling time can drive it to a mathematically optimal but physiologically
+  // impossible answer — previously reported with no warning at all.
+  //
+  // Deliberately wide, so real biological outliers are not nagged:
+  //   * impossible  — an apparent Vd below plasma volume cannot occur for any drug, in any
+  //                   patient; this is a physiological limit, not a drug-specific range.
+  //   * implausible — a fitted value more than 4x away from THIS TOOL'S OWN population
+  //                   prior. In log space that is ~4.6 SD for CL (omega 0.30) and ~5.5 SD
+  //                   for V (omega 0.25), so it indicts the data far more than the patient.
+  //                   No new literature threshold is introduced: the bound is derived from
+  //                   the priors already used for fitting.
+  const PLASMA_VOL_L_PER_KG = 0.045;   // ~45 mL/kg; blood volume is ~70 mL/kg
+  const FIT_PRIOR_FOLD_LIMIT = 4;
+
+  function checkFitPlausibility(o){
+    const out = [];
+    if(!o || !o.fitMode || o.fitMode === 'population') return out; // nothing was fitted
+    const {CL, V, tHalf, weightKg, CLpop, Vpop} = o;
+    if(!isFinite(CL) || !isFinite(V) || CL<=0 || V<=0){
+      out.push({level:'danger', text:'擬合未收斂到有效的參數值，本頁的個體化數值不可採用。請檢查濃度與給藥時間是否輸入正確。'});
+      return out;
+    }
+    if(isFinite(weightKg) && weightKg>0){
+      const vdPerKg = V/weightKg;
+      if(vdPerKg < PLASMA_VOL_L_PER_KG){
+        out.push({level:'danger', text:`擬合推得 Vd ${vdPerKg.toFixed(3)} L/kg，低於血漿容積（約 ${PLASMA_VOL_L_PER_KG} L/kg），生理上不可能——幾乎可確定是資料輸入問題。請優先檢查濃度數值有無小數點錯位、以及每筆抽血時間與對應劑次是否正確。在釐清前，請勿採用本頁的擬合參數與劑量建議。`});
+      }
+    }
+    const fold = (a,b)=> (isFinite(a)&&isFinite(b)&&a>0&&b>0) ? Math.max(a/b, b/a) : null;
+    const fV = fold(V, Vpop), fCL = fold(CL, CLpop);
+    if(fV !== null && fV > FIT_PRIOR_FOLD_LIMIT){
+      out.push({level:'warn', text:`擬合的 Vd（${V.toFixed(1)} L）與族群估算值（${Vpop.toFixed(1)} L）相差約 ${fV.toFixed(1)} 倍，遠超出族群變異的合理範圍。這通常代表濃度或抽血時間有誤，或兩筆濃度的採檢時間過近而無法穩定分辨 Vd，建議先確認資料再解讀。`});
+    }
+    if(fCL !== null && fCL > FIT_PRIOR_FOLD_LIMIT){
+      out.push({level:'warn', text:`擬合的 CL（${CL.toFixed(2)} L/hr）與族群估算值（${CLpop.toFixed(2)} L/hr）相差約 ${fCL.toFixed(1)} 倍，遠超出族群變異的合理範圍。請確認濃度數值、抽血時間與腎功能資料是否一致。`});
+    }
+    if(isFinite(tHalf) && tHalf>0 && tHalf > 240){
+      out.push({level:'warn', text:`擬合推得半衰期 ${tHalf.toFixed(0)} 小時（超過 10 天），已超出本藥物即使在無尿病人身上的常見範圍，請檢查資料。`});
+    }
+    return out;
+  }
+
+  // Two concentrations drawn close together carry almost no information about the slope,
+  // so ke — and therefore Vd — becomes poorly identified. Empirically (see the tool's own
+  // simulation notes), a pair spanning well under one half-life plus ordinary assay noise
+  // can move the fitted Vd by tens of percent even when CL looks stable.
+  function checkLevelSpacing(levels, tHalf){
+    if(!levels || levels.length < 2) return null;
+    if(!(tHalf>0) || !isFinite(tHalf)) return null;
+    const ts = levels.map(l=>l.tHr).filter(t=>isFinite(t));
+    if(ts.length < 2) return null;
+    const span = Math.max(...ts) - Math.min(...ts);
+    if(span >= tHalf) return null;
+    // Rendered as a neutral note rather than a warning on purpose: for a patient with a
+    // long half-life, a peak/trough pair inside one dosing interval CANNOT span a half-life,
+    // so this would fire on most renally impaired patients. It is useful guidance for
+    // interpreting Vd and for planning the next draw, not a defect in the current result —
+    // and at warning level that frequency would just breed alert fatigue.
+    return {level:'ok', text:`本次納入擬合的濃度，最早與最晚僅相距 ${span.toFixed(1)} 小時，不到一個半衰期（約 ${tHalf.toFixed(1)} 小時）。採檢點過於集中時，消除斜率與 Vd 難以穩定分辨，Vd 與 peak 相關數值的不確定性明顯較高（CL／AUC 通常仍較穩健）。若需要可靠的 Vd，建議兩點至少相隔一個半衰期，或加抽一點拉開間距。`};
+  }
+
   function integrateTrapz(fn, a, b, steps){
     if(b<=a) return 0;
     const h=(b-a)/steps;
@@ -3067,7 +3132,12 @@
     document.getElementById('flagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
 
     // candidate regimens, computed the same way as the post-level pipeline, just driven by CLpop
-    const targetDailyDose = dailyDose*(targetAUC/AUC24ss);
+    // Algebraically identical to the previous form (AUC24ss = dailyDose/CL, so the
+    // dailyDose terms cancel exactly) but no longer routed through the CURRENT regimen:
+    // the candidate table only ever needed clearance and the AUC target. The old form
+    // propagated NaN whenever 維持劑量/給藥間隔 was blank, blanking every candidate row
+    // to "— mg" even though CL was already known. (External audit finding, verified.)
+    const targetDailyDose = CLpop*targetAUC;
     const candTaus=[];
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
@@ -3277,6 +3347,20 @@ ${decidedTextP}
     const levelsForFit = windowLevelRows.map(l=>({tHr:(l.t-windowStartMs)/3600000, conc:l.conc}));
     const fit = fitCLV(dosesForFit, levelsForFit, prior);
     const CL = fit.CL, V = fit.V, ke = CL/V, tHalf = 0.693/ke;
+    const fitIssuesHD = checkFitPlausibility({CL, V, tHalf, weightKg:weightForDosing, CLpop, Vpop, fitMode:fit.mode});
+    fitIssuesHD.forEach(f=>flags.push(f));
+    if(!fitIssuesHD.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
+    // Known structural limitation of this interdialytic fit: predictConc() starts from
+    // C(0)=0, so the drug still in the body when the session ended is not represented.
+    // Simulation of a realistic case (post-HD residual ~9 ug/mL, two levels in the window)
+    // put both Vd and CL ~35% LOW, with ke essentially unbiased — i.e. the shape is right
+    // but the amplitude is not, and the resulting dose suggestion came out ~35% low.
+    // Surfaced as an explicit caveat rather than silently modelled: adding a fitted
+    // baseline term would mean estimating a third parameter from the 1-2 levels a window
+    // typically has, which would make the fit less stable, not more trustworthy.
+    if(lastSession && fit.mode !== 'population'){
+      flags.push({level:'warn', text:'本透析間期的擬合是以「透析結束時體內濃度為 0」為起點，未納入透析後殘留藥物。若這位病人透析後仍有可觀殘留（常見於高 pre-HD trough 或移除率較低的情況），擬合的 Vd 與 CL 會同步偏低，連帶使下方建議劑量偏低。請勿僅憑本頁結果調降劑量；併同 pre-HD trough 實測值與臨床判斷一起解讀。'});
+    }
     fitBadge.textContent = {
       'population':'僅族群估算（本透析間期尚無濃度）',
       'single-level':'單點貝氏校正（本透析間期，V 固定為族群值）',
@@ -3675,6 +3759,11 @@ ${flagText || '（無特別旗標）'}
     const fit = fitCLV(dosesForFit, levelsForFit, prior);
     const CL = fit.CL, V = fit.V;
     const ke = CL/V, tHalf = 0.693/ke;
+    const fitIssues = checkFitPlausibility({CL, V, tHalf, weightKg:weightForVd, CLpop, Vpop, fitMode:fit.mode});
+    fitIssues.forEach(f=>flags.push(f));
+    // only meaningful while t-half itself is trustworthy — once the fit has been flagged
+    // as implausible, comparing the sampling span against its half-life says nothing
+    if(!fitIssues.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
     fitBadge.textContent = {
       'population':'僅族群估算（尚無濃度）',
       'single-level':'單點貝氏校正（V 固定為族群值）',
@@ -3763,7 +3852,12 @@ ${flagText || '（無特別旗標）'}
     flagList.innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
 
     // --- 8. dosing recommendation candidates ---
-    const targetDailyDose = dailyDoseNow*(targetAUC/AUC24ss);
+    // Algebraically identical to the previous form (AUC24ss = dailyDose/CL, so the
+    // dailyDose terms cancel exactly) but no longer routed through the CURRENT regimen:
+    // the candidate table only ever needed clearance and the AUC target. The old form
+    // propagated NaN whenever 維持劑量/給藥間隔 was blank, blanking every candidate row
+    // to "— mg" even though CL was already known. (External audit finding, verified.)
+    const targetDailyDose = CL*targetAUC;
     const candTaus=[];
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
@@ -4074,14 +4168,38 @@ ${flagText || '（無特別旗標）'}
   // Amikacin: Acemycin Injection 500 mg/2 mL/vial (250 mg/mL). Gentamicin: V-Genta inj
   // 80 mg/2 mL/vial (40 mg/mL). Tobramycin intentionally has no entry — not stocked at
   // this hospital; falls back to the generic mg-rounding below with an explicit flag.
+  //
+  // roundToTen: gentamicin's institutional prescribing convention requires the dose to end
+  // in 0 (個位數是零) — confirmed to apply to gentamicin only, not amikacin. For
+  // gentamicin (40 mg/mL), every 10mg step is exactly 0.25 mL, so rounding to the nearest
+  // 10mg costs nothing: the resulting mL is always a clean quarter-mL reading, same as
+  // before. Amikacin (250 mg/mL) has no such convention here, so it keeps the original
+  // nearest-0.1mL rounding — forcing amikacin to multiples of 10mg would land on 2-decimal
+  // mL values (e.g. 1.68, 1.84 mL) that no longer align with a syringe's 0.1mL markings,
+  // which is a worse trade than what "個位數是零" is meant to buy.
   const AMINO_VIALS = {
-    amikacin: {label:'Acemycin Injection', mgPerVial:500, mlPerVial:2, concMgPerMl:250},
-    gentamicin: {label:'V-Genta inj', mgPerVial:80, mlPerVial:2, concMgPerMl:40}
+    amikacin: {label:'Acemycin Injection', mgPerVial:500, mlPerVial:2, concMgPerMl:250, roundToTen:false},
+    gentamicin: {label:'V-Genta inj', mgPerVial:80, mlPerVial:2, concMgPerMl:40, roundToTen:true}
   };
+  // Displays the minimum decimal precision that still round-trips exactly. Needed because
+  // gentamicin's new nearest-10mg rounding lands on quarter-mL values (5.25, 5.75 mL) —
+  // a flat .toFixed(1) would show "5.3 mL" for an exact 5.25 mL (210mg) dose, which
+  // back-computes to 212mg. That silently reintroduces the ±2mg the "個位數是零" rule was
+  // meant to remove, and mismatches the mg figure printed right next to it.
+  function fmtMl(ml){
+    const r2 = Math.round(ml*100)/100;
+    return (Math.round(r2*10)/10 === r2) ? r2.toFixed(1) : r2.toFixed(2);
+  }
+
   function roundDoseAminoVial(mg, drug){
     const vial = AMINO_VIALS[drug];
     if(!vial){
       return {mg: roundDoseAmino(mg), ml: null, vialLabel: null};
+    }
+    if(vial.roundToTen){
+      const mgRounded = roundDoseAmino(mg); // nearest 10mg, floor 20mg
+      const ml = mgRounded / vial.concMgPerMl;
+      return {mg: mgRounded, ml, vialLabel: vial.label};
     }
     const mlRaw = mg / vial.concMgPerMl;
     const mlRounded = Math.max(0.1, Math.round(mlRaw*10)/10);
@@ -4554,7 +4672,7 @@ ${flagText || '（無特別旗標）'}
     document.querySelector('#amgRegimenTable tbody').innerHTML = regimenRows.map(r=>{
       const key = 'cand-'+r.candTau;
       const checked = amgPickedKey===key ? 'checked' : '';
-      const doseText = r.doseMl!=null ? `${fmt0(r.roundedDose)} mg（${r.doseMl.toFixed(1)} mL）` : `${fmt0(r.roundedDose)} mg`;
+      const doseText = r.doseMl!=null ? `${fmt0(r.roundedDose)} mg（${fmtMl(r.doseMl)} mL）` : `${fmt0(r.roundedDose)} mg`;
       return `
       <tr class="${amgPickedKey===key?'picked':''}">
         <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" value="${key}" ${checked}></td>
@@ -4871,6 +4989,11 @@ ${flagText || '（無特別旗標）'}
     const fit = fitCLV(dosesForFit, levelsForFit, prior);
     const CL = fit.CL, V = fit.V;
     const ke = CL/V, tHalf = 0.693/ke;
+    const fitIssues = checkFitPlausibility({CL, V, tHalf, weightKg:weightForVd, CLpop, Vpop, fitMode:fit.mode});
+    fitIssues.forEach(f=>flags.push(f));
+    // only meaningful while t-half itself is trustworthy — once the fit has been flagged
+    // as implausible, comparing the sampling span against its half-life says nothing
+    if(!fitIssues.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
     fitBadge.textContent = {
       'population':'僅族群估算（尚無濃度）',
       'single-level':'單點貝氏校正（V 固定為族群值）',
