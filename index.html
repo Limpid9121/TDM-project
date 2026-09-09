@@ -225,6 +225,10 @@
   .btn.primary{background:var(--trace);border-color:var(--trace);color:#fff;}
   .btn.primary:hover{background:var(--trace-strong);border-color:var(--trace-strong);color:#fff;}
   .btn.small{font-size:11.5px;padding:5px 9px;}
+  .pop-model-toggle{margin:2px 0 14px;}
+  .pop-model-toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .pop-model-toggle-label{font-size:12px;color:var(--ink-soft);}
+  .pop-model-refs{font-size:10.5px;color:var(--ink-faint);margin-top:6px;line-height:1.5;}
   .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .prune-tool{
     display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);
@@ -515,13 +519,14 @@
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
         <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</p>
         <div class="field-row stacked">
-          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
+          <div class="field"><label id="therapyStartLabel">分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
         </div>
         <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
         <div class="field-row" id="loadingFields" style="display:none;">
           <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
           <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
+          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
         </div>
         <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
         <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
@@ -535,6 +540,7 @@
           <div class="btn-row">
             <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
           </div>
+          <p class="hint" style="margin-top:-4px;">未勾選 loading：「分析起點」即第一劑維持劑量的確切時間，之後每一劑固定間隔 τ 小時展開。已勾選 loading：「分析起點」是 loading 的確切時間，「第一劑維持劑量時間」另外獨立填寫，之後同樣每 τ 小時展開——兩者互不相關，不會互相帶入。院內常見固定給藥時段僅供你填寫時參考，不會自動代入或強制對齊：QD 09:00；Q12H 09:00／21:00；Q8H 05:00／13:00／21:00；Q6H 05:00／11:00／17:00／23:00。</p>
         </div>
 
         <div id="hdDoseFields" style="display:none;">
@@ -659,6 +665,17 @@
         </div>
       </div>
 
+      <div class="pop-model-toggle" id="vancoPopModelToggle" style="display:none;">
+        <div class="pop-model-toggle-row">
+          <span class="pop-model-toggle-label">族群 PK 參數來源（僅用於尚無濃度資料可校正時的族群估算，比較用途）：</span>
+          <button type="button" class="btn small primary" id="vancoPopModelBtnA">模型 A（現行・CG-linear）</button>
+          <button type="button" class="btn small" id="vancoPopModelBtnB">模型 B（Oda 2024 兩室）</button>
+        </div>
+        <div class="pop-model-refs">
+          模型 A：Matzke GR, McGory RW, Halstenson CE, Keane WF. Pharmacokinetics of vancomycin in patients with various degrees of renal function. <i>Antimicrob Agents Chemother.</i> 1984;25(4):433-437.<br>
+          模型 B：Oda K, Matsumoto K, Shoji K, et al. Validation and development of population pharmacokinetic model of vancomycin using a real-world database from a nationwide free web application. <i>J Infect Chemother.</i> 2024;30(6):1244-1251.
+        </div>
+      </div>
       <div class="param-grid" id="paramGrid"></div>
 
       <div class="section-block">
@@ -1835,14 +1852,21 @@
       alert('請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
       return;
     }
+    let firstMaintMs = startMs;
+    if(useLoading){
+      firstMaintMs = parseLocal(document.getElementById('firstMaintDoseTime').value);
+      if(!isFinite(firstMaintMs)){
+        alert('已勾選獨立 loading 劑量，請另外填寫「第一劑維持劑量時間」。');
+        return;
+      }
+    }
     clearTbody('#doseTable');
-    let cursor = startMs;
     if(useLoading){
       const lDose = parseFloat(document.getElementById('loadingDose').value);
       const lInf = parseFloat(document.getElementById('loadingInf').value);
       addDoseRow(toLocalInputValue(new Date(startMs)), lDose, lInf);
-      cursor = startMs + tauHr*3600000;
     }
+    let cursor = firstMaintMs;
     while(cursor <= toMs + 1){
       addDoseRow(toLocalInputValue(new Date(cursor)), maintDose, maintInf);
       cursor += tauHr*3600000;
@@ -1967,11 +1991,13 @@
 
     // 03 給藥處方與紀錄
     document.getElementById('therapyStart').value='';
+    document.getElementById('therapyStartLabel').textContent='分析起點（本次採用的第一筆給藥時間）';
     document.getElementById('expandTo').value='';
     document.getElementById('useLoading').checked=false;
     document.getElementById('loadingFields').style.display='none';
     document.getElementById('loadingDose').value='2000';
     document.getElementById('loadingInf').value='120';
+    document.getElementById('firstMaintDoseTime').value='';
     document.getElementById('assumeSteadyState').checked=false;
     document.getElementById('steadyStateHint').style.display='none';
     vancoPickedKey = null;
@@ -2030,7 +2056,7 @@
       indication:v('indication'), severity:v('severity'), site:v('site'), organism:v('organism'),
       deepInfection:c('deepInfection'), sourceControlDone:c('sourceControlDone'),
       therapyStart:v('therapyStart'), expandTo:v('expandTo'),
-      useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'),
+      useLoading:c('useLoading'), loadingDose:v('loadingDose'), loadingInf:v('loadingInf'), firstMaintDoseTime:v('firstMaintDoseTime'),
       assumeSteadyState:c('assumeSteadyState'),
       maintDose:v('maintDose'), maintInterval:v('maintInterval'), maintInf:v('maintInf'),
       hdMaintDose:v('hdMaintDose'), hdFixedTime:v('hdFixedTime'), hdMaintInf:v('hdMaintInf'),
@@ -2066,7 +2092,9 @@
 
     setVal('therapyStart', s.therapyStart); setVal('expandTo', s.expandTo);
     setChecked('useLoading', s.useLoading);
+    setVal('firstMaintDoseTime', s.firstMaintDoseTime);
     document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
+    { const lbl = document.getElementById('therapyStartLabel'); if(lbl) lbl.textContent = s.useLoading ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）'; }
     setChecked('assumeSteadyState', s.assumeSteadyState);
     document.getElementById('steadyStateHint').style.display = s.assumeSteadyState ? 'block' : 'none';
     // what-if pick is ephemeral per-session state, not part of a saved patient record
@@ -3081,9 +3109,73 @@
   // Used when no actual doses have been administered yet, but a planned regimen is
   // specified: shows expected steady-state PK/Cmax/Cmin/AUC from population estimates
   // alone, mirroring the standard workflow of predicting before the first dose is given.
+
+  // Which population PK source the prospective (no-level) screen currently displays.
+  // 'A' = existing CG-linear prior (0.7*CrCl*0.06 / 0.7 L/kg). 'B' = Oda et al. 2024
+  // two-compartment model, offered as an explicit user-toggled side-by-side comparison.
+  // Deliberately module-level (not persisted to patient records/localStorage) and NOT
+  // wired into the Bayesian data-fitting engine — comparison-only.
+  let vancoProspectiveModel = 'A';
+
+  // Oda K, et al. J Infect Chemother 2024;30:1244-1251, Table 2 (real-world Japanese
+  // popPK model, two-compartment, n=7167 modeling dataset).
+  //   IF CrCl>167.8 THEN CrCl_eff=167.8 ; CL = 4.9*(CrCl_eff/120)^0.959      [L/hr]
+  //   V1 = 32.1*(wt/60)^0.532   Q = 8.33 (no reported IIV)   V2 = 58.2*(wt/60)^0.348
+  function odaVancoPopParams(crcl, weightKg){
+    const crclEff = Math.min(crcl, 167.8);
+    return {
+      CL: 4.9 * Math.pow(crclEff/120, 0.959),
+      V1: 32.1 * Math.pow(weightKg/60, 0.532),
+      Q: 8.33,
+      V2: 58.2 * Math.pow(weightKg/60, 0.348)
+    };
+  }
+
+  // Two-compartment, constant-rate IV infusion, steady-state concentration profile.
+  // Closed-form hybrid-constant solution (Gibaldi & Perrier / Rowland & Tozer),
+  // extended to steady state the same way the 1-compartment Cmax/Cmin formulas
+  // elsewhere in this file already are: each exponential term accumulates as its
+  // own independent geometric series across repeated doses. Verified against
+  // numerical ODE integration and against the model-independent identity
+  // AUC_tau,ss = Dose/CL before being wired in.
+  function twoCompartmentSS(doseMg, infHr, tauHr, CL, V1, Q, V2){
+    const k10 = CL/V1, k12 = Q/V1, k21 = Q/V2;
+    const sum = k10+k12+k21;
+    const disc = Math.max(0, sum*sum - 4*k10*k21);
+    const sq = Math.sqrt(disc);
+    const alpha = (sum+sq)/2, beta = (sum-sq)/2;
+    const R0 = doseMg/infHr;
+    const L = (alpha-k21)/(alpha*(alpha-beta));
+    const M = (k21-beta)/(beta*(alpha-beta));
+    const denomA = 1-Math.exp(-alpha*tauHr), denomB = 1-Math.exp(-beta*tauHr);
+    const termA = L*(1-Math.exp(-alpha*infHr));
+    const termB = M*(1-Math.exp(-beta*infHr));
+    const conc = (tPrime)=> R0/V1*( termA*Math.exp(-alpha*tPrime)/denomA + termB*Math.exp(-beta*tPrime)/denomB );
+    return {
+      Cmax: conc(0),
+      Cmin: conc(tauHr-infHr),
+      alpha, beta, tHalfBeta: 0.693/beta, k10, k12, k21
+    };
+  }
+
   function renderProspective(ctx){
     const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr} = ctx;
     const ke = CLpop/Vpop, tHalf = 0.693/ke;
+
+    // --- optional Model B (Oda 2024 兩室模型) side-by-side comparison ---
+    const weightForVdB = useDryWeight ? dryWeight : tbw;
+    const modelB = odaVancoPopParams(crcl, weightForVdB);
+    const toggleEl = document.getElementById('vancoPopModelToggle');
+    const btnA = document.getElementById('vancoPopModelBtnA');
+    const btnB = document.getElementById('vancoPopModelBtnB');
+    if(toggleEl) toggleEl.style.display = '';
+    if(btnA) btnA.classList.toggle('primary', vancoProspectiveModel==='A');
+    if(btnB) btnB.classList.toggle('primary', vancoProspectiveModel==='B');
+    const useModelB = vancoProspectiveModel==='B';
+    if(useModelB){
+      flags.push({level:'ok', text:'目前顯示「模型 B（Oda et al. 2024, J Infect Chemother 30:1244-1251）」之族群 PK 預測，僅供與模型 A 並列比較，不取代模型 A 為預設判讀。此模型來自日本 real-world 資料庫（中位年齡 70 歲），CrCl 超過 167.8 mL/min 時 CL 已封頂不再上升；V2／分佈體積之估計不確定性高於 CL（原文報告 shrinkage 偏大），實際使用請併同臨床判斷，勿僅憑此模型調整劑量。'});
+      flags.push({level:'warn', text:'下方濃度－時間曲線目前僅繪製模型 A（單室）之預測；模型 B 的雙室曲線尚未實作，暫時只提供 Cmax／Cmin／AUC 數值比較。'});
+    }
 
     const useLoading = document.getElementById('useLoading').checked;
     const loadingDose = parseFloat(document.getElementById('loadingDose').value);
@@ -3098,17 +3190,42 @@
     const AUCoverMIC = AUC24ss/mic;
     const targetAUC = parseFloat(document.getElementById('targetAuc').value)||500;
 
-    flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
-    if(CminSS>20) flags.push({level:'danger', text:`計畫處方預測穩態 Cmin ${CminSS.toFixed(1)} µg/mL > 20，起始劑量可能偏高，建議重新評估間隔或劑量。`});
-    else if(CminSS>15) flags.push({level:'warn', text:`計畫處方預測穩態 Cmin ${CminSS.toFixed(1)} µg/mL 落在 15–20，腎毒性風險略升，建議留意。`});
-    if(AUC24ss>600) flags.push({level:'danger', text:`計畫處方預測 AUC₂₄ ${AUC24ss.toFixed(0)} 超過 600，起始劑量可能偏高。`});
-    else if(AUC24ss<400) flags.push({level:'warn', text:`計畫處方預測 AUC₂₄ ${AUC24ss.toFixed(0)} 低於 400，起始劑量可能偏低，達穩態前療效可能不足。`});
+    // Model B 的對應 Cmax/Cmin/AUC（雙室穩態，AUC 公式結構不變、僅換 CL）
+    const ssB = twoCompartmentSS(maintDose, maintInfHr, tau, modelB.CL, modelB.V1, modelB.Q, modelB.V2);
+    const AUC24ssB = dailyDose/modelB.CL;
+    const AUCoverMICB = AUC24ssB/mic;
 
-    document.getElementById('fitModeBadge').textContent = '起始劑量預測（純族群 PK，尚未給藥）';
-    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${CLpop.toFixed(2)} L/hr ・ 預測 AUC₂₄ ${AUC24ss.toFixed(0)}`);
+    // 目前畫面實際顯示（並用於 flag／AI prompt）的一組數值，依切換狀態決定
+    const dispCL = useModelB ? modelB.CL : CLpop;
+    const dispCmax = useModelB ? ssB.Cmax : CmaxSS;
+    const dispCmin = useModelB ? ssB.Cmin : CminSS;
+    const dispAUC24 = useModelB ? AUC24ssB : AUC24ss;
+    const dispAUCoverMIC = useModelB ? AUCoverMICB : AUCoverMIC;
+    const modelTag = useModelB ? '模型B' : '模型A';
+
+    flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
+    if(dispCmin>20) flags.push({level:'danger', text:`計畫處方預測穩態 Cmin（${modelTag}） ${dispCmin.toFixed(1)} µg/mL > 20，起始劑量可能偏高，建議重新評估間隔或劑量。`});
+    else if(dispCmin>15) flags.push({level:'warn', text:`計畫處方預測穩態 Cmin（${modelTag}） ${dispCmin.toFixed(1)} µg/mL 落在 15–20，腎毒性風險略升，建議留意。`});
+    if(dispAUC24>600) flags.push({level:'danger', text:`計畫處方預測 AUC₂₄（${modelTag}） ${dispAUC24.toFixed(0)} 超過 600，起始劑量可能偏高。`});
+    else if(dispAUC24<400) flags.push({level:'warn', text:`計畫處方預測 AUC₂₄（${modelTag}） ${dispAUC24.toFixed(0)} 低於 400，起始劑量可能偏低，達穩態前療效可能不足。`});
+
+    document.getElementById('fitModeBadge').textContent = `起始劑量預測（純族群 PK，尚未給藥・${modelTag}）`;
+    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ 預測 CL ${dispCL.toFixed(2)} L/hr ・ 預測 AUC₂₄ ${dispAUC24.toFixed(0)}`);
 
     // param grid (subset relevant to a pre-dose prediction)
-    const cells = [
+    const cells = useModelB ? [
+      ['CL（模型 B）', fmt2(modelB.CL), 'L/hr', 'CrCl 已依論文上限 167.8 mL/min 封頂'],
+      ['V1（模型 B）', fmt1(modelB.V1), 'L', ''],
+      ['V2（模型 B）', fmt1(modelB.V2), 'L', ''],
+      ['Q（模型 B）', fmt2(modelB.Q), 'L/hr', '論文未報告個體變異，視為固定值'],
+      ['α／β（模型 B）', `${fmt3(ssB.alpha)} / ${fmt3(ssB.beta)}`, 'hr⁻¹', ''],
+      ['t½,β（模型 B）', fmt1(ssB.tHalfBeta), 'hr', `約需 ${(4*ssB.tHalfBeta).toFixed(0)}–${(5*ssB.tHalfBeta).toFixed(0)} 小時達穩態`],
+      ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
+      ['預測 Cmax,ss（模型 B）', fmt1(ssB.Cmax), 'µg/mL', ''],
+      ['預測 Cmin,ss（模型 B）', fmt1(ssB.Cmin), 'µg/mL', ssB.Cmin>20?'>20 腎毒性關切':(ssB.Cmin>15?'15–20 略升':'')],
+      ['預測 AUC₂₄,ss（模型 B）', fmt0(AUC24ssB), 'mg·hr/L', ''],
+      ['預測 AUC/MIC（模型 B）', fmt0(AUCoverMICB), '', `MIC 假設 ${mic}`]
+    ] : [
       ['ke（族群估算）', fmt3(ke), 'hr⁻¹', ''],
       ['t½（族群估算）', fmt1(tHalf), 'hr', `約需 ${(4*tHalf).toFixed(0)}–${(5*tHalf).toFixed(0)} 小時達穩態`],
       ['Vd（族群估算）', fmt1(Vpop), 'L', useDryWeight?`${(Vpop/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(Vpop/tbw).toFixed(2)} L/kg`],
@@ -3137,7 +3254,7 @@
     // the candidate table only ever needed clearance and the AUC target. The old form
     // propagated NaN whenever 維持劑量/給藥間隔 was blank, blanking every candidate row
     // to "— mg" even though CL was already known. (External audit finding, verified.)
-    const targetDailyDose = CLpop*targetAUC;
+    const targetDailyDose = dispCL*targetAUC;
     const candTaus=[];
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
@@ -3147,14 +3264,20 @@
       const roundedDose = roundDoseTo250(rawDose);
       const infMinC = inferInfusionMinutes(roundedDose);
       const infHrC = infMinC/60;
-      const Rc = roundedDose/infHrC;
-      const cmaxC = (Rc/CLpop)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
-      const cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
-      const auc24C = (roundedDose*(24/candTau))/CLpop;
+      let cmaxC, cminC;
+      if(useModelB){
+        const ssC = twoCompartmentSS(roundedDose, infHrC, candTau, modelB.CL, modelB.V1, modelB.Q, modelB.V2);
+        cmaxC = ssC.Cmax; cminC = ssC.Cmin;
+      } else {
+        const Rc = roundedDose/infHrC;
+        cmaxC = (Rc/CLpop)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
+        cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
+      }
+      const auc24C = (roundedDose*(24/candTau))/dispCL;
       const {tag, tagText} = regimenTag(cminC, auc24C);
       return {candTau, roundedDose, infMinC, cmaxC, cminC, auc24C, tag, tagText, isCurrent: candTau===tau};
     });
-    renderRegimenTableVanco(regimenRows, '計畫間隔');
+    renderRegimenTableVanco(regimenRows, useModelB?'計畫間隔・模型B':'計畫間隔');
 
     // loading suggestion (independent of dose history, same as main pipeline)
     const deepInfection = document.getElementById('deepInfection').checked;
@@ -3216,20 +3339,24 @@
     const decidedTextP = vancoWhatIfP
       ? `藥師決定處方：${fmt0(vancoWhatIfP.doseMg)} mg／輸注 ${Math.round(vancoWhatIfP.infHr*60)} 分／q${vancoWhatIfP.tau}h，預計自 ${fmtDateTimeFull(vancoWhatIfP.startMs)} 開始`
       : '（尚未於劑量調整建議表格勾選最終決定處方，以下候選方案僅供比較）';
-    document.getElementById('aiPromptOut').value = `你是一位資深臨床藥師顧問。病人尚未開始 vancomycin，以下是根據族群藥動學（Cockcroft-Gault CrCl → 族群 CL、TBW → 族群 Vd）對計畫處方所做的起始劑量預測，請協助評估這組起始劑量是否合理。
+    const modelLabelFull = useModelB ? 'B（Oda et al. 2024 兩室模型）' : 'A（Cockcroft-Gault 線性 CL／0.7 L/kg Vd）';
+    const popParamsText = useModelB
+      ? `CL ${modelB.CL.toFixed(2)} L/hr，V1 ${modelB.V1.toFixed(1)} L，Q ${modelB.Q.toFixed(2)} L/hr（固定值，無報告 IIV），V2 ${modelB.V2.toFixed(1)} L，α ${ssB.alpha.toFixed(3)}／β ${ssB.beta.toFixed(3)} hr⁻¹，t½β ${ssB.tHalfBeta.toFixed(1)} hr`
+      : `ke ${ke.toFixed(4)} hr⁻¹，t½ ${tHalf.toFixed(1)} hr，Vd ${Vpop.toFixed(1)} L，CL ${CLpop.toFixed(2)} L/hr`;
+    document.getElementById('aiPromptOut').value = `你是一位資深臨床藥師顧問。病人尚未開始 vancomycin，以下是根據族群藥動學（模型 ${modelLabelFull}）對計畫處方所做的起始劑量預測，請協助評估這組起始劑量是否合理。
 
 ## 一、病人與腎功能
 - CrCl：約 ${crcl.toFixed(0)} mL/min（${cgMethod}）
-- 族群估算：ke ${ke.toFixed(4)} hr⁻¹，t½ ${tHalf.toFixed(1)} hr，Vd ${Vpop.toFixed(1)} L，CL ${CLpop.toFixed(2)} L/hr
-${useDryWeight?`- Vd 估算採乾／平常體重 ${dryWeight} kg（而非 TBW ${tbw} kg）\n`:''}
+- 族群估算（模型 ${useModelB?'B':'A'}）：${popParamsText}
+${useDryWeight?`- Vd／V1 估算採乾／平常體重 ${dryWeight} kg（而非 TBW ${tbw} kg）\n`:''}
 ## 二、感染／臨床脈絡
 - 適應症：${indication}；嚴重度：${severity}；感染部位：${site}；菌種／MIC：${organism}
 
 ## 三、計畫處方
 - 維持劑量：${maintDose} mg q${tau}h（輸注 ${(maintInfHr*60).toFixed(0)} 分）
-${useLoading?`- Loading：${loadingDose} mg（輸注 ${(loadingInfHr*60).toFixed(0)} 分）\n`:''}- 預測穩態：Cmax,ss ${CmaxSS.toFixed(1)} µg/mL／Cmin,ss ${CminSS.toFixed(1)} µg/mL／AUC₂₄ ${AUC24ss.toFixed(0)} mg·hr/L（MIC 假設 ${mic}，AUC/MIC ${AUCoverMIC.toFixed(0)}，目標 ${targetAUC}）
+${useLoading?`- Loading：${loadingDose} mg（輸注 ${(loadingInfHr*60).toFixed(0)} 分）\n`:''}- 預測穩態（模型 ${useModelB?'B':'A'}）：Cmax,ss ${dispCmax.toFixed(1)} µg/mL／Cmin,ss ${dispCmin.toFixed(1)} µg/mL／AUC₂₄ ${dispAUC24.toFixed(0)} mg·hr/L（MIC 假設 ${mic}，AUC/MIC ${dispAUCoverMIC.toFixed(0)}，目標 ${targetAUC}）
 ${deepInfection?`- 建議評估 loading dose：約 ${loadSuggest} mg\n`:''}
-## 四、候選方案（中性列表，本工具不做推薦排序）
+## 四、候選方案（中性列表，本工具不做推薦排序；模型 ${useModelB?'B':'A'}）
 ${regimenText}
 
 ${decidedTextP}
@@ -3243,7 +3370,7 @@ ${decidedTextP}
 2. 是否有本工具未捕捉到的個別狀況（如預期腎功能將變化、特殊分布體積族群等）值得調整起始劑量？
 3. 首次 TDM 時機的建議是否需要調整？
 
-請保持透明：清楚區分「本工具已算出的族群預測值」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。`;
+請保持透明：清楚區分「本工具已算出的族群預測值（模型 ${useModelB?'B — Oda 2024 real-world 兩室模型':'A — Cockcroft-Gault 線性模型'}）」與「你新增的臨床判斷」。${useModelB?'模型 B 來自日本 real-world 高齡族群資料，CrCl>167.8 mL/min 時清除率已封頂、V2 估計不確定性較高，請勿單獨以此模型作為劑量調整依據。':''}最終處方決策屬臨床藥師專業責任。`;
   }
 
   // ---------------- main render pipeline ----------------
@@ -3285,6 +3412,8 @@ ${decidedTextP}
   }
 
   function renderVancoHD(){
+    const toggleElHD = document.getElementById('vancoPopModelToggle');
+    if(toggleElHD) toggleElHD.style.display = 'none';
     const age = parseFloat(document.getElementById('age').value);
     const sex = document.getElementById('sex').value;
     const height = parseFloat(document.getElementById('height').value);
@@ -3721,6 +3850,8 @@ ${flagText || '（無特別旗標）'}
         renderProspective({crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose:maintDoseP, tau:tauP, maintInfHr:maintInfHrP});
         return;
       }
+      const toggleElEmpty = document.getElementById('vancoPopModelToggle');
+      if(toggleElEmpty) toggleElEmpty.style.display = 'none';
       paramGrid.innerHTML = '<div class="empty-note" style="padding:16px 20px;">請先在下方「給藥處方與紀錄」填妥計畫處方（維持劑量／間隔／輸注時間），即可看到起始劑量的族群 PK 預測；輸入實際給藥紀錄後則會改用資料擬合。</div>';
       fitBadge.textContent = '尚無給藥資料';
       document.getElementById('curveSvg').innerHTML='';
@@ -3819,13 +3950,62 @@ ${flagText || '（無特別旗標）'}
     const windowStart = Math.max(0, lastEventRel-24);
     const auc24Actual = integrateTrapz(t=>predictConc(t,dosesForFit,CL,V), windowStart, lastEventRel, 480);
 
-    if(CminSS>20) flags.push({level:'danger', text:`推算穩態 Cmin ${CminSS.toFixed(1)} µg/mL > 20，腎毒性風險上升，建議下調劑量或延長間隔。`});
-    else if(CminSS>15) flags.push({level:'warn', text:`推算穩態 Cmin ${CminSS.toFixed(1)} µg/mL 落在 15–20 區間，腎毒性風險略升，建議留意。`});
-    if(AUC24ss>600) flags.push({level:'danger', text:`現行處方推算 AUC₂₄ ${AUC24ss.toFixed(0)} 超過 600，腎毒性風險升高。`});
-    else if(AUC24ss<400) flags.push({level:'warn', text:`現行處方推算 AUC₂₄ ${AUC24ss.toFixed(0)} 低於 400，療效可能不足。`});
+    // --- optional Model B (Oda 2024 兩室模型) comparison ---
+    // Only meaningful while fit.mode==='population': at that point CL/V here ARE
+    // CLpop/Vpop verbatim (no concentration data yet to adjust them), so swapping in
+    // a different population prior is a clean, honest comparison. The moment any real
+    // level exists (single-level or joint fit), CL/V reflect this patient's actual
+    // data and take priority — Model B has no role there, so the toggle is hidden and
+    // the display silently falls back to the fitted (Model A-anchored) values.
+    const isPopulationOnly = fit.mode === 'population';
+    const toggleElFit = document.getElementById('vancoPopModelToggle');
+    const btnAFit = document.getElementById('vancoPopModelBtnA');
+    const btnBFit = document.getElementById('vancoPopModelBtnB');
+    let useModelB = false;
+    let modelB=null, ssB=null, AUC24ssB=0, AUCoverMICB=0;
+    if(isPopulationOnly){
+      if(toggleElFit) toggleElFit.style.display = '';
+      if(btnAFit) btnAFit.classList.toggle('primary', vancoProspectiveModel==='A');
+      if(btnBFit) btnBFit.classList.toggle('primary', vancoProspectiveModel==='B');
+      useModelB = vancoProspectiveModel==='B';
+      fitBadge.textContent += useModelB ? '・模型B' : '・模型A';
+      modelB = odaVancoPopParams(crcl, weightForVd);
+      ssB = twoCompartmentSS(maintDose, maintInfHr, tau, modelB.CL, modelB.V1, modelB.Q, modelB.V2);
+      AUC24ssB = dailyDoseNow/modelB.CL;
+      AUCoverMICB = AUC24ssB/mic;
+      if(useModelB){
+        flags.push({level:'ok', text:'目前顯示「模型 B（Oda et al. 2024, J Infect Chemother 30:1244-1251）」之族群 PK 預測，僅供與模型 A 並列比較，不取代模型 A 為預設判讀。此模型來自日本 real-world 資料庫（中位年齡 70 歲），CrCl 超過 167.8 mL/min 時 CL 已封頂不再上升；V2／分佈體積之估計不確定性高於 CL（原文報告 shrinkage 偏大），實際使用請併同臨床判斷，勿僅憑此模型調整劑量。'});
+        flags.push({level:'warn', text:'下方濃度－時間曲線目前僅繪製模型 A（單室）之預測，「近 24h 實際 AUC」欄位也僅提供模型 A 數值——完整雙室模擬給藥史超出本輪範圍，暫不提供模型 B 版本。'});
+      }
+    } else if(toggleElFit){
+      toggleElFit.style.display = 'none';
+    }
+    const dispCL = useModelB ? modelB.CL : CL;
+    const dispCmax = useModelB ? ssB.Cmax : CmaxSS;
+    const dispCmin = useModelB ? ssB.Cmin : CminSS;
+    const dispAUC24 = useModelB ? AUC24ssB : AUC24ss;
+    const dispAUCoverMIC = useModelB ? AUCoverMICB : AUCoverMIC;
+    const modelTagFit = useModelB ? '模型B' : '模型A';
+
+    if(dispCmin>20) flags.push({level:'danger', text:`推算穩態 Cmin（${modelTagFit}） ${dispCmin.toFixed(1)} µg/mL > 20，腎毒性風險上升，建議下調劑量或延長間隔。`});
+    else if(dispCmin>15) flags.push({level:'warn', text:`推算穩態 Cmin（${modelTagFit}） ${dispCmin.toFixed(1)} µg/mL 落在 15–20 區間，腎毒性風險略升，建議留意。`});
+    if(dispAUC24>600) flags.push({level:'danger', text:`現行處方推算 AUC₂₄（${modelTagFit}） ${dispAUC24.toFixed(0)} 超過 600，腎毒性風險升高。`});
+    else if(dispAUC24<400) flags.push({level:'warn', text:`現行處方推算 AUC₂₄（${modelTagFit}） ${dispAUC24.toFixed(0)} 低於 400，療效可能不足。`});
 
     // --- 6. render param grid ---
-    const cellsHtml = [
+    const cellsHtml = useModelB ? [
+      ['CL（模型 B）', fmt2(modelB.CL), 'L/hr', 'CrCl 已依論文上限 167.8 mL/min 封頂'],
+      ['V1（模型 B）', fmt1(modelB.V1), 'L', ''],
+      ['V2（模型 B）', fmt1(modelB.V2), 'L', ''],
+      ['Q（模型 B）', fmt2(modelB.Q), 'L/hr', '論文未報告個體變異，視為固定值'],
+      ['α／β（模型 B）', `${fmt3(ssB.alpha)} / ${fmt3(ssB.beta)}`, 'hr⁻¹', ''],
+      ['t½,β（模型 B）', fmt1(ssB.tHalfBeta), 'hr', ''],
+      ['CrCl（Cockcroft-Gault）', fmt0(crcl), 'mL/min', cgMethod],
+      ['Cmax,ss（模型 B）', fmt1(ssB.Cmax), 'µg/mL', ''],
+      ['Cmin,ss（模型 B）', fmt1(ssB.Cmin), 'µg/mL', ssB.Cmin>20?'>20 腎毒性關切':(ssB.Cmin>15?'15–20 略升':'')],
+      ['AUC₂₄,ss（模型 B）', fmt0(AUC24ssB), 'mg·hr/L', ''],
+      ['AUC/MIC（模型 B）', fmt0(AUCoverMICB), '', `MIC 假設 ${mic}`]
+    ] : [
       ['ke（消除速率常數）', fmt3(ke), 'hr⁻¹', ''],
       ['t½（半衰期）', fmt1(tHalf), 'hr', anyNotSS?'尚未達穩態，保留解讀':''],
       ['Vd（分布體積）', fmt1(V), 'L', useDryWeight?`${(V/dryWeight).toFixed(2)} L/kg（以乾體重估算）`:`${(V/tbw).toFixed(2)} L/kg`],
@@ -3857,7 +4037,7 @@ ${flagText || '（無特別旗標）'}
     // the candidate table only ever needed clearance and the AUC target. The old form
     // propagated NaN whenever 維持劑量/給藥間隔 was blank, blanking every candidate row
     // to "— mg" even though CL was already known. (External audit finding, verified.)
-    const targetDailyDose = CL*targetAUC;
+    const targetDailyDose = dispCL*targetAUC;
     const candTaus=[];
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
@@ -3867,14 +4047,20 @@ ${flagText || '（無特別旗標）'}
       const roundedDose = roundDoseTo250(rawDose);
       const infMinC = inferInfusionMinutes(roundedDose);
       const infHrC = infMinC/60;
-      const Rc = roundedDose/infHrC;
-      const cmaxC = (Rc/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
-      const cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
-      const auc24C = (roundedDose*(24/candTau))/CL;
+      let cmaxC, cminC;
+      if(useModelB){
+        const ssC = twoCompartmentSS(roundedDose, infHrC, candTau, modelB.CL, modelB.V1, modelB.Q, modelB.V2);
+        cmaxC = ssC.Cmax; cminC = ssC.Cmin;
+      } else {
+        const Rc = roundedDose/infHrC;
+        cmaxC = (Rc/CL)*(1-Math.exp(-ke*infHrC))/(1-Math.exp(-ke*candTau));
+        cminC = cmaxC*Math.exp(-ke*(candTau-infHrC));
+      }
+      const auc24C = (roundedDose*(24/candTau))/dispCL;
       const {tag, tagText} = regimenTag(cminC, auc24C);
       return {candTau, roundedDose, infMinC, cmaxC, cminC, auc24C, tag, tagText, isCurrent: candTau===tau};
     });
-    renderRegimenTableVanco(regimenRows, '現行間隔');
+    renderRegimenTableVanco(regimenRows, useModelB?'現行間隔・模型B':'現行間隔');
 
     const customResult = updateCustomRow(CL, ke, mic);
 
@@ -3927,7 +4113,7 @@ ${flagText || '（無特別旗標）'}
     updateWhatIfReadout('vanco', whatIf, CL, ke);
 
     // --- 11. header meta ---
-    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${CL.toFixed(2)} L/hr ・ AUC₂₄ ${AUC24ss.toFixed(0)}`);
+    setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${dispCL.toFixed(2)} L/hr ・ AUC₂₄ ${dispAUC24.toFixed(0)}${useModelB?'（模型B）':''}`);
 
     // --- capture derived outputs for versioned patient snapshot (loop B) ---
     lastVancoDerived = {
@@ -3944,7 +4130,8 @@ ${flagText || '（無特別旗標）'}
       doseRowsMs, levelRowsMs, maintDose, tau, maintInfHr, mic, targetAUC,
       CL, V, ke, tHalf, CmaxSS, CminSS, AUC24ss, AUCoverMIC, auc24Actual, fit,
       decidedRegimen: whatIf, regimenRows, loadSuggest: deepInfection?loadSuggest:null,
-      flags, customResult
+      flags, customResult,
+      popModelB: useModelB ? {CL:modelB.CL, V1:modelB.V1, Q:modelB.Q, V2:modelB.V2, alpha:ssB.alpha, beta:ssB.beta, tHalfBeta:ssB.tHalfBeta, Cmax:ssB.Cmax, Cmin:ssB.Cmin, AUC24:AUC24ssB, AUCoverMIC:AUCoverMICB} : null
     });
   }
 
@@ -3998,9 +4185,10 @@ ${levelText}
 - 擬合模式：${d.fit.mode}
 - ke = ${d.ke.toFixed(4)} hr⁻¹，t½ = ${d.tHalf.toFixed(1)} hr
 - Vd = ${d.V.toFixed(1)} L，CL = ${d.CL.toFixed(2)} L/hr
-- 現行處方推算：Cmax,ss ${d.CmaxSS.toFixed(1)} µg/mL／Cmin,ss ${d.CminSS.toFixed(1)} µg/mL／AUC₂₄ ${d.AUC24ss.toFixed(0)} mg·hr/L（MIC 假設 ${d.mic}，AUC/MIC ${d.AUCoverMIC.toFixed(0)}）
-- 近 24 小時實際累積 AUC（依已發生給藥推算，非穩態外推）：${d.auc24Actual.toFixed(0)} mg·hr/L
+- 現行處方推算（模型 A）：Cmax,ss ${d.CmaxSS.toFixed(1)} µg/mL／Cmin,ss ${d.CminSS.toFixed(1)} µg/mL／AUC₂₄ ${d.AUC24ss.toFixed(0)} mg·hr/L（MIC 假設 ${d.mic}，AUC/MIC ${d.AUCoverMIC.toFixed(0)}）
+- 近 24 小時實際累積 AUC（依已發生給藥推算，非穩態外推，模型 A）：${d.auc24Actual.toFixed(0)} mg·hr/L
 - 目標 AUC₂₄：${d.targetAUC}
+${d.popModelB?`- 使用者目前另外開啟「模型 B（Oda et al. 2024 兩室，日本 real-world 資料）」比較：CL ${d.popModelB.CL.toFixed(2)} L/hr，V1 ${d.popModelB.V1.toFixed(1)} L，Q ${d.popModelB.Q.toFixed(2)} L/hr（固定值），V2 ${d.popModelB.V2.toFixed(1)} L，t½β ${d.popModelB.tHalfBeta.toFixed(1)} hr；預測 Cmax,ss ${d.popModelB.Cmax.toFixed(1)}／Cmin,ss ${d.popModelB.Cmin.toFixed(1)}／AUC₂₄ ${d.popModelB.AUC24.toFixed(0)}。此為僅供比較的第二組族群先驗，並未取代模型 A，下方候選劑量方案已改依模型 B 計算。\n`:''}
 
 ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序）
 ${regimenText}
@@ -6007,6 +6195,8 @@ ${flagText||'（無）'}
 
     document.getElementById('useLoading').addEventListener('change', function(){
       document.getElementById('loadingFields').style.display = this.checked ? 'grid' : 'none';
+      const lbl = document.getElementById('therapyStartLabel');
+      if(lbl) lbl.textContent = this.checked ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）';
     });
     document.getElementById('assumeSteadyState').addEventListener('change', function(){
       document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
@@ -6040,6 +6230,8 @@ ${flagText||'（無）'}
     });
     document.getElementById('vancoPickStart').addEventListener('input', render);
     document.getElementById('vancoPickStart').addEventListener('change', render);
+    document.getElementById('vancoPopModelBtnA').addEventListener('click', ()=>{ vancoProspectiveModel = 'A'; render(); });
+    document.getElementById('vancoPopModelBtnB').addEventListener('click', ()=>{ vancoProspectiveModel = 'B'; render(); });
 
     document.getElementById('addScrRow').addEventListener('click', ()=>{ addScrRow('', ''); render(); });
     document.getElementById('addDoseRow').addEventListener('click', ()=>{ addDoseRow('', '', ''); renumberDoseRows(); render(); });
