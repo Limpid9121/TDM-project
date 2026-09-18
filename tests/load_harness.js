@@ -32,7 +32,9 @@ const EXPORT_NAMES = [
   'GENT_CONVENTIONAL', 'GENT_ODD',
   'AZOLE_TARGETS', 'AZOLE_FORMULATIONS', 'AZOLE_PO_UNIT_MG',
   'checkAzoleTrough', 'computeAzoleSteadyState', 'inferInfectionTrend', 'classifyToxicitySigns',
-  'crossCheckClinical', 'checkCypInteractionsAzole', 'suggestPoDoseAzole', 'azoleIndicationList'
+  'crossCheckClinical', 'checkCypInteractionsAzole', 'suggestPoDoseAzole', 'azoleIndicationList',
+  'AED_RULES', 'phtSaltFactor', 'phtNormalize', 'aedSamplingCheck', 'aedLabScheduleNote',
+  'phtToxicityStatPrompt', 'vpaAssess', 'vpaHermidaCorrect', 'aedSteadyStateCheck', 'aedInteractionScan'
 ];
 
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');

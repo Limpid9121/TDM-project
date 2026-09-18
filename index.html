@@ -405,7 +405,7 @@
         <button class="btn small primary drug-switch-btn" type="button" data-drug="vancomycin">Vancomycin</button>
         <button class="btn small drug-switch-btn" type="button" data-drug="aminoglycoside">Aminoglycoside</button>
         <button class="btn small drug-switch-btn" type="button" data-drug="azole">Azole</button>
-        <button class="btn small drug-switch-btn coming-soon" type="button" disabled title="尚未建置">抗癲癇藥物<span class="soon-tag">即將推出</span></button>
+        <button class="btn small drug-switch-btn" type="button" data-drug="aed">抗癲癇藥物</button>
       </div>
     </div>
     <div class="header-right">
@@ -1335,6 +1335,274 @@
         <div class="btn-row">
           <button class="btn primary small" id="azlCopyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="azlCopyStatus"></span>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+  </div>
+
+  <div id="drug-aed" class="drug-module">
+  <main class="grid">
+    <!-- ============ LEFT: INPUT PANEL (AED) ============ -->
+    <section class="stack" id="aedInputPanel">
+
+      <!-- 00. 病人資料存檔 -->
+      <div class="card" id="aedPatientManagerCard">
+        <h2><span class="idx">⟳</span>病人資料存檔</h2>
+        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
+        <div class="field-row">
+          <div class="field"><label>病歷號</label><input type="text" id="aedPatientLabel" placeholder=""></div>
+          <div class="field"><label>評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>選擇已儲存的病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+          <div class="field"><label>收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button>
+          <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+          <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
+          <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn small" id="aedExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
+          <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
+        </div>
+        <div class="hint" id="aedPatientMeta" style="margin-top:8px;min-height:14px;"></div>
+      </div>
+
+      <!-- 01. 藥物與目的 -->
+      <div class="card">
+        <h2><span class="idx">01</span>目標藥物與目的</h2>
+        <p class="hint">本模組為「濃度校正判讀＋情境檢查」工具，不做時間-濃度曲線擬合（phenytoin 的 MM 劑量推估與趨勢圖為後續分期，本版尚未提供）。校正公式與目標值出自院內指引與本院醫令，可能與教科書通則不同，詳細出處見各處提示。</p>
+        <div class="field-row">
+          <div class="field"><label>目標藥物</label>
+            <select id="aedDrug">
+              <option value="phenytoin">Phenytoin</option>
+              <option value="valproate">Valproic Acid</option>
+            </select>
+          </div>
+          <div class="field"><label>本次 TDM 目的</label>
+            <select id="aedPurpose">
+              <option value="routine">常規監測</option>
+              <option value="titration">劑量調整後複測</option>
+              <option value="toxicity">疑似毒性</option>
+              <option value="efficacy">療效不佳／發作未控制</option>
+              <option value="interaction">新增／移除交互作用藥物</option>
+            </select>
+          </div>
+        </div>
+        <div class="hint" id="aedTargetDisplay" style="margin-top:-4px;"></div>
+      </div>
+
+      <!-- 02. 人口學 -->
+      <div class="card">
+        <h2><span class="idx">02</span>人口學與身體計測</h2>
+        <div class="field-row three">
+          <div class="field"><label>年齡（歲）</label><input type="number" id="aedAge" value="45" min="0" max="120"></div>
+          <div class="field"><label>生理性別</label><select id="aedSex"><option value="M">男</option><option value="F">女</option></select></div>
+          <div class="field"><label>身高（cm）</label><input type="number" id="aedHeight" value="165" min="100" max="230"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>實際體重 TBW（kg）</label><input type="number" id="aedTbw" value="60" min="20" max="250" step="0.1"></div>
+          <div class="field"><label>懷孕／哺乳</label>
+            <select id="aedPregnancy"><option value="no">否</option><option value="pregnant">懷孕</option><option value="lactating">哺乳</option></select>
+          </div>
+        </div>
+        <div class="hint" id="aedRenalDisplay" style="margin-top:-4px;"></div>
+      </div>
+
+      <!-- 03. 實驗室 -->
+      <div class="card">
+        <h2><span class="idx">03</span>實驗室數值（最新一筆）</h2>
+        <p class="hint">Albumin 為蛋白結合校正必需；SCr／透析狀態決定 phenytoin 校正公式（見濃度判讀）。</p>
+        <div class="field-row three">
+          <div class="field"><label>Albumin（g/dL）</label><input type="number" id="aedAlbumin" step="0.1"></div>
+          <div class="field"><label>AST／ALT（U/L）</label><input type="text" id="aedAstAlt" placeholder="如：45 / 60"></div>
+          <div class="field"><label>Total bilirubin（mg/dL）</label><input type="number" id="aedTbil" step="0.1"></div>
+        </div>
+        <div class="field-row three">
+          <div class="field"><label>SCr（mg/dL）</label><input type="number" id="aedScr" step="0.01"></div>
+          <div class="field"><label>BUN（mg/dL）</label><input type="number" id="aedBun" step="1"></div>
+          <div class="field"><label>lab 日期</label><input type="date" id="aedLabDate"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>Platelet（×10³/µL，VPA 用）</label><input type="number" id="aedPlatelet" step="1"></div>
+          <div class="field"><label>Ammonia NH₃（µmol/L，VPA 用）</label><input type="number" id="aedNh3" step="1"></div>
+        </div>
+        <div class="checkline"><input type="checkbox" id="aedDialysis"><label for="aedDialysis">正在透析（自動套用腎衰竭校正公式，可手動覆寫，見下）</label></div>
+      </div>
+
+      <!-- 04. 給藥處方 -->
+      <div class="card">
+        <h2><span class="idx">04</span>給藥處方</h2>
+        <div class="field-row">
+          <div class="field"><label>本院劑型／品項</label><select id="aedForm"></select></div>
+          <div class="field"><label>給藥間隔（小時，τ）</label><input type="number" id="aedTauH" value="24" min="1" step="1"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label id="aedDoseLabel">維持劑量（mg／每次）</label><input type="number" id="aedDose" step="50"></div>
+          <div class="field"><label>本劑量起始時間（最近一次調整日）</label><input type="datetime-local" id="aedRegimenStart"></div>
+        </div>
+        <p class="hint" id="aedDoseHint" style="margin-top:-6px;"></p>
+        <div class="checkline"><input type="checkbox" id="aedUseLoading"><label for="aedUseLoading">已給過 loading dose</label></div>
+        <div class="field-row" id="aedLoadingRow" style="display:none;">
+          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="aedLoadingDose" step="50"></div>
+          <div class="field"><label>Loading 給藥時間</label><input type="datetime-local" id="aedLoadingAt"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>近期漏給／暫停／延遲劑量（選填）</label><input type="text" id="aedMissedDoses" placeholder=""></div>
+          <div class="field"></div>
+        </div>
+      </div>
+
+      <!-- 05. 濃度量測 -->
+      <div class="card">
+        <h2><span class="idx">05</span>濃度量測</h2>
+        <p class="hint">本院 total／free、phenytoin／VPA 皆採同一條「給藥前一小時內」低谷採樣窗（本院醫令，較院內指引通則的寬鬆 trough 更精確）；phenytoin IV 給藥另有給藥後 2–4 小時峰值窗。</p>
+        <div class="field-row">
+          <div class="field"><label>濃度類型</label><select id="aedLevelType"><option value="total">Total</option><option value="free">Free</option></select></div>
+          <div class="field"><label>給藥途徑（採樣窗判斷用）</label><select id="aedLevelRoute"><option value="po">PO</option><option value="iv">IV</option></select></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>濃度數值</label><input type="number" id="aedLevelValue" step="0.1"></div>
+          <div class="field"><label>抽血日期時間</label><input type="datetime-local" id="aedLevelDrawAt"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label>最近一次給藥時間</label><input type="datetime-local" id="aedLevelLastDoseAt"></div>
+          <div class="field"></div>
+        </div>
+        <div class="hint" id="aedSamplingCheckDisplay" style="margin-top:-4px;"></div>
+      </div>
+
+      <!-- 06a. Phenytoin 專屬 -->
+      <div class="card" id="aedPhtSubtable" style="display:none;">
+        <h2><span class="idx">06</span>Phenytoin 專屬</h2>
+        <div class="field-row">
+          <div class="field"><label>CYP2C9（若知）</label>
+            <select id="aedCyp2c9"><option value="">不明</option><option value="NM">NM（正常）</option><option value="IM1.5">IM（活性分數 1.5）</option><option value="IM1.0">IM（活性分數 1.0）</option><option value="PM">PM（poor metabolizer）</option></select>
+          </div>
+          <div class="field"><label>HLA-B*15:02</label>
+            <select id="aedHlab1502"><option value="">未驗</option><option value="pos">陽性</option><option value="neg">陰性</option></select>
+          </div>
+        </div>
+        <p class="hint">HLA-B*15:02 陽性且未曾使用者建議避免 phenytoin（SJS/TEN 風險）；台灣族群此等位基因頻率高。本院無 free phenytoin 醫令，如需 free level 須外送。</p>
+        <div class="field-row">
+          <div class="field"><label>併用 VPA 濃度（若有，µg/mL）</label><input type="number" id="aedVpaLevel" step="0.1"></div>
+          <div class="field"><label>該 VPA 濃度抽血時間</label><input type="datetime-local" id="aedVpaLevelAt"></div>
+        </div>
+        <div class="checkline"><input type="checkbox" id="aedImNg"><label for="aedImNg">IM 給藥或 NG feeding（吸收可能不穩定）</label></div>
+        <div class="checkline"><input type="checkbox" id="aedCritical"><label for="aedCritical">重症／危重病人</label></div>
+      </div>
+
+      <!-- 06b. Valproic Acid 專屬 -->
+      <div class="card" id="aedVpaSubtable" style="display:none;">
+        <h2><span class="idx">06</span>Valproic Acid 專屬</h2>
+        <div class="field-row">
+          <div class="field"><label>適應症</label><input type="text" id="aedIndication" placeholder="癲癇／躁症／其他"></div>
+          <div class="field"></div>
+        </div>
+        <div class="checkline"><input type="checkbox" id="aedIcu"><label for="aedIcu">ICU／重症</label></div>
+        <div class="checkline"><input type="checkbox" id="aedPropofol"><label for="aedPropofol">併用 propofol／Intralipid／clevidipine（free fatty acid 輸注）</label></div>
+        <div class="checkline"><input type="checkbox" id="aedCarbapenem"><label for="aedCarbapenem">併用 carbapenem 類抗生素（原則避免併用，濃度可數日內大幅下降）</label></div>
+      </div>
+
+      <!-- 08. 臨床 -->
+      <div class="card">
+        <h2><span class="idx">08</span>臨床病程與毒性徵象</h2>
+        <div class="field-row">
+          <div class="field"><label>發作／症狀控制狀況</label><input type="text" id="aedSeizureControl" placeholder=""></div>
+          <div class="field"><label>本次調整誘因</label><input type="text" id="aedTrigger" placeholder=""></div>
+        </div>
+        <div id="aedPhtSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>Phenytoin 毒性徵象</strong>（任一勾選會提示可送 STAT phenytoin）：</p>
+          <div class="checkline"><input type="checkbox" id="aedSxNystagmus"><label for="aedSxNystagmus">眼震</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxAtaxia"><label for="aedSxAtaxia">共濟失調</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxDysarthria"><label for="aedSxDysarthria">構音障礙</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxDrowsy"><label for="aedSxDrowsy">嗜睡</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxConfusion"><label for="aedSxConfusion">意識改變</label></div>
+        </div>
+        <div id="aedVpaSigns" style="display:none;">
+          <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>VPA 毒性徵象</strong>（意識改變可能為高血氨腦病，可在 total 正常時發生，建議查 ammonia）：</p>
+          <div class="checkline"><input type="checkbox" id="aedSxTremor"><label for="aedSxTremor">震顫</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxEncephalopathy"><label for="aedSxEncephalopathy">嗜睡／意識改變</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxBleeding"><label for="aedSxBleeding">出血傾向（血小板低下相關）</label></div>
+          <div class="checkline"><input type="checkbox" id="aedSxGiUpset"><label for="aedSxGiUpset">腸胃症狀（噁心／嘔吐／腹痛，罕見胰臟炎）</label></div>
+        </div>
+      </div>
+
+      <!-- 09. 併用藥物 -->
+      <div class="card">
+        <h2><span class="idx">09</span>併用藥物清單</h2>
+        <p class="hint">系統會用關鍵字比對已知高風險類別（carbapenem／valproate/phenytoin 互相置換／CYP 誘導或抑制劑等），不做精確劑量換算資料庫。</p>
+        <div class="field">
+          <label>藥名／劑量／頻次（每行一項）</label>
+          <textarea id="aedConcomitant" placeholder="如：meropenem 1g q8h, aspirin 100mg qd…"></textarea>
+        </div>
+      </div>
+
+      <!-- 10. 治療目標與限制 -->
+      <div class="card">
+        <h2><span class="idx">10</span>治療目標與限制</h2>
+        <div class="field">
+          <label>治療目標</label>
+          <textarea id="aedGoal" placeholder=""></textarea>
+        </div>
+        <div class="field-row" style="margin-top:10px;">
+          <div class="field"><label>預計療程長度</label><input type="text" id="aedDuration"></div>
+          <div class="field"><label>劑量／給藥限制</label><input type="text" id="aedConstraints" placeholder=""></div>
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>既往對本藥或同類藥的不良反應</label>
+          <input type="text" id="aedPriorAdr">
+        </div>
+      </div>
+
+      <!-- 11. 備註 -->
+      <div class="card">
+        <h2><span class="idx">11</span>其他備註</h2>
+        <textarea id="aedOtherNotes"></textarea>
+      </div>
+
+    </section>
+
+    <!-- ============ RIGHT: RESULTS PANEL (AED) ============ -->
+    <section class="panel" id="aedResultsPanel">
+
+      <div class="results-head">
+        <h2>判讀結果</h2>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <span class="mode-badge" id="aedFitModeBadge">尚無資料</span>
+        </div>
+      </div>
+
+      <div class="param-grid" id="aedParamGrid"></div>
+
+      <div class="section-block">
+        <h3><span class="idx">A</span>濃度校正判讀（全部公式並列，標示建議採用者）</h3>
+        <div class="flag-list" id="aedCorrList"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">B</span>健全性檢查與情境提示</h3>
+        <div class="flag-list" id="aedFlagList"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">C</span>監測提醒（純臨床天數；排班／TAT 僅供參考文字，不折算進天數）</h3>
+        <div class="monitor-grid" id="aedMonitorGrid"></div>
+      </div>
+
+      <div class="section-block">
+        <h3><span class="idx">D</span>AI 諮詢 Prompt</h3>
+        <p class="hint" style="margin-bottom:10px;">本版尚不含 phenytoin MM 劑量推估與趨勢圖（P2/P3）；下方會整合目前已輸入的資料，可貼給任一主流 AI 進行整合評估。</p>
+        <textarea id="aedAiPromptOut" readonly></textarea>
+        <div class="btn-row">
+          <button class="btn primary small" id="aedCopyPromptBtn" type="button">複製 Prompt</button>
+          <span class="copy-status" id="aedCopyStatus"></span>
         </div>
       </div>
 
@@ -6117,6 +6385,512 @@ ${flagText||'（無）'}
     renderAzole();
   }
 
+  // ==================== AED (phenytoin / valproic acid) ====================
+  // docs/AED_SPEC_v1.md — P1 scope only: concentration-correction interpretation, all
+  // flags, sampling/schedule checks, AI prompt. Phenytoin MM dosing, VPA proportional
+  // dosing, the dose-concentration pair table (card 07) and the trend chart are P2/P3
+  // and intentionally NOT implemented yet (see spec §8 phasing).
+  //
+  // AED_RULES: every clinical constant with its src, per docs/AED_SPEC_v1.md §3.2 (Q1,
+  // Q2, Q4, Q6, Q12 resolutions folded in). kmSensitivityCandidates/cypDoseAdj/pop are
+  // carried here as data for P2 even though no P1 function reads them yet.
+  const AED_RULES = {
+    phenytoin: {
+      range:      { lo:10, hi:20, unit:'mcg/mL', src:'院內指引 III；本院醫令 10502BZP／10502BYP' },
+      freeRange:  { lo:1, hi:2, unit:'mcg/mL', src:'文獻補充（Winter；skill reference）— 已確認本院無 free phenytoin 醫令（Q12），此範圍僅供外送報告對照用，UI 不主動呈現送檢選項', localTest:false },
+      sampling:   { windowMinBeforeDose:60, iv:{ fromH:2, toH:4 }, src:'本院醫令 10502BZP（給藥前一小時內抽血，取代院內指引通則 PO trough／IV 2–4h 的粗略版本）' },
+      lab: {
+        routine:  { code:'10502BZP', scheduleText:'本院 total phenytoin：平日常規可送，約 1 天報告', tatDays:1, src:'本院醫令擷取 2026-09-18' },
+        stat:     { code:'10502BYP', scheduleText:'可送 STAT phenytoin（10502BYP）：急診 30 分鐘、病房 1 小時，24 小時皆可送', tatMin:{ER:30,ward:60}, src:'本院醫令擷取 2026-09-18' }
+      },
+      ssDays:     { lo:5, hi:30, open:true, src:'院內指引 III' },
+      tbilFlag:   { gt:15, unit:'mg/dL', src:'院內指引 III-5' },
+      corr: {
+        hypoAlb:    { a:0.2, b:0.1, src:'院內指引 III-6（Winter-Tozer）' },
+        hypoAlbRef: { a:0.275, b:0.1, label:'Cheng 衍生式（非院內公式，僅供參考）', hospitalFormula:false, src:'Cheng et al., Can J Hosp Pharm 2016；Q4 已解決' },
+        renal:      { a:0.1, b:0.1, trigger:{ crClLt:10, orDialysis:true, manualOverride:true }, src:'院內指引 III-7（Liponi 1984）；Q1 已解決' },
+        vpa:        { c0:0.095, c1:0.001, src:'院內指引 III-8（Haidukewych 1989）' }
+      },
+      salt: {
+        products: [
+          { code:'ALE4JA07', name:'Aleviatin Tablet 100 mg/tab', form:'PO 錠劑', salt:'acid', S:1.0, doseStepMg:50, unitMg:100, canHalve:true },
+          { code:'AL 1JA07', name:'Aleviatin Injection 250 mg/5 mL/amp（50 mg/mL）', form:'IV', salt:'sodium', S:0.92 }
+        ],
+        src:'本院藥品品項（Q6 已解決，見 §2.7）'
+      },
+      pop:        { vmaxMgKgDay:8.29, vmaxElderly:5.8, elderlyAge:60, km:4, vdLkg:0.7, src:'Hung CC et al. Ther Drug Monit 2004;26(5):534-540（台灣 n=169）；Q5 已解決 — P2 才會用到' },
+      kmSensitivityCandidates: [
+        { km:1.45, label:'韓國（n=97，G1 n=36）' }, { km:2.307, label:'新加坡華人（n=66）' },
+        { km:4, label:'教科書（Winter）' }, { km:6, label:'教科書上緣示範值' }, { km:9.19, label:'日本（Odani 1996, n=116）' }
+      ],
+      cypDoseAdj: { groups: [
+        { g:'G1', genotype:'CYP2C9 EM／CYP2C19 EM', doseMgKgDay:[5.5,7] }, { g:'G2', genotype:'CYP2C9 IM／CYP2C19 EM', doseMgKgDay:[5,7] },
+        { g:'G3', genotype:'CYP2C9 EM／CYP2C19 PM', doseMgKgDay:[5,6] }, { g:'G4', genotype:'CYP2C9 PM／CYP2C19 EM', doseMgKgDay:[3,4] },
+        { g:'G5', genotype:'CYP2C9 PM／CYP2C19 PM', doseMgKgDay:[2,3] } ], src:'Hung CC et al. 2004（台灣 n=169）' },
+      cpic:       { cyp2c9_AS1: -0.25, cyp2c9_PM: -0.5, src:'CPIC 2020' }
+    },
+    valproate: {
+      range:      { lo:50, hi:100, unit:'mcg/mL', src:'院內指引 III；本院醫令 10510B0P' },
+      freeRange:  { lo:5, hi:15, unit:'µg/mL', src:'本院檢驗科 Free-form Valproic acid 醫令 10510CYP；Q2 已解決' },
+      sampling:   { windowMinBeforeDose:60, fixedRelation:true, src:'本院醫令 10510B0P（給藥前一小時內抽血）' },
+      lab: {
+        total: { code:'10510B0P', scheduleText:'本院 total VPA：平日常規可送，約 1 天報告', tatDays:1, src:'本院醫令擷取 2026-09-18' },
+        free:  { code:'10510CYP', scheduleText:'本院 free VPA 僅週二、週五（W2、W5）執行，報告需 3 天', tatDays:3, src:'本院檢驗科 10510CYP' },
+        stat:  null
+      },
+      freeRiskFactorsHospital: {
+        list:['尿毒症(uremia)','低白蛋白症','free fatty acid 輸注(Intralipid／propofol／clevidipine)','蛋白結合競爭藥物(aspirin／ibuprofen)'],
+        src:'本院檢驗科 10510CYP 臨床意義說明'
+      },
+      ssDays:     { lo:2, hi:3, src:'院內指引 III' },
+      hermida: { c:6.5, maxTotalReliable:75, unit:'mg/L', excludeIf:['jaundice','uremia','renalFailure'], src:'Hermida & Tutor 2005；Q3 已解決' },
+      carbapenem: { meanDrop:44, onsetDays:[1,3], recoverWeeks:[1,2], src:'Meta-analysis PMID 33322967' },
+      products: [
+        { code:'DEP1JA15', name:'Depakine Lyophilized Injection 400 mg/vial', form:'IV' },
+        { code:'DEP5JA10', name:'Depakine Oral Solution 200 mg/mL, 40 mL/btl', form:'PO 液劑（連續劑量）' },
+        { code:'DEP4JA15', name:'Depakine Chrono Film Coated Tablet, 500 mg valproate sodium/tab', form:'PO ER 膜衣錠', doseStepMg:250, unitMg:500, canHalve:true }
+      ]
+    }
+  };
+
+  function phtSaltFactor(form){
+    if(form==='acid') return 1.0;
+    if(form==='sodium') return 0.92;
+    if(form==='fos') return 0.92;
+    return null;
+  }
+
+  // Concentration normalization decision tree (§4.2). Returns every applicable
+  // candidate (never silently drops one), which one the tree recommends, and a
+  // grey "reference only" row (Q4, Cheng 0.275) that never becomes the suggested
+  // value.
+  function phtNormalize({ total, free, albumin, renalFailure, vpaLevel } = {}){
+    const candidates = [];
+    const hasTotal = isFinite(total);
+    const hasAlbumin = isFinite(albumin);
+    if(isFinite(free)) candidates.push({ method:'free', value:free, formula:'實測 free level', applicable:true });
+    if(hasTotal && isFinite(vpaLevel)){
+      const { c0, c1 } = AED_RULES.phenytoin.corr.vpa;
+      candidates.push({ method:'vpaCorrected', value: ((c0 + c1*vpaLevel) * total) / 0.1, formula:'Haidukewych（併用 VPA）', applicable:true,
+        caveat:'此式未納入白蛋白，與白蛋白校正不可串接' });
+    }
+    if(hasTotal && hasAlbumin && renalFailure){
+      const { a, b } = AED_RULES.phenytoin.corr.renal;
+      candidates.push({ method:'renal', value: total/(a*albumin+b), formula:'腎衰竭校正（0.1×Alb+0.1）', applicable:true });
+    }
+    if(hasTotal && hasAlbumin){
+      const { a, b } = AED_RULES.phenytoin.corr.hypoAlb;
+      candidates.push({ method:'hypoAlb', value: total/(a*albumin+b), formula:'白蛋白校正（0.2×Alb+0.1）', applicable:true });
+    }
+    if(hasTotal && !hasAlbumin){
+      candidates.push({ method:'totalOnly', value: total, formula:'僅 total（未輸入白蛋白）', applicable:true, caveat:'建議補 albumin' });
+    }
+    const priority = ['free','vpaCorrected','renal','hypoAlb','totalOnly'];
+    let suggested = null;
+    for(const p of priority){ if(candidates.some(c=>c.method===p)){ suggested = p; break; } }
+    const refOnly = [];
+    if(hasTotal && hasAlbumin){
+      const { a, b } = AED_RULES.phenytoin.corr.hypoAlbRef;
+      refOnly.push({ method:'hypoAlbRef', value: total/(a*albumin+b), formula:AED_RULES.phenytoin.corr.hypoAlbRef.label, hospitalFormula:false });
+    }
+    return { candidates, suggested, refOnly };
+  }
+
+  function aedSamplingCheck({ doseTime, drawTime, windowMinBeforeDose = 60, route, ivFromH, ivToH } = {}){
+    if(!isFinite(doseTime) || !isFinite(drawTime)) return { ok:null, text:'尚未輸入給藥或抽血時間' };
+    const diffMin = (drawTime - doseTime) / 60000;
+    if(route==='iv' && isFinite(ivFromH) && isFinite(ivToH)){
+      const diffH = diffMin/60;
+      if(diffH>=ivFromH && diffH<=ivToH) return { ok:true, text:`符合 IV 峰值採樣窗（給藥後 ${ivFromH}–${ivToH} 小時）` };
+      return { ok:false, text:`不在 IV 峰值採樣窗內（給藥後 ${ivFromH}–${ivToH} 小時），判讀時需留意採樣時點誤差` };
+    }
+    if(diffMin<0 && diffMin>=-windowMinBeforeDose) return { ok:true, text:`符合給藥前 ${windowMinBeforeDose} 分鐘內的低谷採樣窗` };
+    return { ok:false, text:`不在給藥前 ${windowMinBeforeDose} 分鐘內的低谷採樣窗，判讀時需留意採樣時點誤差` };
+  }
+
+  // Q11 已解決：只組固定提示文字，不做「今天到下次可送驗還剩幾天」的日期運算。
+  function aedLabScheduleNote({ drug, levelType } = {}){
+    const rules = AED_RULES[drug];
+    if(!rules) return '';
+    const lab = rules.lab && rules.lab[levelType];
+    if(!lab) return (drug==='valproate' && levelType==='stat') ? '本院擷取資料未見 VPA STAT 醫令' : '';
+    return lab.scheduleText || '';
+  }
+
+  function phtToxicityStatPrompt({ sxFlags = {} } = {}){
+    const any = Object.values(sxFlags).some(Boolean);
+    if(!any) return { show:false, text:'' };
+    return { show:true, text: aedLabScheduleNote({ drug:'phenytoin', levelType:'stat' }) + '——對應院內指引通則「有中毒證據時應立即測濃度」' };
+  }
+
+  function vpaAssess({ total, free, albumin, uremia, ffaInfusion, competingDrug, bun, icu } = {}){
+    const freeRiskFlags = [];
+    if(uremia) freeRiskFlags.push({ src:'hospital', text:'尿毒症(uremia)' });
+    if(isFinite(albumin) && albumin<3.5) freeRiskFlags.push({ src:'hospital', text:'低白蛋白症' });
+    if(ffaInfusion) freeRiskFlags.push({ src:'hospital', text:'free fatty acid 輸注(Intralipid／propofol／clevidipine)' });
+    if(competingDrug) freeRiskFlags.push({ src:'hospital', text:'蛋白結合競爭藥物(aspirin／ibuprofen)' });
+    if(isFinite(total) && total>90) freeRiskFlags.push({ src:'literature', text:'total 濃度偏高（>90 mg/L），飽和結合使 free fraction 不成比例上升' });
+    if(icu) freeRiskFlags.push({ src:'literature', text:'重症/ICU' });
+    if(isFinite(bun) && bun>25) freeRiskFlags.push({ src:'literature', text:'BUN 上升' });
+    const recommendFree = freeRiskFlags.length>0;
+    let status = 'noData';
+    if(isFinite(total)){
+      const { lo, hi } = AED_RULES.valproate.range;
+      status = total<lo ? 'low' : (total>hi ? 'high' : 'inRange');
+    }
+    return { status, freeRiskFlags, recommendFree };
+  }
+
+  // Q3 已解決：一律計算「適用性」，但 Hermida-Tutor 內部 albumin→free fraction 的查表
+  // 公式無法從可靠原始文獻覆核（僅有低信度的二次擷取），依專案鐵則「絕不杜撰未由資料
+  // 支持的數值」，本函式不輸出校正後數字，只給是否落在驗證範圍內的判定。已明確告知
+  // Brandon，待取得原始文獻 Table 1 後再補上真正的校正數字。
+  function vpaHermidaCorrect({ total, albumin, jaundice, uremia, renalFailure } = {}){
+    if(!isFinite(total) || !isFinite(albumin)) return { normalized:null, reliable:null, reason:'尚未輸入 total 或 albumin' };
+    const { maxTotalReliable } = AED_RULES.valproate.hermida;
+    const excluded = jaundice || uremia || renalFailure;
+    const reliable = !excluded && total<=maxTotalReliable;
+    return {
+      normalized: null,
+      reliable,
+      reason: !reliable
+        ? (excluded ? '超出本公式驗證範圍（黃疸／尿毒／腎衰竭），僅供參考' : `超出本公式驗證範圍（total>${maxTotalReliable} mg/L），僅供參考`)
+        : '⚠️公式數值尚待以原始文獻 Table 1 驗證，本版暫不顯示計算後數字'
+    };
+  }
+
+  function aedSteadyStateCheck({ drug, lastChangeMs, drawMs } = {}){
+    if(!isFinite(lastChangeMs) || !isFinite(drawMs)) return { status:'unknown', text:'尚未輸入起始/調整日期或抽血日期' };
+    const days = (drawMs - lastChangeMs) / 86400000;
+    const { lo, open } = AED_RULES[drug].ssDays;
+    if(days < lo) return { status:'notSteady', days, text:`可能尚未達穩態（已 ${days.toFixed(1)} 天，院內建議 ≥${lo} 天${open?'，毒性大/半衰期長者建議更久':''}）` };
+    return { status:'steady', days, text:`已達穩態（第 ${days.toFixed(1)} 天）` };
+  }
+
+  const AED_INTERACTION_KEYWORDS = {
+    phenytoin: [
+      { kw:['valproic','valproate','depakine','vpa'], text:'併用 valproic acid：置換蛋白結合位置，需套用 Haidukewych 校正式（見上方濃度判讀）' },
+      { kw:['carbamazepine'], text:'併用 carbamazepine：雙向誘導/自體誘導，可能影響兩藥濃度' },
+      { kw:['rifampin','rifampicin'], text:'併用 rifampin：強效酵素誘導劑，可能降低 phenytoin 濃度' },
+      { kw:['fluconazole','amiodarone','isoniazid'], text:'併用已知 CYP2C9/2C19 抑制劑，可能升高 phenytoin 濃度' },
+      { kw:['warfarin'], text:'phenytoin 與 warfarin 雙向交互作用，需加強監測 INR' }
+    ],
+    valproate: [
+      { kw:['meropenem','imipenem','ertapenem','doripenem','carbapenem'], text:'併用 carbapenem 類抗生素：VPA 濃度可在數日內大幅下降，原則避免併用' },
+      { kw:['phenytoin','dilantin','aleviatin'], text:'併用 phenytoin：雙向蛋白結合置換與誘導，需交叉檢視兩藥濃度' },
+      { kw:['lamotrigine'], text:'併用 lamotrigine：VPA 抑制其代謝，lamotrigine 濃度可能上升' },
+      { kw:['aspirin','ibuprofen'], text:'併用高蛋白結合競爭藥物：可能使 VPA free fraction 上升' }
+    ]
+  };
+  function aedInteractionScan(text, drug){
+    const t = (text||'').toLowerCase();
+    const rules = AED_INTERACTION_KEYWORDS[drug] || [];
+    const hits = [];
+    rules.forEach(r=>{ if(r.kw.some(k=>t.includes(k))) hits.push(r.text); });
+    return hits;
+  }
+
+  // ---------------- AED UI ----------------
+  function populateAedFormOptions(){
+    const drug = document.getElementById('aedDrug').value;
+    const sel = document.getElementById('aedForm');
+    const items = drug==='phenytoin' ? AED_RULES.phenytoin.salt.products : AED_RULES.valproate.products;
+    sel.innerHTML = items.map(p=>`<option value="${p.code}">${p.name}</option>`).join('');
+  }
+  function currentAedFormObj(){
+    const drug = document.getElementById('aedDrug').value;
+    const code = document.getElementById('aedForm').value;
+    const items = drug==='phenytoin' ? AED_RULES.phenytoin.salt.products : AED_RULES.valproate.products;
+    return items.find(p=>p.code===code) || items[0];
+  }
+  function toggleAedDrugUI(){
+    const drug = document.getElementById('aedDrug').value;
+    document.getElementById('aedPhtSubtable').style.display = drug==='phenytoin' ? '' : 'none';
+    document.getElementById('aedVpaSubtable').style.display = drug==='valproate' ? '' : 'none';
+    document.getElementById('aedPhtSigns').style.display = drug==='phenytoin' ? '' : 'none';
+    document.getElementById('aedVpaSigns').style.display = drug==='valproate' ? '' : 'none';
+    populateAedFormOptions();
+    const r = AED_RULES[drug];
+    document.getElementById('aedTargetDisplay').textContent = drug==='phenytoin'
+      ? `目標 total ${r.range.lo}–${r.range.hi} ${r.range.unit}（本院無 free phenytoin 醫令，如需 free 須外送，見校正說明）`
+      : `目標 total ${r.range.lo}–${r.range.hi} ${r.range.unit}；free ${r.freeRange.lo}–${r.freeRange.hi} ${r.freeRange.unit}（本院醫令 10510CYP）`;
+    updateAedDoseHint();
+  }
+  function updateAedDoseHint(){
+    const form = currentAedFormObj();
+    const hint = document.getElementById('aedDoseHint');
+    if(!hint) return;
+    hint.textContent = (form && form.doseStepMg)
+      ? `本院劑型最小可用單位 ${form.unitMg}mg（可剝半，格點 ${form.doseStepMg}mg）`
+      : (form ? `${form.form}，依配製濃度計算，不受整顆限制` : '');
+  }
+
+  function collectStateAed(){
+    const v = id => document.getElementById(id).value;
+    const c = id => document.getElementById(id).checked;
+    return {
+      drug:v('aedDrug'), purpose:v('aedPurpose'),
+      age:v('aedAge'), sex:v('aedSex'), height:v('aedHeight'), tbw:v('aedTbw'), pregnancy:v('aedPregnancy'),
+      labs:{ albumin:v('aedAlbumin'), astAlt:v('aedAstAlt'), tbil:v('aedTbil'), scr:v('aedScr'), bun:v('aedBun'),
+             platelet:v('aedPlatelet'), nh3:v('aedNh3'), labDate:v('aedLabDate'), dialysis:c('aedDialysis') },
+      regimen:{ form:v('aedForm'), tauH:v('aedTauH'), dose:v('aedDose'), regimenStart:v('aedRegimenStart'),
+                useLoading:c('aedUseLoading'), loadingDose:v('aedLoadingDose'), loadingAt:v('aedLoadingAt'), missed:v('aedMissedDoses') },
+      level:{ type:v('aedLevelType'), route:v('aedLevelRoute'), value:v('aedLevelValue'), drawAt:v('aedLevelDrawAt'), lastDoseAt:v('aedLevelLastDoseAt') },
+      pht:{ cyp2c9:v('aedCyp2c9'), hlab1502:v('aedHlab1502'), vpaLevel:v('aedVpaLevel'), vpaLevelAt:v('aedVpaLevelAt'), imNg:c('aedImNg'), critical:c('aedCritical'),
+            sx:{ nystagmus:c('aedSxNystagmus'), ataxia:c('aedSxAtaxia'), dysarthria:c('aedSxDysarthria'), drowsy:c('aedSxDrowsy'), confusion:c('aedSxConfusion') } },
+      vpa:{ indication:v('aedIndication'), icu:c('aedIcu'), propofol:c('aedPropofol'), carbapenem:c('aedCarbapenem'),
+            sx:{ tremor:c('aedSxTremor'), encephalopathy:c('aedSxEncephalopathy'), bleeding:c('aedSxBleeding'), giUpset:c('aedSxGiUpset') } },
+      clinical:{ seizureControl:v('aedSeizureControl'), trigger:v('aedTrigger') },
+      concomitant:v('aedConcomitant'),
+      goal:v('aedGoal'), duration:v('aedDuration'), constraints:v('aedConstraints'), priorAdr:v('aedPriorAdr'), otherNotes:v('aedOtherNotes')
+    };
+  }
+  function applyStateAed(s){
+    const setVal=(id,val)=>{ const el=document.getElementById(id); if(el) el.value = (val!==undefined&&val!==null)?val:''; };
+    const setChecked=(id,val)=>{ const el=document.getElementById(id); if(el) el.checked = !!val; };
+    setVal('aedDrug', s.drug||'phenytoin'); toggleAedDrugUI();
+    setVal('aedPurpose', s.purpose||'routine');
+    setVal('aedAge', s.age); setVal('aedSex', s.sex||'M'); setVal('aedHeight', s.height); setVal('aedTbw', s.tbw); setVal('aedPregnancy', s.pregnancy||'no');
+    const labs = s.labs||{};
+    setVal('aedAlbumin', labs.albumin); setVal('aedAstAlt', labs.astAlt); setVal('aedTbil', labs.tbil); setVal('aedScr', labs.scr); setVal('aedBun', labs.bun);
+    setVal('aedPlatelet', labs.platelet); setVal('aedNh3', labs.nh3); setVal('aedLabDate', labs.labDate); setChecked('aedDialysis', labs.dialysis);
+    const reg = s.regimen||{};
+    setVal('aedForm', reg.form); setVal('aedTauH', reg.tauH); setVal('aedDose', reg.dose); setVal('aedRegimenStart', reg.regimenStart);
+    setChecked('aedUseLoading', reg.useLoading); document.getElementById('aedLoadingRow').style.display = reg.useLoading ? '' : 'none';
+    setVal('aedLoadingDose', reg.loadingDose); setVal('aedLoadingAt', reg.loadingAt); setVal('aedMissedDoses', reg.missed);
+    const lvl = s.level||{};
+    setVal('aedLevelType', lvl.type||'total'); setVal('aedLevelRoute', lvl.route||'po'); setVal('aedLevelValue', lvl.value);
+    setVal('aedLevelDrawAt', lvl.drawAt); setVal('aedLevelLastDoseAt', lvl.lastDoseAt);
+    const pht = s.pht||{};
+    setVal('aedCyp2c9', pht.cyp2c9); setVal('aedHlab1502', pht.hlab1502); setVal('aedVpaLevel', pht.vpaLevel); setVal('aedVpaLevelAt', pht.vpaLevelAt);
+    setChecked('aedImNg', pht.imNg); setChecked('aedCritical', pht.critical);
+    const phtSx = pht.sx||{};
+    setChecked('aedSxNystagmus', phtSx.nystagmus); setChecked('aedSxAtaxia', phtSx.ataxia); setChecked('aedSxDysarthria', phtSx.dysarthria);
+    setChecked('aedSxDrowsy', phtSx.drowsy); setChecked('aedSxConfusion', phtSx.confusion);
+    const vpa = s.vpa||{};
+    setVal('aedIndication', vpa.indication); setChecked('aedIcu', vpa.icu); setChecked('aedPropofol', vpa.propofol); setChecked('aedCarbapenem', vpa.carbapenem);
+    const vpaSx = vpa.sx||{};
+    setChecked('aedSxTremor', vpaSx.tremor); setChecked('aedSxEncephalopathy', vpaSx.encephalopathy); setChecked('aedSxBleeding', vpaSx.bleeding); setChecked('aedSxGiUpset', vpaSx.giUpset);
+    const clin = s.clinical||{};
+    setVal('aedSeizureControl', clin.seizureControl); setVal('aedTrigger', clin.trigger);
+    setVal('aedConcomitant', s.concomitant);
+    setVal('aedGoal', s.goal); setVal('aedDuration', s.duration); setVal('aedConstraints', s.constraints); setVal('aedPriorAdr', s.priorAdr); setVal('aedOtherNotes', s.otherNotes);
+    renderAed();
+  }
+  function aedAsOfDefault(){
+    const d = document.getElementById('aedLevelDrawAt').value;
+    if(d) return d;
+    const ld = document.getElementById('aedLabDate').value;
+    if(ld) return ld + 'T00:00';
+    return toLocalInputValue(new Date());
+  }
+  const aedStore = makeVersionedPatientStore({
+    key:'aed_tdm_patients_v2', idPrefix:'aed', exportName:'aed_tdm_patients',
+    labelId:'aedPatientLabel', patientSelectId:'aedPatientSelect', visitSelectId:'aedPatientVisitSelect',
+    metaId:'aedPatientMeta', asOfId:'aedPatientAsOf', updateBtnId:'aedUpdateVisitBtn',
+    collectState: collectStateAed, applyState: applyStateAed, getDerived:()=>lastAedDerived, getAsOfDefault:aedAsOfDefault
+  });
+  function clearAllFnAed(){
+    const ok = confirm('確定要清空目前畫面上的抗癲癇藥物資料嗎？已儲存的病人存檔不會受影響。');
+    if(!ok) return;
+    document.querySelectorAll('#aedInputPanel input[type=text], #aedInputPanel input[type=number], #aedInputPanel input[type=date], #aedInputPanel input[type=datetime-local], #aedInputPanel textarea').forEach(el=>el.value='');
+    document.querySelectorAll('#aedInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
+    document.getElementById('aedDrug').value='phenytoin'; document.getElementById('aedSex').value='M'; document.getElementById('aedPregnancy').value='no';
+    document.getElementById('aedLevelType').value='total'; document.getElementById('aedLevelRoute').value='po'; document.getElementById('aedPurpose').value='routine';
+    toggleAedDrugUI();
+    document.getElementById('aedPatientLabel').value=''; document.getElementById('aedPatientAsOf').value='';
+    document.getElementById('aedPatientSelect').value=''; document.getElementById('aedPatientMeta').textContent='';
+    aedStore.clearCurrent(); aedStore.refreshPatientSelect('');
+    renderAed();
+  }
+  function initDefaultsAed(){
+    const now = new Date();
+    const start = new Date(now.getTime() - 10*24*3600000);
+    toggleAedDrugUI();
+    document.getElementById('aedRegimenStart').value = toLocalInputValue(start);
+    document.getElementById('aedLevelDrawAt').value = toLocalInputValue(now);
+    document.getElementById('aedLevelLastDoseAt').value = toLocalInputValue(new Date(now.getTime()-30*60000));
+    document.getElementById('aedLabDate').value = toLocalDateValue(now);
+    renderAed();
+  }
+
+  function buildAedMonitorGrid(drug){
+    const scheduleRoutine = aedLabScheduleNote({ drug, levelType: drug==='phenytoin'?'routine':'total' });
+    const scheduleAlt = drug==='phenytoin' ? aedLabScheduleNote({drug,levelType:'stat'}) : aedLabScheduleNote({drug,levelType:'free'});
+    const labText = drug==='phenytoin' ? 'albumin、肝功能、腎功能（院內指引）' : '肝功能、albumin（院內指引）＋ammonia、platelet（收案表補充）';
+    const signText = drug==='phenytoin' ? '眼震、共濟失調、構音障礙、嗜睡、意識改變' : '嗜睡/意識改變（可能為高血氨腦病）、震顫、出血傾向、腸胃症狀';
+    const retrigger = drug==='phenytoin' ? 'albumin／腎功能變化、新增或移除 CYP 誘導/抑制劑或 VPA、劑型或 salt 改變'
+      : 'albumin 變化、新增 carbapenem、其他 AED 增減、肝功能惡化、懷孕';
+    return `
+      <div>
+        <h4>排班／TAT 提示（僅供參考，不折算進監測天數）</h4>
+        <p>${scheduleRoutine}</p>
+        <p>${scheduleAlt}</p>
+        <h4 style="margin-top:12px;">Lab 監測</h4>
+        <p>${labText}</p>
+      </div>
+      <div>
+        <h4>臨床 Sign 監測</h4>
+        <p>${signText}</p>
+        <h4 style="margin-top:12px;">再評估觸發條件</h4>
+        <p>${retrigger}</p>
+      </div>`;
+  }
+
+  function buildAiPromptAed(d){
+    const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
+    return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版只做濃度校正判讀與情境交叉檢查（尚未提供 phenytoin MM 劑量推估，屬後續分期），請你整合下列資訊給第二意見：
+
+【目標藥物】${d.drugLabel}／目的：${d.purposeLabel}
+【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
+【實驗室】Albumin ${d.albumin||'未填'}／AST/ALT ${d.astAlt||'未填'}／T-bil ${d.tbil||'未填'}／SCr ${d.scr||'未填'}／BUN ${d.bun||'未填'}
+【給藥處方】${d.formLabel}，τ=${d.tauH||'未填'}h，劑量 ${d.dose||'未填'}mg，起始 ${d.regimenStart||'未填'}
+【濃度】${d.levelType}：${d.levelValue!=null?d.levelValue:'未輸入'}（抽血 ${d.drawAt||'未填'}）
+【濃度校正判讀】${d.corrText}
+【已觸發的情境提示】
+${flagText||'（無）'}
+【治療目標】${d.goal||'未填'}
+
+請你根據以上資料，整合最新的臨床病程給出你的判斷與建議，並指出本工具本版未涵蓋（MM 劑量推估、趨勢圖）但你認為重要的面向。`;
+  }
+
+  function renderAed(){
+    const drugLabels = { phenytoin:'Phenytoin', valproate:'Valproic Acid' };
+    const purposeLabels = { routine:'常規監測', titration:'劑量調整後複測', toxicity:'疑似毒性', efficacy:'療效不佳／發作未控制', interaction:'新增／移除交互作用藥物' };
+    const drug = document.getElementById('aedDrug').value;
+    const purpose = document.getElementById('aedPurpose').value;
+    const albumin = parseFloat(document.getElementById('aedAlbumin').value);
+    const scr = parseFloat(document.getElementById('aedScr').value);
+    const dialysis = document.getElementById('aedDialysis').checked;
+    const age = parseFloat(document.getElementById('aedAge').value);
+    const sex = document.getElementById('aedSex').value;
+    const tbw = parseFloat(document.getElementById('aedTbw').value);
+    const tbil = parseFloat(document.getElementById('aedTbil').value);
+    const bun = parseFloat(document.getElementById('aedBun').value);
+
+    // Renal failure trigger for the 0.1 correction coefficient (Q1 已解決): CrCl<10 OR
+    // on dialysis, with the dialysis checkbox acting as a manual override path.
+    let crcl = NaN;
+    if(isFinite(age) && isFinite(tbw) && isFinite(scr) && scr>0){
+      const ibw = ibwDevine(parseFloat(document.getElementById('aedHeight').value)||0, sex);
+      const { weight } = weightForCG(tbw, ibw);
+      crcl = cockcroftGault(age, weight, scr, sex);
+    }
+    const renalFailure = dialysis || (isFinite(crcl) && crcl<10);
+    document.getElementById('aedRenalDisplay').textContent = isFinite(crcl)
+      ? `估算 CrCl（Cockcroft-Gault）≈ ${crcl.toFixed(1)} mL/min${renalFailure?'（觸發腎衰竭校正係數，可用「正在透析」勾選手動覆寫維持）':''}`
+      : '';
+
+    const levelType = document.getElementById('aedLevelType').value;
+    const levelRoute = document.getElementById('aedLevelRoute').value;
+    const levelValue = parseFloat(document.getElementById('aedLevelValue').value);
+    const drawAtMs = parseLocal(document.getElementById('aedLevelDrawAt').value);
+    const lastDoseAtMs = parseLocal(document.getElementById('aedLevelLastDoseAt').value);
+    const vpaLevel = parseFloat(document.getElementById('aedVpaLevel').value);
+
+    const flags = [];
+
+    // ---- concentration correction (drug-specific) ----
+    let corrHtml = '', corrText = '';
+    if(drug==='phenytoin'){
+      const total = levelType==='total' ? levelValue : NaN;
+      const free = levelType==='free' ? levelValue : NaN;
+      const norm = phtNormalize({ total, free, albumin, renalFailure, vpaLevel: isFinite(vpaLevel)?vpaLevel:undefined });
+      const rows = norm.candidates.map(c=>{
+        const isSug = c.method===norm.suggested;
+        return `<div class="flag-item ${isSug?'':''}"><span class="dot"></span><span>${isSug?'【建議採用】':''}${c.formula}：${isFinite(c.value)?c.value.toFixed(2):'—'} mcg/mL${c.caveat?`（${c.caveat}）`:''}</span></div>`;
+      }).join('');
+      const refRows = norm.refOnly.map(c=>`<div class="flag-item"><span class="dot"></span><span style="color:var(--muted,#888);">${c.formula}：${isFinite(c.value)?c.value.toFixed(2):'—'} mcg/mL（非院內公式，僅供敏感度參考，不參與建議與計算）</span></div>`).join('');
+      corrHtml = rows + refRows;
+      const sugCand = norm.candidates.find(c=>c.method===norm.suggested);
+      corrText = sugCand ? `${sugCand.formula} → ${isFinite(sugCand.value)?sugCand.value.toFixed(2):'—'} mcg/mL（目標 ${AED_RULES.phenytoin.range.lo}–${AED_RULES.phenytoin.range.hi}）` : '尚無足夠資料計算';
+      if(isFinite(tbil) && tbil>AED_RULES.phenytoin.tbilFlag.gt) flags.push({level:'warn', text:`T-bil ${tbil} > ${AED_RULES.phenytoin.tbilFlag.gt} mg/dL：可能推高 free fraction，優先考慮測 free（本院無此醫令，須外送）`});
+      if(document.getElementById('aedImNg').checked) flags.push({level:'warn', text:'IM 給藥或 NG feeding：吸收可能不穩定，影響達標速度'});
+      if(document.getElementById('aedCritical').checked) flags.push({level:'warn', text:'重症病人：蛋白結合誤差通常更大，建議優先測 free（本院無此醐令，須外送）'});
+      const hlab = document.getElementById('aedHlab1502').value;
+      if(hlab==='pos') flags.push({level:'danger', text:'HLA-B*15:02 陽性：未曾使用者建議避免 phenytoin（SJS/TEN 風險）；已連續使用≥3個月無皮膚反應者可審慎續用'});
+      const cyp = document.getElementById('aedCyp2c9').value;
+      if(cyp==='PM') flags.push({level:'warn', text:'CYP2C9 PM：維持劑量約需減 50%（CPIC），僅供資訊參考，本版劑量調整仍以 TDM 滴定為主'});
+      else if(cyp==='IM1.0') flags.push({level:'warn', text:'CYP2C9 IM（活性分數1.0）：維持劑量約需減 25%（CPIC），僅供資訊參考'});
+      const sx = { nystagmus:document.getElementById('aedSxNystagmus').checked, ataxia:document.getElementById('aedSxAtaxia').checked,
+        dysarthria:document.getElementById('aedSxDysarthria').checked, drowsy:document.getElementById('aedSxDrowsy').checked, confusion:document.getElementById('aedSxConfusion').checked };
+      const statPrompt = phtToxicityStatPrompt({ sxFlags: sx });
+      if(statPrompt.show) flags.push({level:'danger', text: statPrompt.text});
+    } else {
+      const total = levelType==='total' ? levelValue : NaN;
+      const free = levelType==='free' ? levelValue : NaN;
+      const assess = vpaAssess({ total, free, albumin,
+        uremia: false, // uremia captured via renalFailure below, kept separate per hospital wording
+        ffaInfusion: document.getElementById('aedPropofol').checked, competingDrug:false, bun, icu: document.getElementById('aedIcu').checked });
+      // uremia is renal failure by our CrCl/dialysis determination — feed it in explicitly
+      if(renalFailure && !assess.freeRiskFlags.some(f=>f.text.includes('尿毒症'))) assess.freeRiskFlags.unshift({src:'hospital', text:'尿毒症(uremia)'});
+      const hermida = vpaHermidaCorrect({ total, albumin, jaundice:false, uremia:renalFailure, renalFailure });
+      const rangeText = `目標 total ${AED_RULES.valproate.range.lo}–${AED_RULES.valproate.range.hi}${isFinite(free)?`；free ${AED_RULES.valproate.freeRange.lo}–${AED_RULES.valproate.freeRange.hi}`:''}`;
+      corrText = isFinite(total) ? `Total ${total} mcg/mL（${rangeText}）` : (isFinite(free) ? `Free ${free} µg/mL（${rangeText}）` : '尚無濃度資料');
+      const hermidaRow = `<div class="flag-item"><span class="dot"></span><span>Hermida-Tutor 白蛋白校正：${hermida.reliable===true?'適用範圍內':'不適用/超出範圍'}——${hermida.reason}</span></div>`;
+      const riskRows = assess.freeRiskFlags.map(f=>`<div class="flag-item ${f.src==='hospital'?'warn':''}"><span class="dot"></span><span>${f.src==='hospital'?'【本院檢驗科列名】':'【文獻補充】'}${f.text}</span></div>`).join('');
+      corrHtml = hermidaRow + riskRows;
+      if(assess.recommendFree) flags.push({level:'warn', text:'存在 free fraction 上升風險因子：total 可能低估有效藥量，建議測 free（本院醫令 10510CYP，僅週二、週五執行）'});
+      if(document.getElementById('aedCarbapenem').checked) flags.push({level:'danger', text:'併用 carbapenem 類抗生素：VPA 濃度可在數日內大幅下降，原則避免併用，如無法避免請密切複測'});
+      const vsx = { tremor:document.getElementById('aedSxTremor').checked, encephalopathy:document.getElementById('aedSxEncephalopathy').checked,
+        bleeding:document.getElementById('aedSxBleeding').checked, giUpset:document.getElementById('aedSxGiUpset').checked };
+      if(vsx.encephalopathy) flags.push({level:'danger', text:'嗜睡／意識改變：可能為高血氨腦病，可在 total 正常時發生，建議查 ammonia'});
+      if(vsx.bleeding) flags.push({level:'warn', text:'出血傾向：建議複查 platelet'});
+      const pregnancy = document.getElementById('aedPregnancy').value;
+      if(pregnancy==='pregnant') flags.push({level:'danger', text:'VPA 為明確致畸性藥物：懷孕病人請與神經科／婦產科共同評估是否有替代方案'});
+    }
+    document.getElementById('aedCorrList').innerHTML = corrHtml || '<div class="flag-item"><span class="dot"></span><span>尚未輸入足夠資料進行濃度校正判讀</span></div>';
+
+    // ---- sampling check (shared) ----
+    const samp = aedSamplingCheck({ doseTime:lastDoseAtMs, drawTime:drawAtMs,
+      windowMinBeforeDose: AED_RULES[drug].sampling.windowMinBeforeDose,
+      route: levelRoute, ivFromH: AED_RULES.phenytoin.sampling.iv.fromH, ivToH: AED_RULES.phenytoin.sampling.iv.toH });
+    if(samp.ok===false) flags.push({level:'warn', text: samp.text});
+
+    // ---- steady state ----
+    const changeMs = parseLocal(document.getElementById('aedRegimenStart').value);
+    const ss = aedSteadyStateCheck({ drug, lastChangeMs: changeMs, drawMs: drawAtMs });
+    if(ss.status==='notSteady') flags.push({level:'warn', text: ss.text});
+
+    // ---- interaction scan ----
+    const concomitant = document.getElementById('aedConcomitant').value;
+    aedInteractionScan(concomitant, drug).forEach(text=>flags.push({level:'warn', text}));
+
+    if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
+    document.getElementById('aedFlagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
+
+    document.getElementById('aedFitModeBadge').textContent = `${drugLabels[drug]}／${purposeLabels[purpose]||''}`;
+    const targetLine = drug==='phenytoin'
+      ? `目標 ${AED_RULES.phenytoin.range.lo}–${AED_RULES.phenytoin.range.hi} ${AED_RULES.phenytoin.range.unit}`
+      : `目標 ${AED_RULES.valproate.range.lo}–${AED_RULES.valproate.range.hi} ${AED_RULES.valproate.range.unit}`;
+    document.getElementById('aedParamGrid').innerHTML = `
+      <div class="param-cell"><div class="label">濃度結果</div><div class="value">${isFinite(levelValue)?levelValue.toFixed(1):'—'}<span class="unit">${levelType==='free'?'µg/mL':'mcg/mL'}</span></div><div class="sub">${targetLine}／${levelType==='free'?'Free':'Total'}</div></div>
+      <div class="param-cell"><div class="label">是否達穩態</div><div class="value" style="font-size:16px;">${ss.text}</div></div>`;
+
+    document.getElementById('aedMonitorGrid').innerHTML = buildAedMonitorGrid(drug);
+    setHeaderMeta('drug-aed', `${drugLabels[drug]}／${levelType==='free'?'Free':'Total'} ${isFinite(levelValue)?levelValue.toFixed(1):'—'}`);
+
+    const formObj = currentAedFormObj();
+    document.getElementById('aedAiPromptOut').value = buildAiPromptAed({
+      drugLabel: drugLabels[drug], purposeLabel: purposeLabels[purpose]||'',
+      age: document.getElementById('aedAge').value, sex, height: document.getElementById('aedHeight').value, tbw: document.getElementById('aedTbw').value,
+      albumin: document.getElementById('aedAlbumin').value, astAlt: document.getElementById('aedAstAlt').value, tbil: document.getElementById('aedTbil').value,
+      scr: document.getElementById('aedScr').value, bun: document.getElementById('aedBun').value,
+      formLabel: formObj ? formObj.name : document.getElementById('aedForm').value, tauH: document.getElementById('aedTauH').value, dose: document.getElementById('aedDose').value,
+      regimenStart: document.getElementById('aedRegimenStart').value,
+      levelType: levelType==='free'?'Free':'Total', levelValue: isFinite(levelValue)?levelValue:null, drawAt: document.getElementById('aedLevelDrawAt').value,
+      corrText, flags, goal: document.getElementById('aedGoal').value
+    });
+
+    lastAedDerived = {
+      drug, purpose,
+      levelType, levelValue: isFinite(levelValue)?levelValue:null,
+      renalFailure, crcl: isFinite(crcl)?crcl:null,
+      steadyStatus: ss.status,
+      flagLevels: flags.map(f=>f.level)
+    };
+  }
+
   // ---------------- drug switcher ----------------
   let currentDrugModule = 'vancomycin';
   const AMINO_HEADER = {
@@ -6137,6 +6911,24 @@ ${flagText||'（無）'}
     docTitle:'Azole TDM 判讀引擎',
     footer:'<strong>定位聲明：</strong>本模組為 trough 對目標值判讀＋情境交叉檢查工具，不做 PK 擬合（不計算 Cpeak／Vd／CL／AUC／ke／t½，例行 azole TDM 不建模）。目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles；Prevention of invasive fungal infections in adults with hematologic malignancies and HCT recipients）、Segal 等人 MSG/EORTC 治療反應共識標準、IDSA 2016 Aspergillosis Guideline 與本院實際藥局品項，可能與特定院內 protocol 有出入，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
+  const AED_HEADER = {
+    title:'抗癲癇藥物 TDM 判讀引擎', eyebrow:'Trough／Free 判讀 · 非線性劑量提示',
+    subtitle:'濃度校正判讀 ＋ 非線性／比例劑量推估 ＋ 情境檢查',
+    docTitle:'抗癲癇藥物 TDM 判讀引擎',
+    footer:'<strong>定位聲明：</strong>本模組為濃度校正判讀＋情境交叉檢查工具，Phenytoin 非線性動力學相關劑量提示為輔助估算，不取代個別化貝氏擬合；VPA 目前僅做濃度區間判讀與情境檢查，不做劑量反解。校正公式（Winter-Tozer、腎衰竭校正、Haidukewych 併用 VPA 校正）與族群參數出自明列文獻（見文件末參考文獻），Km 敏感度帶反映多篇亞洲／台灣族群研究之異質性，絕不杜撰未由資料支持的數值；院內檢驗排班與 TAT 僅為文字提醒，不代入日期計算。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+  };
+  // Registry (§9 Q7, HANDOFF_v3 §15): showDrugModule/clearCurrentDrug dispatch through this
+  // table instead of an if/else chain. Adding a new drug module (e.g. AED, later
+  // carbamazepine/phenobarbital) means adding one entry here — these two functions
+  // themselves never need another branch. vanco/AMG/azole entries are a mechanical
+  // extraction of the previous if/else bodies; their own render/clear/header logic is
+  // untouched.
+  const DRUG_MODULE_REGISTRY = {
+    vancomycin:     { header: VANCO_HEADER,  render: ()=>render(),      clear: ()=>clearAllFn() },
+    aminoglycoside: { header: AMINO_HEADER,  render: ()=>renderAmino(), clear: ()=>clearAllFnAmg() },
+    azole:          { header: AZOLE_HEADER,  render: ()=>renderAzole(), clear: ()=>clearAllFnAzl() },
+    aed:            { header: AED_HEADER,    render: ()=>renderAed(),  clear: ()=>clearAllFnAed() }
+  };
   function showDrugModule(name){
     currentDrugModule = name;
     document.querySelectorAll('.drug-module').forEach(el=>el.classList.remove('active'));
@@ -6145,16 +6937,19 @@ ${flagText||'（無）'}
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
       btn.classList.toggle('primary', btn.dataset.drug===name);
     });
-    const h = name==='aminoglycoside' ? AMINO_HEADER : (name==='azole' ? AZOLE_HEADER : VANCO_HEADER);
+    const entry = DRUG_MODULE_REGISTRY[name];
+    if(!entry) return;
+    const h = entry.header;
     document.getElementById('appTitle').textContent = h.title;
     document.getElementById('appEyebrow').textContent = h.eyebrow;
     document.getElementById('appSubtitle').textContent = h.subtitle;
     document.title = h.docTitle;
     document.getElementById('footerDisclaimer').innerHTML = h.footer;
-    if(name==='aminoglycoside') renderAmino(); else if(name==='azole') renderAzole(); else render();
+    entry.render();
   }
   function clearCurrentDrug(){
-    if(currentDrugModule==='aminoglycoside') clearAllFnAmg(); else if(currentDrugModule==='azole') clearAllFnAzl(); else clearAllFn();
+    const entry = DRUG_MODULE_REGISTRY[currentDrugModule];
+    if(entry) entry.clear();
   }
 
   // ---------------- wiring ----------------
@@ -6419,6 +7214,59 @@ ${flagText||'（無）'}
     });
 
     initDefaultsAzole();
+
+    // ---------------- aed wiring ----------------
+    ['aedAge','aedSex','aedHeight','aedTbw','aedPregnancy',
+     'aedAlbumin','aedAstAlt','aedTbil','aedScr','aedBun','aedLabDate','aedPlatelet','aedNh3','aedDialysis',
+     'aedForm','aedTauH','aedDose','aedRegimenStart','aedLoadingDose','aedLoadingAt','aedMissedDoses',
+     'aedPurpose',
+     'aedLevelType','aedLevelRoute','aedLevelValue','aedLevelDrawAt','aedLevelLastDoseAt',
+     'aedCyp2c9','aedHlab1502','aedVpaLevel','aedVpaLevelAt','aedImNg','aedCritical',
+     'aedSxNystagmus','aedSxAtaxia','aedSxDysarthria','aedSxDrowsy','aedSxConfusion',
+     'aedIndication','aedIcu','aedPropofol','aedCarbapenem',
+     'aedSxTremor','aedSxEncephalopathy','aedSxBleeding','aedSxGiUpset',
+     'aedSeizureControl','aedTrigger',
+     'aedConcomitant',
+     'aedGoal','aedDuration','aedConstraints','aedPriorAdr','aedOtherNotes'
+    ].forEach(id=>{
+      const el = document.getElementById(id);
+      if(el){ el.addEventListener('input', renderAed); el.addEventListener('change', renderAed); }
+    });
+    document.getElementById('aedDrug').addEventListener('change', ()=>{ toggleAedDrugUI(); renderAed(); });
+    document.getElementById('aedUseLoading').addEventListener('change', function(){
+      document.getElementById('aedLoadingRow').style.display = this.checked ? '' : 'none';
+      renderAed();
+    });
+
+    document.getElementById('aedSavePatientBtn').addEventListener('click', ()=>aedStore.saveAsNewVisit());
+    document.getElementById('aedUpdateVisitBtn').addEventListener('click', ()=>aedStore.updateCurrentVisit());
+    document.getElementById('aedLoadPatientBtn').addEventListener('click', ()=>aedStore.loadSelected());
+    document.getElementById('aedDeletePatientBtn').addEventListener('click', ()=>aedStore.deleteSelectedPatient());
+    document.getElementById('aedPatientSelect').addEventListener('change', ()=>aedStore.refreshVisitSelect());
+    document.getElementById('aedExportPatientsBtn').addEventListener('click', ()=>aedStore.exportAll());
+    document.getElementById('aedImportPatientsBtn').addEventListener('click', ()=>{
+      document.getElementById('aedImportFileInput').click();
+    });
+    document.getElementById('aedImportFileInput').addEventListener('change', function(){
+      if(this.files && this.files[0]) aedStore.importMerge(this.files[0]);
+      this.value = '';
+    });
+    aedStore.refreshPatientSelect();
+
+    document.getElementById('aedCopyPromptBtn').addEventListener('click', ()=>{
+      const ta = document.getElementById('aedAiPromptOut');
+      ta.select();
+      navigator.clipboard.writeText(ta.value).then(()=>{
+        const s = document.getElementById('aedCopyStatus');
+        s.textContent = '已複製到剪貼簿';
+        setTimeout(()=>{ s.textContent=''; }, 2500);
+      }).catch(()=>{
+        document.execCommand('copy');
+        document.getElementById('aedCopyStatus').textContent = '已複製';
+      });
+    });
+
+    initDefaultsAed();
 
     initCollapsibleCards();
 
