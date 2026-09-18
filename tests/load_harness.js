@@ -34,7 +34,9 @@ const EXPORT_NAMES = [
   'checkAzoleTrough', 'computeAzoleSteadyState', 'inferInfectionTrend', 'classifyToxicitySigns',
   'crossCheckClinical', 'checkCypInteractionsAzole', 'suggestPoDoseAzole', 'azoleIndicationList',
   'AED_RULES', 'phtSaltFactor', 'phtNormalize', 'aedSamplingCheck', 'aedLabScheduleNote',
-  'phtToxicityStatPrompt', 'vpaAssess', 'vpaHermidaCorrect', 'aedSteadyStateCheck', 'aedInteractionScan'
+  'phtToxicityStatPrompt', 'vpaAssess', 'vpaHermidaCorrect', 'aedSteadyStateCheck', 'aedInteractionScan',
+  'phtMmSinglePoint', 'phtMmTwoPoint', 'phtPredictCss', 'phtDoseForTarget', 'phtKmSensitivity',
+  'phtT90', 'phtLoadingDose', 'vpaProportionalDose'
 ];
 
 const INDEX_HTML_PATH = path.join(__dirname, 'index.html');

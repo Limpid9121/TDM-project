@@ -1510,6 +1510,17 @@
         <div class="checkline"><input type="checkbox" id="aedCarbapenem"><label for="aedCarbapenem">併用 carbapenem 類抗生素（原則避免併用，濃度可數日內大幅下降）</label></div>
       </div>
 
+      <!-- 07. 穩態劇量-濃度配對（phenytoin 兩點法用） -->
+      <div class="card" id="aedSsPairsCard" style="display:none;">
+        <h2><span class="idx">07</span>穩態劇量-濃度配對表（選填，兩點法用）</h2>
+        <p class="hint">只有勾選「已確認達穩態」的列才會用於兩點法解出病人專屬 Vmax／Km；需要至少兩列、且每日劇量不同。不填這張表也能用下方結果面板的單點法估算，但單點法需假設族群 Km（見敏感度帶）。</p>
+        <div class="entry-list" id="aedSsPairsTable"></div>
+        <div class="btn-row">
+          <button class="btn small" id="aedAddSsPairBtn" type="button">新增一列</button>
+          <button class="btn small" id="aedPullCurrentSsPairBtn" type="button">帶入目前畫面上的劇量與濃度</button>
+        </div>
+      </div>
+
       <!-- 08. 臨床 -->
       <div class="card">
         <h2><span class="idx">08</span>臨床病程與毒性徵象</h2>
@@ -1586,19 +1597,29 @@
         <div class="flag-list" id="aedCorrList"></div>
       </div>
 
+      <div class="section-block" id="aedPkBlock" style="display:none;">
+        <h3><span class="idx">B</span>Phenytoin 非線性藥動（Michaelis-Menten）與候選劇量</h3>
+        <div id="aedPkContent"></div>
+      </div>
+
+      <div class="section-block" id="aedVpaDoseBlock" style="display:none;">
+        <h3><span class="idx">B</span>比例劇量估算</h3>
+        <div id="aedVpaDoseContent"></div>
+      </div>
+
       <div class="section-block">
-        <h3><span class="idx">B</span>健全性檢查與情境提示</h3>
+        <h3><span class="idx">C</span>健全性檢查與情境提示</h3>
         <div class="flag-list" id="aedFlagList"></div>
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">C</span>監測提醒（純臨床天數；排班／TAT 僅供參考文字，不折算進天數）</h3>
+        <h3><span class="idx">D</span>監測提醒（純臨床天數；排班／TAT 僅供參考文字，不折算進天數）</h3>
         <div class="monitor-grid" id="aedMonitorGrid"></div>
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt</h3>
-        <p class="hint" style="margin-bottom:10px;">本版尚不含 phenytoin MM 劑量推估與趨勢圖（P2/P3）；下方會整合目前已輸入的資料，可貼給任一主流 AI 進行整合評估。</p>
+        <h3><span class="idx">E</span>AI 諮詢 Prompt</h3>
+        <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劇量-濃度曲線尚未提供（P3）。</p>
         <textarea id="aedAiPromptOut" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="aedCopyPromptBtn" type="button">複製 Prompt</button>
@@ -1635,6 +1656,7 @@
   let lastAmgDerived = null;
   let lastAzoleDerived = null;
   let lastAedDerived = null;
+  let aedPickedCandidate = null; // picked row key from the phenytoin candidate-dose table (P2); AI prompt only names this one, never ranks the others
 
   // ---------------- regimen "what-if" single-select state (ephemeral, not saved to patient records) ----------------
   // Which candidate/custom row is picked, per module. Values: null | 'custom' | 'cand-<tau>'.
@@ -6591,6 +6613,86 @@ ${flagText||'（無）'}
     return hits;
   }
 
+  // ---------------- AED P2: phenytoin Michaelis-Menten dosing / VPA proportional dosing ----------------
+  // F (bioavailability fraction) defaults to 1 everywhere it appears: the hospital's own
+  // product list (AED_RULES.phenytoin.salt.products) only specifies a salt factor S for its
+  // two phenytoin products, never a bioavailability fraction distinct from 1. Per this
+  // project's "絕不杜撰未由資料支持的數值" rule, F=1 is the standard PK-textbook default
+  // absent hospital-specific evidence otherwise (not a fabricated number) — it is a real
+  // parameter here, not hardcoded away, so it can be corrected later if real data appears.
+
+  // single-point MM (§2.2): assume a population/candidate Km, solve Vmax from one steady-state level
+  function phtMmSinglePoint({ R, Css, km } = {}){
+    if(!isFinite(R) || !isFinite(Css) || !isFinite(km) || Css<=0) return { vmax:null, assumption:`Km=${km}`, valid:false };
+    const vmax = R*(km+Css)/Css;
+    return { vmax, assumption:`假設 Km=${km} mg/L`, valid:true };
+  }
+  // two-point MM (§2.2): two different steady-state dose/level pairs -> solve both Km and Vmax
+  function phtMmTwoPoint({ R1, C1, R2, C2 } = {}){
+    const reasons = [];
+    if(![R1,C1,R2,C2].every(isFinite)){ reasons.push('缺少必要數值'); return { km:null, vmax:null, valid:false, reasons }; }
+    if(R1<=0 || R2<=0 || C1<=0 || C2<=0){ reasons.push('劇量或濃度必須為正值'); return { km:null, vmax:null, valid:false, reasons }; }
+    if(R1===R2) reasons.push('兩次劇量相同，無法解出兩個未知數（需要兩個不同劇量）');
+    if((R2-R1)*(C2-C1)<0) reasons.push('劇量與濃度變化方向不一致（劇量增加但濃度下降，或反之），資料可能有誤或病人未真正達穩態');
+    if(reasons.length) return { km:null, vmax:null, valid:false, reasons };
+    const denom = (R1/C1)-(R2/C2);
+    if(denom===0){ reasons.push('兩點解出的分母為零，資料無法收斂'); return { km:null, vmax:null, valid:false, reasons }; }
+    const km = (R2-R1)/denom;
+    const vmax = R1 + km*(R1/C1);
+    if(!(km>0) || !(vmax>Math.max(R1,R2))){
+      reasons.push('解出的 Km 或 Vmax 不符合生理合理範圍（Km 應為正值，Vmax 應大於兩次劇量）');
+      return { km, vmax, valid:false, reasons };
+    }
+    return { km, vmax, valid:true, reasons:[] };
+  }
+  // predicted steady-state concentration for a given daily dose-rate R (§2.2)
+  function phtPredictCss({ vmax, km, R } = {}){
+    if(!isFinite(vmax) || !isFinite(km) || !isFinite(R)) return { css:null, unattainable:null };
+    if(R>=vmax) return { css:Infinity, unattainable:true }; // no steady state possible at this dose
+    return { css:(km*R)/(vmax-R), unattainable:false };
+  }
+  // daily prescribed dose to reach a target Css, given Vmax/Km (§2.2)
+  function phtDoseForTarget({ vmax, km, target, S, F=1 } = {}){
+    if(![vmax,km,target,S].every(isFinite) || S<=0 || F<=0 || !(target>0)) return { dailyDoseMg:null, rNew:null };
+    const rNew = vmax*target/(km+target);
+    return { dailyDoseMg: rNew/(S*F), rNew };
+  }
+  // Km sensitivity band (§2.2.1, Q5 已解決): show every candidate Km, never pick "the" one
+  function phtKmSensitivity({ R, Css, target, S, F=1, kms } = {}){
+    if(!Array.isArray(kms)) return [];
+    return kms.map(({ km, label })=>{
+      const sp = phtMmSinglePoint({ R, Css, km });
+      const dose = sp.valid ? phtDoseForTarget({ vmax:sp.vmax, km, target, S, F }) : { dailyDoseMg:null };
+      return { km, label, vmax:sp.vmax, doseForTargetMg: dose.dailyDoseMg };
+    });
+  }
+  // time to 90% of new steady state after a dose change (§2.2): R here is the NEW dose's rate
+  function phtT90({ vmax, km, vd, R } = {}){
+    if(![vmax,km,vd,R].every(isFinite)) return { days:null, unattainable:null };
+    if(!(vmax>R)) return { days:null, unattainable:true };
+    const days = (km*vd/Math.pow(vmax-R,2)) * (2.3*vmax - 0.9*R);
+    return { days, unattainable:false };
+  }
+  // supplemental loading dose (Q9 已解決: only "top up to target from current level", never a from-zero SE loading dose)
+  function phtLoadingDose({ vd, target, current, S, F=1 } = {}){
+    if(![vd,target,current,S].every(isFinite) || S<=0 || F<=0) return { doseMg:null, reason:null };
+    const diff = target-current;
+    if(diff<=0) return { doseMg:null, reason:'目前濃度已達或超過目標，不需要補充負荷劇量' };
+    return { doseMg:(vd*diff)/(S*F), reason:null };
+  }
+  // VPA proportional dose estimate (Q3 已解決): only when no free-fraction risk flag is active
+  function vpaProportionalDose({ dose, total, target, riskFlags = [] } = {}){
+    if(riskFlags && riskFlags.length>0){
+      let direction = 'hold';
+      if(isFinite(total) && isFinite(target)) direction = total<target ? 'up' : (total>target ? 'down' : 'hold');
+      return { doseMg:null, direction, reason:'存在 free fraction 風險因子，total 換算劇量的比例關係不可靠，建議先測 free 再決定劇量' };
+    }
+    if(![dose,total,target].every(isFinite) || total<=0 || dose<=0) return { doseMg:null, direction:null, reason:'資料不足，無法估算' };
+    const raw = dose*(target/total);
+    const roundedTo = 250; // Depakine Chrono 500mg 可剝半 -> 最小實用格點為半錠(250mg)；IV/口服液為連續劑量但建議值仍取整方便判讀
+    return { doseMg: Math.round(raw/roundedTo)*roundedTo, roundedTo, reason:null };
+  }
+
   // ---------------- AED UI ----------------
   function populateAedFormOptions(){
     const drug = document.getElementById('aedDrug').value;
@@ -6610,6 +6712,9 @@ ${flagText||'（無）'}
     document.getElementById('aedVpaSubtable').style.display = drug==='valproate' ? '' : 'none';
     document.getElementById('aedPhtSigns').style.display = drug==='phenytoin' ? '' : 'none';
     document.getElementById('aedVpaSigns').style.display = drug==='valproate' ? '' : 'none';
+    document.getElementById('aedSsPairsCard').style.display = drug==='phenytoin' ? '' : 'none';
+    document.getElementById('aedPkBlock').style.display = drug==='phenytoin' ? '' : 'none';
+    document.getElementById('aedVpaDoseBlock').style.display = drug==='valproate' ? '' : 'none';
     populateAedFormOptions();
     const r = AED_RULES[drug];
     document.getElementById('aedTargetDisplay').textContent = drug==='phenytoin'
@@ -6624,6 +6729,31 @@ ${flagText||'（無）'}
     hint.textContent = (form && form.doseStepMg)
       ? `本院劑型最小可用單位 ${form.unitMg}mg（可剝半，格點 ${form.doseStepMg}mg）`
       : (form ? `${form.form}，依配製濃度計算，不受整顆限制` : '');
+  }
+
+  // ---------------- AED P2: steady-state dose/level pairs table (card 07, phenytoin two-point method) ----------------
+  function addAedSsPairRow(dateVal, doseVal, levelVal, albVal, confirmed){
+    const container = document.getElementById('aedSsPairsTable');
+    const row = document.createElement('div');
+    row.className = 'entry-row';
+    row.innerHTML = `<input type="date" class="ssp-date" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="ssp-dose" value="${doseVal!=null?doseVal:''}"><span class="unit">mg/day</span></div>
+      <div class="num-field"><input type="number" step="0.1" class="ssp-level" value="${levelVal!=null?levelVal:''}"><span class="unit">mcg/mL total</span></div>
+      <div class="num-field"><input type="number" step="0.1" class="ssp-albumin" value="${albVal!=null?albVal:''}"><span class="unit">Alb(選填)</span></div>
+      <span class="checkline" style="margin:0;"><input type="checkbox" class="ssp-confirmed" ${confirmed?'checked':''}><label>已達穩態</label></span>
+      <button class="row-del" type="button">×</button>`;
+    container.appendChild(row);
+    row.querySelectorAll('input').forEach(i=>{ i.addEventListener('input', renderAed); i.addEventListener('change', renderAed); });
+    wireDelete(row.querySelector('.row-del'), row, renderAed);
+  }
+  function collectAedSsPairs(){
+    return Array.from(document.querySelectorAll('#aedSsPairsTable .entry-row')).map(row=>({
+      date: row.querySelector('.ssp-date').value,
+      dailyDoseMg: parseFloat(row.querySelector('.ssp-dose').value),
+      level: parseFloat(row.querySelector('.ssp-level').value),
+      albumin: parseFloat(row.querySelector('.ssp-albumin').value),
+      confirmedSS: row.querySelector('.ssp-confirmed').checked
+    }));
   }
 
   function collectStateAed(){
@@ -6643,7 +6773,8 @@ ${flagText||'（無）'}
             sx:{ tremor:c('aedSxTremor'), encephalopathy:c('aedSxEncephalopathy'), bleeding:c('aedSxBleeding'), giUpset:c('aedSxGiUpset') } },
       clinical:{ seizureControl:v('aedSeizureControl'), trigger:v('aedTrigger') },
       concomitant:v('aedConcomitant'),
-      goal:v('aedGoal'), duration:v('aedDuration'), constraints:v('aedConstraints'), priorAdr:v('aedPriorAdr'), otherNotes:v('aedOtherNotes')
+      goal:v('aedGoal'), duration:v('aedDuration'), constraints:v('aedConstraints'), priorAdr:v('aedPriorAdr'), otherNotes:v('aedOtherNotes'),
+      ssPairs: collectAedSsPairs(), pickedCandidate: aedPickedCandidate
     };
   }
   function applyStateAed(s){
@@ -6676,6 +6807,9 @@ ${flagText||'（無）'}
     setVal('aedSeizureControl', clin.seizureControl); setVal('aedTrigger', clin.trigger);
     setVal('aedConcomitant', s.concomitant);
     setVal('aedGoal', s.goal); setVal('aedDuration', s.duration); setVal('aedConstraints', s.constraints); setVal('aedPriorAdr', s.priorAdr); setVal('aedOtherNotes', s.otherNotes);
+    document.getElementById('aedSsPairsTable').innerHTML = '';
+    (s.ssPairs||[]).forEach(p=>addAedSsPairRow(p.date, p.dailyDoseMg, p.level, p.albumin, p.confirmedSS));
+    aedPickedCandidate = s.pickedCandidate || null;
     renderAed();
   }
   function aedAsOfDefault(){
@@ -6701,6 +6835,8 @@ ${flagText||'（無）'}
     toggleAedDrugUI();
     document.getElementById('aedPatientLabel').value=''; document.getElementById('aedPatientAsOf').value='';
     document.getElementById('aedPatientSelect').value=''; document.getElementById('aedPatientMeta').textContent='';
+    document.getElementById('aedSsPairsTable').innerHTML = '';
+    aedPickedCandidate = null;
     aedStore.clearCurrent(); aedStore.refreshPatientSelect('');
     renderAed();
   }
@@ -6715,7 +6851,7 @@ ${flagText||'（無）'}
     renderAed();
   }
 
-  function buildAedMonitorGrid(drug){
+  function buildAedMonitorGrid(drug, nextDrawNote){
     const scheduleRoutine = aedLabScheduleNote({ drug, levelType: drug==='phenytoin'?'routine':'total' });
     const scheduleAlt = drug==='phenytoin' ? aedLabScheduleNote({drug,levelType:'stat'}) : aedLabScheduleNote({drug,levelType:'free'});
     const labText = drug==='phenytoin' ? 'albumin、肝功能、腎功能（院內指引）' : '肝功能、albumin（院內指引）＋ammonia、platelet（收案表補充）';
@@ -6729,6 +6865,7 @@ ${flagText||'（無）'}
         <p>${scheduleAlt}</p>
         <h4 style="margin-top:12px;">Lab 監測</h4>
         <p>${labText}</p>
+        ${nextDrawNote ? `<h4 style="margin-top:12px;">下次抽血建議（純臨床天數）</h4><p>${nextDrawNote}</p>` : ''}
       </div>
       <div>
         <h4>臨床 Sign 監測</h4>
@@ -6740,7 +6877,7 @@ ${flagText||'（無）'}
 
   function buildAiPromptAed(d){
     const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
-    return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版只做濃度校正判讀與情境交叉檢查（尚未提供 phenytoin MM 劑量推估，屬後續分期），請你整合下列資訊給第二意見：
+    return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劇量估算，請你整合下列資訊給第二意見：
 
 【目標藥物】${d.drugLabel}／目的：${d.purposeLabel}
 【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
@@ -6748,11 +6885,12 @@ ${flagText||'（無）'}
 【給藥處方】${d.formLabel}，τ=${d.tauH||'未填'}h，劑量 ${d.dose||'未填'}mg，起始 ${d.regimenStart||'未填'}
 【濃度】${d.levelType}：${d.levelValue!=null?d.levelValue:'未輸入'}（抽血 ${d.drawAt||'未填'}）
 【濃度校正判讀】${d.corrText}
+【PK／劇量估算】${d.pkNote||'（無）'}
 【已觸發的情境提示】
 ${flagText||'（無）'}
 【治療目標】${d.goal||'未填'}
 
-請你根據以上資料，整合最新的臨床病程給出你的判斷與建議，並指出本工具本版未涵蓋（MM 劑量推估、趨勢圖）但你認為重要的面向。`;
+請你根據以上資料，整合最新的臨床病程給出你的判斷與建議，並指出本工具本版未涵蓋（趨勢圖）但你認為重要的面向。`;
   }
 
   function renderAed(){
@@ -6791,8 +6929,15 @@ ${flagText||'（無）'}
 
     const flags = [];
 
+    // ---- steady state (computed early: the phenytoin P2 MM block below needs ss.status
+    // to gate itself, before the concentration-correction/flags section that used to be
+    // the only consumer) ----
+    const changeMs = parseLocal(document.getElementById('aedRegimenStart').value);
+    const ss = aedSteadyStateCheck({ drug, lastChangeMs: changeMs, drawMs: drawAtMs });
+
     // ---- concentration correction (drug-specific) ----
     let corrHtml = '', corrText = '';
+    let pkHtml = '', vpaDoseHtml = '', nextDrawNote = null, pkPromptText = '';
     if(drug==='phenytoin'){
       const total = levelType==='total' ? levelValue : NaN;
       const free = levelType==='free' ? levelValue : NaN;
@@ -6817,6 +6962,95 @@ ${flagText||'（無）'}
         dysarthria:document.getElementById('aedSxDysarthria').checked, drowsy:document.getElementById('aedSxDrowsy').checked, confusion:document.getElementById('aedSxConfusion').checked };
       const statPrompt = phtToxicityStatPrompt({ sxFlags: sx });
       if(statPrompt.show) flags.push({level:'danger', text: statPrompt.text});
+
+      // ---- P2: Michaelis-Menten dosing ----
+      const mmTarget = (AED_RULES.phenytoin.range.lo + AED_RULES.phenytoin.range.hi)/2; // 15 mcg/mL, therapeutic midpoint
+      const formObjPht = currentAedFormObj();
+      const S = formObjPht ? formObjPht.S : 1;
+      const doseMgPerAdmin = parseFloat(document.getElementById('aedDose').value);
+      const tauHVal = parseFloat(document.getElementById('aedTauH').value);
+      const currentDailyDoseMg = (isFinite(doseMgPerAdmin) && isFinite(tauHVal) && tauHVal>0) ? doseMgPerAdmin*(24/tauHVal) : NaN;
+      const cssForMmRaw = sugCand && isFinite(sugCand.value) ? sugCand.value : NaN;
+      const cssForMm = (norm.suggested==='free' && isFinite(cssForMmRaw)) ? cssForMmRaw*10 : cssForMmRaw;
+
+      if(ss.status!=='steady'){
+        pkHtml = `<p class="hint">尚未確認達穩態（見下方監測提醒 D），Michaelis-Menten 藥動估算需要穩態濃度才有意義，暫不計算。</p>`;
+      } else if(!isFinite(cssForMm) || cssForMm<=0 || !isFinite(currentDailyDoseMg) || currentDailyDoseMg<=0 || !isFinite(S)){
+        pkHtml = `<p class="hint">尚無足夠的目前劇量與濃度資料可估算（需要濃度校正判讀後的數值＋目前每日總劇量）。</p>`;
+      } else {
+        const R = S*currentDailyDoseMg;
+        const popKm = AED_RULES.phenytoin.pop.km;
+
+        // two-point method (card 07): only when >=2 confirmed rows with genuinely different doses
+        const confirmedPairs = collectAedSsPairs().filter(p=>p.confirmedSS && isFinite(p.dailyDoseMg) && p.dailyDoseMg>0 && isFinite(p.level) && p.level>0);
+        let twoPoint = null, twoPointPair = null;
+        if(confirmedPairs.length>=2){
+          let best = null;
+          for(let i=0;i<confirmedPairs.length;i++) for(let j=i+1;j<confirmedPairs.length;j++){
+            const diff = Math.abs(confirmedPairs[i].dailyDoseMg-confirmedPairs[j].dailyDoseMg);
+            if(diff>0 && (!best || diff>best.diff)) best = {diff, a:confirmedPairs[i], b:confirmedPairs[j]};
+          }
+          if(best){
+            const normLevel = p => isFinite(p.albumin) ? p.level/(0.2*p.albumin+0.1) : p.level;
+            twoPointPair = best;
+            twoPoint = phtMmTwoPoint({ R1:S*best.a.dailyDoseMg, C1:normLevel(best.a), R2:S*best.b.dailyDoseMg, C2:normLevel(best.b) });
+          }
+        }
+
+        const usePatientSpecific = !!(twoPoint && twoPoint.valid);
+        const primaryKm = usePatientSpecific ? twoPoint.km : popKm;
+        const primaryVmax = usePatientSpecific ? twoPoint.vmax : phtMmSinglePoint({ R, Css:cssForMm, km:popKm }).vmax;
+        const primaryMethod = usePatientSpecific ? '兩點法（病人專屬，卡片07已確認達穩態的兩列）' : `單點法（假設族群 Km=${popKm} mg/L，見下方敏感度帶）`;
+
+        const doseTarget = phtDoseForTarget({ vmax:primaryVmax, km:primaryKm, target:mmTarget, S });
+        const predCurrent = phtPredictCss({ vmax:primaryVmax, km:primaryKm, R });
+        const t90 = (doseTarget.rNew!=null && isFinite(tbw)) ? phtT90({ vmax:primaryVmax, km:primaryKm, vd:AED_RULES.phenytoin.pop.vdLkg*tbw, R:doseTarget.rNew }) : { days:null, unattainable:null };
+        const loading = (isFinite(tbw) && cssForMm<mmTarget) ? phtLoadingDose({ vd:AED_RULES.phenytoin.pop.vdLkg*tbw, target:mmTarget, current:cssForMm, S }) : null;
+
+        let mmSummary = `<p><strong>採用方法：</strong>${primaryMethod}</p>`;
+        if(usePatientSpecific){
+          mmSummary += `<p>Km=${twoPoint.km.toFixed(2)} mg/L，Vmax=${twoPoint.vmax.toFixed(0)} mg/day（由 ${twoPointPair.a.dailyDoseMg}／${twoPointPair.b.dailyDoseMg} mg/day 兩點解出）</p>`;
+        } else {
+          mmSummary += `<p>Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day（依目前劇量 ${R.toFixed(0)} mg/day 與校正後濃度 ${cssForMm.toFixed(2)} 反解，Km 假設族群值 ${popKm}）</p>`;
+          if(confirmedPairs.length===1) mmSummary += `<p class="hint">卡片07目前只有 1 列已確認達穩態，兩點法需要至少 2 列不同劇量才能計算病人專屬 Km/Vmax。</p>`;
+          else if(twoPoint && !twoPoint.valid) mmSummary += `<p class="hint">⚠️ 卡片07的資料無法解出有效兩點法結果：${(twoPoint.reasons||[]).join('；')}，暫用族群 Km 單點法。</p>`;
+        }
+        mmSummary += predCurrent.unattainable
+          ? `<p class="flag-item danger"><span class="dot"></span><span>以目前劇量（${R.toFixed(0)} mg/day）預估已達或超過 Vmax，理論上無法達到穩態——這是 phenytoin 非線性動力學最危險的情況，請勿再加量，考慮減量並密切追蹤。</span></p>`
+          : `<p>以目前劇量預估穩態濃度 ≈ ${isFinite(predCurrent.css)?predCurrent.css.toFixed(2):'—'} mcg/mL（與實測校正值 ${cssForMm.toFixed(2)} 互相印證，理論上應接近）</p>`;
+        mmSummary += `<p><strong>達目標（${mmTarget} mcg/mL 中點）估算每日總劇量 ≈ ${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg</strong>（僅估算，須依本院劇型格點調整，見下方候選劇量表）</p>`;
+        if(t90.days!=null){
+          mmSummary += `<p>調整到此劇量後，預估約 ${t90.days.toFixed(1)} 天達到新穩態的 90%（純臨床天數，不折算排班，見監測提醒 D）</p>`;
+          nextDrawNote = `若依此估算調整劇量，約 ${t90.days.toFixed(1)} 天後複測較能反映新穩態（純臨床天數，未折算實際送驗排班）；若未調整劇量，仍以院內建議 ${AED_RULES.phenytoin.ssDays.lo}–${AED_RULES.phenytoin.ssDays.hi}${AED_RULES.phenytoin.ssDays.open?'+':''} 天為準。`;
+        } else if(t90.unattainable) mmSummary += `<p class="hint">⚠️ 目標劇量下 Vmax 與新劇量太接近，t90 估算不穩定</p>`;
+        if(loading && isFinite(loading.doseMg)) mmSummary += `<p>若想更快接近目標，補充負荷劇量估算 ≈ ${loading.doseMg.toFixed(0)} mg（一次性給予；院內指引未規範，此為文獻族群常用法之估算，非 status epilepticus 從零負荷）</p>`;
+
+        const kmRows = phtKmSensitivity({ R, Css:cssForMm, target:mmTarget, S, kms:AED_RULES.phenytoin.kmSensitivityCandidates });
+        const kmRowsHtml = kmRows.map(r=>`<tr><td>${r.label}</td><td>${r.km}</td><td>${isFinite(r.vmax)?r.vmax.toFixed(0):'—'}</td><td>${isFinite(r.doseForTargetMg)?r.doseForTargetMg.toFixed(0):'—'}</td></tr>`).join('');
+        const kmTableHtml = `<table class="regimen-table"><thead><tr><th>Km 候選值來源</th><th>Km(mg/L)</th><th>反解 Vmax(mg/day)</th><th>達目標所需劇量(mg/day)</th></tr></thead><tbody>${kmRowsHtml}</tbody></table>
+          <p class="hint">Km 在各族群研究間差異可達 6 倍以上（見規格 §2.2.1），以上為敏感度分析，不代表其中一個「最準」——只用來讓你看到劇量建議對 Km 假設有多敏感。</p>`;
+
+        const step = (formObjPht && formObjPht.doseStepMg) || 50;
+        const recRounded = isFinite(doseTarget.dailyDoseMg) ? Math.round(doseTarget.dailyDoseMg/step)*step : NaN;
+        const candDoses = isFinite(recRounded) ? Array.from(new Set([recRounded-step, recRounded, recRounded+step])).filter(d=>d>0).sort((a,b)=>a-b) : [];
+        const candRowsHtml = candDoses.map(d=>{
+          const key = 'cand-'+d;
+          const pred = phtPredictCss({ vmax:primaryVmax, km:primaryKm, R:S*d });
+          const checked = aedPickedCandidate===key ? 'checked' : '';
+          return `<tr class="${aedPickedCandidate===key?'picked':''}">
+            <td class="pick-col"><input type="radio" name="aedCandPick" class="aed-cand-radio" value="${key}" ${checked}></td>
+            <td>${d.toFixed(0)} mg/day</td>
+            <td>${pred.unattainable?'<strong style="color:var(--crimson,#c0392b);">無法達穩態（R≥Vmax）</strong>':`${pred.css.toFixed(2)} mcg/mL`}</td>
+          </tr>`;
+        }).join('');
+        const candTableHtml = candDoses.length ? `<table class="regimen-table"><thead><tr class="pick-col"><th class="pick-col">選取</th><th>每日總劇量</th><th>預估穩態濃度</th></tr></thead><tbody>${candRowsHtml}</tbody></table>
+          <p class="hint">中性呈現，不排序、不標「建議」；勾選一列後 AI Prompt 會帶入你的選擇，最終處方判斷仍屬你的專業責任。格點依本院劇型（${formObjPht?formObjPht.name:'—'}，每步 ${step}mg）。</p>` : '';
+
+        pkHtml = mmSummary + kmTableHtml + candTableHtml;
+
+        const pickedRow = aedPickedCandidate ? candDoses.find(d=>('cand-'+d)===aedPickedCandidate) : null;
+        pkPromptText = `${primaryMethod}；Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day，Km=${primaryKm}；達目標(${mmTarget})估算劇量≈${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg/day${t90.days!=null?`，t90≈${t90.days.toFixed(1)}天`:''}${loading&&isFinite(loading.doseMg)?`；補充負荷劇量≈${loading.doseMg.toFixed(0)}mg`:''}${pickedRow?`；藥師已勾選候選劇量 ${pickedRow.toFixed(0)} mg/day`:''}`;
+      }
     } else {
       const total = levelType==='total' ? levelValue : NaN;
       const free = levelType==='free' ? levelValue : NaN;
@@ -6839,8 +7073,31 @@ ${flagText||'（無）'}
       if(vsx.bleeding) flags.push({level:'warn', text:'出血傾向：建議複查 platelet'});
       const pregnancy = document.getElementById('aedPregnancy').value;
       if(pregnancy==='pregnant') flags.push({level:'danger', text:'VPA 為明確致畸性藥物：懷孕病人請與神經科／婦產科共同評估是否有替代方案'});
+
+      // ---- P2: VPA proportional dose estimate ----
+      const vpaDoseMgPerAdmin = parseFloat(document.getElementById('aedDose').value);
+      const vpaTauH = parseFloat(document.getElementById('aedTauH').value);
+      const vpaDailyDose = (isFinite(vpaDoseMgPerAdmin) && isFinite(vpaTauH) && vpaTauH>0) ? vpaDoseMgPerAdmin*(24/vpaTauH) : NaN;
+      const vpaTarget = (AED_RULES.valproate.range.lo + AED_RULES.valproate.range.hi)/2; // 75 mcg/mL, therapeutic midpoint
+      if(!isFinite(vpaDailyDose) || !isFinite(total)){
+        vpaDoseHtml = `<p class="hint">尚無足夠的目前劇量與濃度資料可估算（需要目前每日總劇量＋total 濃度）。</p>`;
+      } else {
+        const propResult = vpaProportionalDose({ dose:vpaDailyDose, total, target:vpaTarget, riskFlags:assess.freeRiskFlags });
+        if(propResult.doseMg!=null){
+          vpaDoseHtml = `<p>目前總劇量 ${vpaDailyDose.toFixed(0)} mg/day，濃度 ${total} mcg/mL → 比例估算達目標（${vpaTarget} mcg/mL 中點）約需 <strong>${propResult.doseMg} mg/day</strong>（格點 ${propResult.roundedTo}mg，依 Depakine Chrono 可剝半格點）</p>
+            <p class="hint">此為線性比例估算，僅適用於無飽和結合風險因子時；VPA 濃度依賴性蛋白結合，濃度越高換算越不準，請仍以複測 TDM 確認。</p>`;
+          pkPromptText = `比例劇量估算：目前 ${vpaDailyDose.toFixed(0)} mg/day → 估算達目標(${vpaTarget})約 ${propResult.doseMg} mg/day`;
+        } else {
+          const dirLabel = {up:'方向：建議增量', down:'方向：建議減量', hold:'方向：建議暫不調整'}[propResult.direction] || '方向：資料不足';
+          vpaDoseHtml = `<p class="flag-item warn"><span class="dot"></span><span>${propResult.reason}</span></p>
+            <p><strong>${dirLabel}</strong>——不提供具體劇量數字，待 free 結果出來後再決定。</p>`;
+          pkPromptText = `比例劇量估算已因風險因子暫停：${propResult.reason}（${dirLabel}）`;
+        }
+      }
     }
     document.getElementById('aedCorrList').innerHTML = corrHtml || '<div class="flag-item"><span class="dot"></span><span>尚未輸入足夠資料進行濃度校正判讀</span></div>';
+    document.getElementById('aedPkContent').innerHTML = pkHtml;
+    document.getElementById('aedVpaDoseContent').innerHTML = vpaDoseHtml;
 
     // ---- sampling check (shared) ----
     const samp = aedSamplingCheck({ doseTime:lastDoseAtMs, drawTime:drawAtMs,
@@ -6848,9 +7105,6 @@ ${flagText||'（無）'}
       route: levelRoute, ivFromH: AED_RULES.phenytoin.sampling.iv.fromH, ivToH: AED_RULES.phenytoin.sampling.iv.toH });
     if(samp.ok===false) flags.push({level:'warn', text: samp.text});
 
-    // ---- steady state ----
-    const changeMs = parseLocal(document.getElementById('aedRegimenStart').value);
-    const ss = aedSteadyStateCheck({ drug, lastChangeMs: changeMs, drawMs: drawAtMs });
     if(ss.status==='notSteady') flags.push({level:'warn', text: ss.text});
 
     // ---- interaction scan ----
@@ -6868,7 +7122,7 @@ ${flagText||'（無）'}
       <div class="param-cell"><div class="label">濃度結果</div><div class="value">${isFinite(levelValue)?levelValue.toFixed(1):'—'}<span class="unit">${levelType==='free'?'µg/mL':'mcg/mL'}</span></div><div class="sub">${targetLine}／${levelType==='free'?'Free':'Total'}</div></div>
       <div class="param-cell"><div class="label">是否達穩態</div><div class="value" style="font-size:16px;">${ss.text}</div></div>`;
 
-    document.getElementById('aedMonitorGrid').innerHTML = buildAedMonitorGrid(drug);
+    document.getElementById('aedMonitorGrid').innerHTML = buildAedMonitorGrid(drug, nextDrawNote);
     setHeaderMeta('drug-aed', `${drugLabels[drug]}／${levelType==='free'?'Free':'Total'} ${isFinite(levelValue)?levelValue.toFixed(1):'—'}`);
 
     const formObj = currentAedFormObj();
@@ -6880,7 +7134,7 @@ ${flagText||'（無）'}
       formLabel: formObj ? formObj.name : document.getElementById('aedForm').value, tauH: document.getElementById('aedTauH').value, dose: document.getElementById('aedDose').value,
       regimenStart: document.getElementById('aedRegimenStart').value,
       levelType: levelType==='free'?'Free':'Total', levelValue: isFinite(levelValue)?levelValue:null, drawAt: document.getElementById('aedLevelDrawAt').value,
-      corrText, flags, goal: document.getElementById('aedGoal').value
+      corrText, pkNote: pkPromptText, flags, goal: document.getElementById('aedGoal').value
     });
 
     lastAedDerived = {
@@ -7265,6 +7519,28 @@ ${flagText||'（無）'}
         document.execCommand('copy');
         document.getElementById('aedCopyStatus').textContent = '已複製';
       });
+    });
+
+    // ---------------- aed P2 wiring: ss-pairs table (card 07) + candidate-dose radio pick ----------------
+    document.getElementById('aedAddSsPairBtn').addEventListener('click', ()=>{ addAedSsPairRow('', '', '', '', false); renderAed(); });
+    document.getElementById('aedPullCurrentSsPairBtn').addEventListener('click', ()=>{
+      const doseMg = parseFloat(document.getElementById('aedDose').value);
+      const tauH = parseFloat(document.getElementById('aedTauH').value);
+      const dailyDose = (isFinite(doseMg) && isFinite(tauH) && tauH>0) ? doseMg*(24/tauH) : null;
+      const level = parseFloat(document.getElementById('aedLevelValue').value);
+      const albuminNow = document.getElementById('aedAlbumin').value;
+      const drawAt = document.getElementById('aedLevelDrawAt').value;
+      addAedSsPairRow(drawAt ? drawAt.slice(0,10) : '', dailyDose, isFinite(level)?level:null, albuminNow!==''?albuminNow:null, false);
+      renderAed();
+    });
+    // delegated listener: #aedPkBlock itself is never overwritten (only its #aedPkContent
+    // child is, on every render), so binding here survives repeated re-renders without
+    // needing to re-attach a listener to each newly-created radio button.
+    document.getElementById('aedPkBlock').addEventListener('change', (e)=>{
+      if(e.target && e.target.classList.contains('aed-cand-radio')){
+        aedPickedCandidate = e.target.value;
+        renderAed();
+      }
     });
 
     initDefaultsAed();
