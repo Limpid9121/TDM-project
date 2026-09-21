@@ -69,41 +69,10 @@
   /* ---------- Layout ---------- */
   main.grid{
     display:grid;
-    grid-template-columns:minmax(320px,400px) 1fr;
+    grid-template-columns:minmax(320px,400px) minmax(0,1fr);
     gap:24px;
     align-items:start;
   }
-  @media (max-width:980px){
-    main.grid{grid-template-columns:1fr;}
-  }
-  @media (max-width:640px){
-    .app{padding:16px 14px 60px;}
-    header.top{flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:14px;margin-bottom:16px;}
-    header.top .meta-line{text-align:left;}
-    header.top .header-right{align-items:flex-start;width:100%;}
-    .card{padding:14px 14px 16px;}
-    .field-row, .field-row.three{grid-template-columns:1fr;gap:8px;}
-    /* iOS Safari auto-zooms on focus if inputs are under 16px */
-    .field input, .field select, .field textarea{font-size:16px;padding:9px 8px;}
-    .custom-input{font-size:16px;}
-    .custom-input.dose{width:78px;}
-    .custom-input.inf{width:64px;}
-    .custom-input.tau{width:56px;}
-    .entry-row input[type="datetime-local"], .entry-row input[type="date"]{font-size:16px;flex-basis:100%;}
-    .entry-row .num-field input{font-size:16px;width:74px;}
-    .prune-tool{margin-left:0;width:100%;}
-    .prune-tool input[type="datetime-local"]{font-size:16px;flex:1 1 auto;}
-    .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
-    .param-cell .value{font-size:16px;}
-    .results-head{padding:14px 14px;}
-    .curve-wrap{padding:12px 14px 2px;}
-    .section-block{padding:14px 14px;}
-    .regimen-table{font-size:11.5px;}
-    .table-scroll{margin:0 -14px;padding:0 14px;}
-    .btn{padding:9px 12px;} /* keep tap targets comfortable */
-    .row-del{padding:6px 10px;font-size:17px;}
-  }
-
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
   .stack{display:flex;flex-direction:column;gap:18px;}
 
@@ -160,7 +129,7 @@
   .field-row.three{grid-template-columns:1fr 1fr 1fr;}
   .field-row.stacked{grid-template-columns:1fr;gap:10px;}
   .field{display:flex;flex-direction:column;gap:4px;min-width:0;}
-  .field input[type="datetime-local"]{min-width:210px;}
+  .field input[type="datetime-local"]{min-width:0;}
   .field label{font-size:11.5px;color:var(--ink-soft);font-weight:500;}
   .field input, .field select, .field textarea{
     font-family:var(--mono);font-size:13.5px;color:var(--ink);
@@ -355,7 +324,6 @@
   #customCmax, #customCmin, #customAuc{font-family:var(--mono);}
 
   .monitor-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-  @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
   .monitor-grid h4{font-size:12px;margin:0 0 6px;color:var(--ink-soft);}
   .monitor-grid p, .monitor-grid ul{font-size:12.5px;margin:0;padding-left:18px;}
   .monitor-grid li{margin-bottom:4px;}
@@ -385,6 +353,39 @@
   }
   .drug-module{display:none;}
   .drug-module.active{display:block;}
+  @media (max-width:980px){
+    main.grid{grid-template-columns:1fr;}
+    main.grid{grid-template-columns:minmax(0,1fr);}
+    .field input[type="datetime-local"]{min-width:0;}
+  }
+  @media (max-width:640px){
+    .app{padding:16px 14px 60px;}
+    header.top{flex-direction:column;align-items:flex-start;gap:6px;padding-bottom:14px;margin-bottom:16px;}
+    header.top .meta-line{text-align:left;}
+    header.top .header-right{align-items:flex-start;width:100%;}
+    .card{padding:14px 14px 16px;}
+    .field-row, .field-row.three{grid-template-columns:1fr;gap:8px;}
+    /* iOS Safari auto-zooms on focus if inputs are under 16px */
+    .field input, .field select, .field textarea{font-size:16px;padding:9px 8px;}
+    .custom-input{font-size:16px;}
+    .custom-input.dose{width:78px;}
+    .custom-input.inf{width:64px;}
+    .custom-input.tau{width:56px;}
+    .entry-row input[type="datetime-local"], .entry-row input[type="date"]{font-size:16px;flex-basis:100%;}
+    .entry-row .num-field input{font-size:16px;width:74px;}
+    .prune-tool{margin-left:0;width:100%;}
+    .prune-tool input[type="datetime-local"]{font-size:16px;flex:1 1 auto;}
+    .param-grid{grid-template-columns:repeat(auto-fill,minmax(128px,1fr));}
+    .param-cell .value{font-size:16px;}
+    .results-head{padding:14px 14px;}
+    .curve-wrap{padding:12px 14px 2px;}
+    .section-block{padding:14px 14px;}
+    .regimen-table{font-size:11.5px;}
+    .table-scroll{margin:0 -14px;padding:0 14px;}
+    .btn{padding:9px 12px;} /* keep tap targets comfortable */
+    .row-del{padding:6px 10px;font-size:17px;}
+  }
+  @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
   @media (max-width:640px){
     .drug-switch{margin-top:8px;width:100%;}
     .drug-switch-btn{flex:1 1 auto;}
