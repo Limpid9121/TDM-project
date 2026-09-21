@@ -1,0 +1,695 @@
+{
+ "V1_vanco_fixed_two_levels": {
+  "fitModeBadge": "聯合擬合 (n=2)",
+  "paramGrid": "ke（消除速率常數）0.079hr⁻¹t½（半衰期）8.7hrVd（分布體積）46.3L0.64 L/kgCL（清除率）3.68L/hrCrCl（Cockcroft-Gault）36mL/minAdjBW = IBW + 0.4×(TBW−IBW)（肥胖）Cmax,ss（現行處方推算）33.8µg/mLCmin,ss（現行處方推算）14.1µg/mLAUC₂₄,ss（現行處方推算）544mg·hr/LAUC/MIC544MIC 假設 1近 24h 實際 AUC（依已發生給藥推算）540mg·hr/L",
+  "flagList": "本次納入擬合的濃度，最早與最晚僅相距 3.8 小時，不到一個半衰期（約 8.7 小時）。採檢點過於集中時，消除斜率與 Vd 難以穩定分辨，Vd 與 peak 相關數值的不確定性明顯較高（CL／AUC 通常仍較穩健）。若需要可靠的 Vd，建議兩點至少相隔一個半衰期，或加抽一點拉開間距。",
+  "loadingSuggestion": "未勾選「深部／難清除感染」。若需評估 loading dose，於左側區塊 02 勾選後將顯示建議。",
+  "regimenTable": "方案劑量間隔Cmax,ssCmin,ssAUC₂₄評語 q8h 500 mg／60 min輸注 q8h 22.1 12.7 408 略接近邊界留意 q12h 現行間隔 1000 mg／60 min輸注 q12h 33.8 14.1 544 符合目標OK q24h 1750 mg／120 min輸注 q24h 41.0 7.2 476 符合目標OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "monitorGrid": "下次 TDM 時機若本次調整劑量，建議於新處方達穩態後複測（理想為同區間兩點或至少一 trough）；若維持現行處方，穩定病人可每週追蹤一次。 重點 Lab 監測SCr：每 1–2 天（腎功能不穩定）BUN：必要時併同 SCr 臨床 Sign 監測腎毒性徵象：尿量、SCr 較基礎上升 ≥0.5 mg/dL 或 ≥50%療效：發燒、培養結果、發炎指標趨勢 再評估觸發條件腎功能出現變化（改善或惡化）透析啟動或排程調整感染臨床惡化或未如預期改善",
+  "aiPromptOut": "你是一位資深臨床藥師顧問。以下是由一套自建 vancomycin TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。 【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／AUC₂₄，並依 AUC 目標投影候選劑量方案。 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、辨識少見或複雜交互作用、納入本工具未建模的個別狀況。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。 ## 一、病人與腎功能 - 年齡 67 歲，性別 女，身高 158 cm，TBW 72 kg（IBW 50.6 kg，CrCl 計算採 AdjBW = IBW + 0.4×(TBW−IBW)（肥胖）） - SCr 數列：2026/9/16 → 1.2 mg/dL；2026/9/18 → 1.4 mg/dL - Cockcroft-Gault CrCl：約 36 mL/min - 透析狀態：否 ## 二、感染／臨床脈絡 - 適應症：治療（經驗性）；嚴重度：穩定 - 感染部位：菌血症；菌種／MIC：MRSA - 深部／難清除感染：否；感染源控制：尚未／不確定 ## 三、給藥紀錄（本工具計算之唯一依據） 第1劑 2026/9/16 上午9:00:00｜1000 mg｜輸注 60 分 第2劑 2026/9/16 下午9:00:00｜1000 mg｜輸注 60 分 第3劑 2026/9/17 上午9:00:00｜1000 mg｜輸注 60 分 第4劑 2026/9/17 下午9:00:00｜1000 mg｜輸注 60 分 第5劑 2026/9/18 上午9:00:00｜1000 mg｜輸注 60 分 第6劑 2026/9/18 下午9:00:00｜1000 mg｜輸注 60 分 第7劑 2026/9/19 上午9:00:00｜1000 mg｜輸注 60 分 現行維持處方：1000 mg q12h（輸注 60 分） ## 四、血中濃度量測（自由時點） 2026/9/18 下午8:45:00 → 14.2 µg/mL 2026/9/19 上午12:30:00 → 27.5 µg/mL ## 五、本工具擬合結果（可稽核） - 擬合模式：joint (n=2) - ke = 0.0794 hr⁻¹，t½ = 8.7 hr - Vd = 46.3 L，CL = 3.68 L/hr - 現行處方推算（模型 A）：Cmax,ss 33.8 µg/mL／Cmin,ss 14.1 µg/mL／AUC₂₄ 544 mg·hr/L（MIC 假設 1，AUC/MIC 544） - 近 24 小時實際累積 AUC（依已發生給藥推算，非穩態外推，模型 A）：540 mg·hr/L - 目標 AUC₂₄：500 ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序） q8h → 500 mg（輸注 60 分）：Cmax,ss 22.1／Cmin,ss 12.7／AUC₂₄ 408 q12h → 1000 mg（輸注 60 分）：Cmax,ss 33.8／Cmin,ss 14.1／AUC₂₄ 544 q24h → 1750 mg（輸注 120 分）：Cmax,ss 41.0／Cmin,ss 7.2／AUC₂₄ 476 （尚未於劑量調整建議表格勾選最終決定處方，以上候選方案僅供比較，本工具不做排序推薦） ## 七、本工具健全性旗標 - [OK] 本次納入擬合的濃度，最早與最晚僅相距 3.8 小時，不到一個半衰期（約 8.7 小時）。採檢點過於集中時，消除斜率與 Vd 難以穩定分辨，Vd 與 peak 相關數值的不確定性明顯較高（CL／AUC 通常仍較穩健）。若需要可靠的 Vd，建議兩點至少相隔一個半衰期，或加抽一點拉開間距。 ## 八、併用藥物與備註 - 併用藥物／交互作用相關：（未填寫） - 其他備註：（未填寫） ## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出） [[請貼上：近期完整 lab trend（renal panel／CBC／肝功能／發炎指標等，含日期）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應（發燒曲線、培養結果等）]] [[如有：完整目前併用藥物清單／給藥紀錄（若與上方摘要不同）]] [[如有：過去 TDM 紀錄與歷次劑量調整後的反應]] ## 十、請你specifically 協助評估 1. 本工具的族群假設（Vd、CrCl 估算、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？ 2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略？ 3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。 4. 下一次監測時機與重點，是否需要在本工具建議之外調整？ 請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。",
+  "curveSvg": "sha1:1e288d598ad50093",
+  "headerMeta": "CrCl 36 mL/min ・ CL 3.68 L/hr ・ AUC₂₄ 544",
+  "custom": {
+   "customCmax": "41.4",
+   "customCmin": "18.0",
+   "customAuc": "679",
+   "customReason": "腎毒性疑慮升高（AUC/MIC≈679）風險"
+  },
+  "saved": {
+   "data": {
+    "age": "67",
+    "sex": "F",
+    "height": "158",
+    "tbw": "72",
+    "dryWeight": "",
+    "dialysis": "none",
+    "arcSuspect": false,
+    "hdFlux": "unknown",
+    "scrRows": [
+     {
+      "date": "2026-09-16",
+      "val": "1.2"
+     },
+     {
+      "date": "2026-09-18",
+      "val": "1.4"
+     }
+    ],
+    "indication": "治療（經驗性）",
+    "severity": "穩定",
+    "site": "菌血症",
+    "organism": "MRSA",
+    "deepInfection": false,
+    "sourceControlDone": false,
+    "therapyStart": "2026-09-16T09:00",
+    "expandTo": "2026-09-19T09:00",
+    "useLoading": false,
+    "loadingDose": "2000",
+    "loadingInf": "120",
+    "firstMaintDoseTime": "",
+    "assumeSteadyState": false,
+    "maintDose": "1000",
+    "maintInterval": "12",
+    "maintInf": "60",
+    "hdMaintDose": "",
+    "hdFixedTime": "21:00",
+    "hdMaintInf": "60",
+    "hdDayPattern": [
+     1,
+     3,
+     5
+    ],
+    "hdSlot": "am",
+    "hdSlotStart": "08:00",
+    "hdDurationHr": "4",
+    "hdSessionRows": [],
+    "doseRows": [
+     {
+      "date": "2026-09-16T09:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-16T21:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-17T09:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-17T21:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-18T09:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-18T21:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-19T09:00",
+      "doseMg": "1000",
+      "infMin": "60"
+     }
+    ],
+    "levelRows": [
+     {
+      "date": "2026-09-18T20:45",
+      "conc": "14.2"
+     },
+     {
+      "date": "2026-09-19T00:30",
+      "conc": "27.5"
+     }
+    ],
+    "mic": "1",
+    "targetAuc": "500",
+    "altTroughStrategy": false,
+    "cand8": true,
+    "cand12": true,
+    "cand24": true,
+    "concomitant": "",
+    "otherNotes": "",
+    "customDose": "1250",
+    "customInf": "90",
+    "customTau": "12"
+   },
+   "derived": {
+    "mode": "standard",
+    "ke": 0.07939942912709651,
+    "vd": 46.34321825721072,
+    "cl": 3.6796250735349676,
+    "tHalf": 8.728022450774787,
+    "auc24ss": 543.5336372677301,
+    "cmaxSs": 33.76597955453476,
+    "cminSs": 14.098382199149006,
+    "aucOverMic": 543.5336372677301,
+    "auc24Actual": 540.1897948085924,
+    "crcl": 36.40668002437195,
+    "hasMeasuredLevels": true,
+    "recDose": null,
+    "recInterval": null
+   },
+   "asOf": "2026-09-19T00:30"
+  },
+  "__alerts": []
+ },
+ "V2_vanco_loading_steady_state": {
+  "fitModeBadge": "單點貝氏校正（V 固定為族群值）",
+  "paramGrid": "ke（消除速率常數）0.080hr⁻¹t½（半衰期）8.7hrVd（分布體積）50.4L0.70 L/kgCL（清除率）4.02L/hrCrCl（Cockcroft-Gault）36mL/minAdjBW = IBW + 0.4×(TBW−IBW)（肥胖）Cmax,ss（現行處方推算）37.9µg/mLCmin,ss（現行處方推算）16.4µg/mL15–20 略升AUC₂₄,ss（現行處方推算）622mg·hr/LAUC/MIC622MIC 假設 1近 24h 實際 AUC（依已發生給藥推算）641mg·hr/L",
+  "flagList": "未偵測到明顯的健全性疑慮。推算穩態 Cmin（模型A） 16.4 µg/mL 落在 15–20 區間，腎毒性風險略升，建議留意。現行處方推算 AUC₂₄（模型A） 622 超過 600，腎毒性風險升高。",
+  "loadingSuggestion": "深部／難清除感染，建議評估 loading dose：1750 mg（以 25 mg/kg TBW 估算，上限 3000 mg），輸注 120 分鐘以上以降低 infusion reaction 風險。",
+  "regimenTable": "方案劑量間隔Cmax,ssCmin,ssAUC₂₄評語 q8h 750 mg／60 min輸注 q8h 30.3 17.3 559 略接近邊界留意 q12h 現行間隔 1000 mg／60 min輸注 q12h 30.9 12.9 497 符合目標OK q24h 2000 mg／120 min輸注 q24h 43.0 7.4 497 符合目標OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "monitorGrid": "下次 TDM 時機若本次調整劑量，建議於新處方達穩態後複測（理想為同區間兩點或至少一 trough）；若維持現行處方，穩定病人可每週追蹤一次。 重點 Lab 監測SCr：每 1–2 天（腎功能不穩定）BUN：必要時併同 SCr 臨床 Sign 監測腎毒性徵象：尿量、SCr 較基礎上升 ≥0.5 mg/dL 或 ≥50%療效：發燒、培養結果、發炎指標趨勢 再評估觸發條件腎功能出現變化（改善或惡化）透析啟動或排程調整感染臨床惡化或未如預期改善",
+  "aiPromptOut": "你是一位資深臨床藥師顧問。以下是由一套自建 vancomycin TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。 【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／AUC₂₄，並依 AUC 目標投影候選劑量方案。 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、辨識少見或複雜交互作用、納入本工具未建模的個別狀況。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。 ## 一、病人與腎功能 - 年齡 67 歲，性別 女，身高 158 cm，TBW 72 kg（IBW 50.6 kg，CrCl 計算採 AdjBW = IBW + 0.4×(TBW−IBW)（肥胖）） - SCr 數列：2026/9/16 → 1.2 mg/dL；2026/9/18 → 1.4 mg/dL - Cockcroft-Gault CrCl：約 36 mL/min - 透析狀態：否 ## 二、感染／臨床脈絡 - 適應症：治療（經驗性）；嚴重度：穩定 - 感染部位：菌血症；菌種／MIC：MRSA - 深部／難清除感染：是；感染源控制：尚未／不確定 ## 三、給藥紀錄（本工具計算之唯一依據） 第1劑 2026/9/17 上午8:00:00｜2000 mg｜輸注 120 分 第2劑 2026/9/17 下午9:00:00｜1250 mg｜輸注 90 分 第3劑 2026/9/18 上午9:00:00｜1250 mg｜輸注 90 分 第4劑 2026/9/18 下午9:00:00｜1250 mg｜輸注 90 分 第5劑 2026/9/19 上午9:00:00｜1250 mg｜輸注 90 分 現行維持處方：1250 mg q12h（輸注 90 分） ## 四、血中濃度量測（自由時點） 2026/9/19 上午8:40:00 → 16.1 µg/mL ## 五、本工具擬合結果（可稽核） - 擬合模式：single-level - ke = 0.0798 hr⁻¹，t½ = 8.7 hr - Vd = 50.4 L，CL = 4.02 L/hr - 現行處方推算（模型 A）：Cmax,ss 37.9 µg/mL／Cmin,ss 16.4 µg/mL／AUC₂₄ 622 mg·hr/L（MIC 假設 1，AUC/MIC 622） - 近 24 小時實際累積 AUC（依已發生給藥推算，非穩態外推，模型 A）：641 mg·hr/L - 目標 AUC₂₄：500 ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序） q8h → 750 mg（輸注 60 分）：Cmax,ss 30.3／Cmin,ss 17.3／AUC₂₄ 559 q12h → 1000 mg（輸注 60 分）：Cmax,ss 30.9／Cmin,ss 12.9／AUC₂₄ 497 q24h → 2000 mg（輸注 120 分）：Cmax,ss 43.0／Cmin,ss 7.4／AUC₂₄ 497 本工具建議評估 loading dose：約 1750 mg （尚未於劑量調整建議表格勾選最終決定處方，以上候選方案僅供比較，本工具不做排序推薦） ## 七、本工具健全性旗標 - [OK] 未偵測到明顯的健全性疑慮。 - [WARN] 推算穩態 Cmin（模型A） 16.4 µg/mL 落在 15–20 區間，腎毒性風險略升，建議留意。 - [DANGER] 現行處方推算 AUC₂₄（模型A） 622 超過 600，腎毒性風險升高。 ## 八、併用藥物與備註 - 併用藥物／交互作用相關：（未填寫） - 其他備註：（未填寫） ## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出） [[請貼上：近期完整 lab trend（renal panel／CBC／肝功能／發炎指標等，含日期）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應（發燒曲線、培養結果等）]] [[如有：完整目前併用藥物清單／給藥紀錄（若與上方摘要不同）]] [[如有：過去 TDM 紀錄與歷次劑量調整後的反應]] ## 十、請你specifically 協助評估 1. 本工具的族群假設（Vd、CrCl 估算、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？ 2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略？ 3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。 4. 下一次監測時機與重點，是否需要在本工具建議之外調整？ 請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。",
+  "curveSvg": "sha1:260e15e2247e8818",
+  "headerMeta": "CrCl 36 mL/min ・ CL 4.02 L/hr ・ AUC₂₄ 622",
+  "__alerts": []
+ },
+ "V3_vanco_prospective": {
+  "fitModeBadge": "起始劑量預測（純族群 PK，尚未給藥・模型A）",
+  "paramGrid": "ke（族群估算）0.030hr⁻¹t½（族群估算）22.8hr約需 91–114 小時達穩態Vd（族群估算）50.4L0.70 L/kgCL（族群估算）1.53L/hrCrCl（Cockcroft-Gault）36mL/minAdjBW = IBW + 0.4×(TBW−IBW)（肥胖）預測 Cmax,ss64.0µg/mL預測 Cmin,ss45.9µg/mL>20 腎毒性關切預測 AUC₂₄,ss1308mg·hr/L預測 AUC/MIC1308MIC 假設 1",
+  "flagList": "這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。計畫處方預測穩態 Cmin（模型A） 45.9 µg/mL > 20，起始劑量可能偏高，建議重新評估間隔或劑量。計畫處方預測 AUC₂₄（模型A） 1308 超過 600，起始劑量可能偏高。",
+  "loadingSuggestion": "未勾選「深部／難清除感染」。若需評估 loading dose，於左側區塊 02 勾選後將顯示建議。",
+  "regimenTable": "方案劑量間隔Cmax,ssCmin,ssAUC₂₄評語 q8h 250 mg／60 min輸注 q8h 22.7 18.3 490 略接近邊界留意 q12h 計畫間隔 500 mg／60 min輸注 q12h 32.0 22.9 654 腎毒性疑慮升高風險 q24h 750 mg／60 min輸注 q24h 28.3 14.1 490 符合目標OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "monitorGrid": "首次 TDM 時機 建議於此計畫處方開始後，約 91–114 小時（4–5 個族群估算半衰期）達穩態附近再安排第一次抽血，理想為同一區間 trough（給藥前）搭配 peak（輸注後 1–2 小時），本工具支援任意時點自由輸入。 開始給藥後 請回到左側「給藥處方與紀錄」輸入實際給藥時間，並於「血中濃度量測」輸入抽血結果——引擎會自動改用實測資料擬合校正 Vd／CL，取代這裡的純族群估算。 基礎 Lab 監測 SCr／腎功能：治療期間至少每 2–3 天追蹤一次，腎功能不穩定者更頻繁治療起始前建議已有近期 SCr 作為基礎值 臨床 Sign 監測 腎毒性徵象：尿量、SCr 較基礎上升 ≥0.5 mg/dL 或 ≥50%療效：發燒、培養結果、發炎指標趨勢",
+  "aiPromptOut": "你是一位資深臨床藥師顧問。病人尚未開始 vancomycin，以下是根據族群藥動學（模型 A（Cockcroft-Gault 線性 CL／0.7 L/kg Vd））對計畫處方所做的起始劑量預測，請協助評估這組起始劑量是否合理。 ## 一、病人與腎功能 - CrCl：約 36 mL/min（AdjBW = IBW + 0.4×(TBW−IBW)（肥胖）） - 族群估算（模型 A）：ke 0.0303 hr⁻¹，t½ 22.8 hr，Vd 50.4 L，CL 1.53 L/hr ## 二、感染／臨床脈絡 - 適應症：治療（經驗性）；嚴重度：穩定；感染部位：菌血症；菌種／MIC：MRSA ## 三、計畫處方 - 維持劑量：1000 mg q12h（輸注 60 分） - 預測穩態（模型 A）：Cmax,ss 64.0 µg/mL／Cmin,ss 45.9 µg/mL／AUC₂₄ 1308 mg·hr/L（MIC 假設 1，AUC/MIC 1308，目標 500） ## 四、候選方案（中性列表，本工具不做推薦排序；模型 A） q8h → 250 mg（輸注 60 分）：預測 Cmax,ss 22.7／Cmin,ss 18.3／AUC₂₄ 490 q12h → 500 mg（輸注 60 分）：預測 Cmax,ss 32.0／Cmin,ss 22.9／AUC₂₄ 654 q24h → 750 mg（輸注 60 分）：預測 Cmax,ss 28.3／Cmin,ss 14.1／AUC₂₄ 490 （尚未於劑量調整建議表格勾選最終決定處方，以下候選方案僅供比較） ## 五、併用藥物與備註 - 併用藥物／交互作用相關：（未填寫） - 其他備註：（未填寫） ## 六、請你協助評估 1. 這組起始劑量（含是否需要 loading）依此病人的腎功能與感染脈絡是否合理？ 2. 是否有本工具未捕捉到的個別狀況（如預期腎功能將變化、特殊分布體積族群等）值得調整起始劑量？ 3. 首次 TDM 時機的建議是否需要調整？ 請保持透明：清楚區分「本工具已算出的族群預測值（模型 A — Cockcroft-Gault 線性模型）」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。",
+  "curveSvg": "sha1:d10c4fdead2975e2",
+  "headerMeta": "CrCl 36 mL/min ・ 預測 CL 1.53 L/hr ・ 預測 AUC₂₄ 1308",
+  "vancoPopModelToggle": "族群 PK 參數來源（僅用於尚無濃度資料可校正時的族群估算，比較用途）： 模型 A（現行・CG-linear） 模型 B（Oda 2024 兩室） 模型 A：Matzke GR, McGory RW, Halstenson CE, Keane WF. Pharmacokinetics of vancomycin in patients with various degrees of renal function. Antimicrob Agents Chemother. 1984;25(4):433-437. 模型 B：Oda K, Matsumoto K, Shoji K, et al. Validation and development of population pharmacokinetic model of vancomycin using a real-world database from a nationwide free web application. J Infect Chemother. 2024;30(6):1244-1251.",
+  "__alerts": []
+ },
+ "V4_vanco_hd": {
+  "fitModeBadge": "單點貝氏校正（本透析間期，V 固定為族群值）",
+  "paramGrid": "ke（透析間期估算）0.001hr⁻¹t½（透析間期估算）521.5hrVd（估算）61.2L0.85 L/kgCL（透析間期，非腎功能）0.08L/hr不代表殘餘腎功能，僅本期擬合值最近一次實測 pre-HD trough17.3µg/mL目標 15–20預測下次透析前濃度11.7µg/mL目標 15–20（依下次透析時程推算）",
+  "flagList": "HD 病人：Cockcroft-Gault／族群 CrCl 不適用（SCr 受透析主導），本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis & Nolin, Kidney360 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。擬合推得半衰期 521 小時（超過 10 天），已超出本藥物即使在無尿病人身上的常見範圍，請檢查資料。本透析間期的擬合是以「透析結束時體內濃度為 0」為起點，未納入透析後殘留藥物。若這位病人透析後仍有可觀殘留（常見於高 pre-HD trough 或移除率較低的情況），擬合的 Vd 與 CL 會同步偏低，連帶使下方建議劑量偏低。請勿僅憑本頁結果調降劑量；併同 pre-HD trough 實測值與臨床判斷一起解讀。",
+  "loadingSuggestion": "HD 起始劑量文獻參考（非個體化）：Loading 約 25 mg/kg（文獻範圍 25–35 mg/kg），維持劑量約 7.5–10 mg/kg 透析後給予（高通量或透析中給藥時可能需上修至 15 mg/kg），依 pre-HD trough 追蹤調整（Lewis SJ, Mueller BA Monte Carlo 模擬研究；院內表：LD 25 mg/kg then 7.5–10 mg/kg after HD TIW）。",
+  "regimenTable": "項目數值說明 本次濃度所依據劑量750 mg本視窗內最近一次給藥，即下方濃度所反映的那一劑最近一次實際給藥750 mg2026/9/18 下午9:00:00，晚於本次擬合所用的濃度時間，尚無 trough 反映此劑效果，未納入下方建議劑量的計算建議下次透析後劑量750 mg依實測 trough 17.3 比例反推至目標中點 17.5（符合 pre-HD 目標 15–20）OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "monitorGrid": "下次 TDM 時機 Pre-HD trough：建議每次透析前常規追蹤，尤其劑量剛調整後；穩定病人可每 1–2 次透析追蹤一次。避免透析結束後 6 小時內抽血（反彈未完成，數值假性偏低）。 臨床 Sign 監測 殘餘尿量（如有）變化療效：發燒、培養結果、發炎指標趨勢輸注反應 再評估觸發條件 透析處方調整（頻次、時數、膜材）殘餘腎功能變化感染臨床惡化或未如預期改善",
+  "aiPromptOut": "你是一位資深臨床藥師顧問。此病人為血液透析（HD）病人，以下是由自建 vancomycin TDM 工具計算的結果——僅在最近一次透析間期內擬合清除率（不橫跨透析事件），並以 pre-HD trough 15–20 µg/mL 為主要目標。 【此工具做得到的事】在單一透析間期內，用已驗證的一室模型從實際給藥與抽血時間估算 ke／Vd／CL，並依比例式反推下次透析後建議劑量。 【此工具做不到的事】模擬透析當下的濃度變化（無反彈/雙室機轉）、橫跨多次透析的長期趨勢建模、殘餘腎功能的量化貢獻。請你把重點放在這些工具算不到的部分。 ## 一、病人 - 年齡 67 歲，性別 女，身高 158 cm，TBW 72 kg - 膜通量：不確定 - SCr 數列（僅供臨床脈絡，未用於清除率估算）：2026/9/16 → 1.2 mg/dL；2026/9/18 → 1.4 mg/dL ## 二、感染／臨床脈絡 - 適應症：治療（經驗性）；嚴重度：穩定；感染部位：菌血症；菌種：MRSA ## 三、透析時程記錄 2026/9/14 上午8:00:00 → 2026/9/14 下午12:00:00 2026/9/16 上午8:00:00 → 2026/9/16 下午12:00:00 2026/9/18 上午8:00:00 → 2026/9/18 下午12:00:00 ## 四、本透析間期給藥紀錄 第1劑（本透析間期）2026/9/16 下午9:00:00｜750 mg｜輸注 60 分 （提醒：2026/9/18 下午9:00:00 另有一劑 750 mg 已實際給予，但晚於本次擬合所用的濃度時間，尚無對應 trough 可評估其效果，未納入以下擬合與建議劑量。） ## 五、本透析間期血中濃度 2026/9/18 上午7:30:00 → 17.3 µg/mL ## 六、本工具擬合結果（僅限本透析間期，可稽核） - 擬合模式：single-level - ke = 0.0013 hr⁻¹，t½ = 521.5 hr，Vd = 61.2 L，CL = 0.08 L/hr（透析間期，非腎功能） - 最近一次實測 pre-HD trough：17.3 µg/mL - 預測下次透析前濃度：11.7 µg/mL ## 七、劑量建議 - 本次濃度所依據劑量：750 mg（本透析間期內、下方濃度所反映的那一劑） - 建議下次透析後劑量：750 mg（依 17.3 µg/mL 比例反推至目標中點 17.5） ## 八、本工具健全性旗標 - [OK] HD 病人：Cockcroft-Gault／族群 CrCl 不適用（SCr 受透析主導），本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis & Nolin, Kidney360 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。 - [WARN] 擬合推得半衰期 521 小時（超過 10 天），已超出本藥物即使在無尿病人身上的常見範圍，請檢查資料。 - [WARN] 本透析間期的擬合是以「透析結束時體內濃度為 0」為起點，未納入透析後殘留藥物。若這位病人透析後仍有可觀殘留（常見於高 pre-HD trough 或移除率較低的情況），擬合的 Vd 與 CL 會同步偏低，連帶使下方建議劑量偏低。請勿僅憑本頁結果調降劑量；併同 pre-HD trough 實測值與臨床判斷一起解讀。 ## 九、併用藥物與備註 - 併用藥物：（未填寫） - 其他備註：（未填寫） ## 十、尚待你整合評估的臨床資訊 [[請貼上：殘餘尿量／殘餘腎功能相關資料（如有）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應]] [[如有：過去透析間期的 TDM 紀錄與劑量調整反應]] ## 十一、請你協助評估 1. 本工具僅限單一透析間期的擬合，是否有跨透析間期的趨勢需要你補充判斷？ 2. 建議劑量是否需要因殘餘腎功能、體液狀態、透析處方調整而修正？ 3. 下次監測時機是否需要調整？ 請保持透明：清楚區分「本工具已算出的數值」與「你新增的臨床判斷」。最終處方決策屬臨床藥師專業責任。",
+  "curveSvg": "sha1:c9c8d5479c396623",
+  "headerMeta": "HD 病人 ・ 透析間期 CL 0.08 L/hr ・ 實測 trough 17.3",
+  "hdSessionTable": "開始 結束 ×開始 結束 ×開始 結束 ×",
+  "saved": {
+   "data": {
+    "age": "67",
+    "sex": "F",
+    "height": "158",
+    "tbw": "72",
+    "dryWeight": "",
+    "dialysis": "HD",
+    "arcSuspect": false,
+    "hdFlux": "unknown",
+    "scrRows": [
+     {
+      "date": "2026-09-16",
+      "val": "1.2"
+     },
+     {
+      "date": "2026-09-18",
+      "val": "1.4"
+     }
+    ],
+    "indication": "治療（經驗性）",
+    "severity": "穩定",
+    "site": "菌血症",
+    "organism": "MRSA",
+    "deepInfection": false,
+    "sourceControlDone": false,
+    "therapyStart": "2026-09-14T00:00",
+    "expandTo": "2026-09-19T11:00",
+    "useLoading": false,
+    "loadingDose": "2000",
+    "loadingInf": "120",
+    "firstMaintDoseTime": "",
+    "assumeSteadyState": false,
+    "maintDose": "",
+    "maintInterval": "",
+    "maintInf": "",
+    "hdMaintDose": "750",
+    "hdFixedTime": "21:00",
+    "hdMaintInf": "60",
+    "hdDayPattern": [
+     1,
+     3,
+     5
+    ],
+    "hdSlot": "am",
+    "hdSlotStart": "08:00",
+    "hdDurationHr": "4",
+    "hdSessionRows": [
+     {
+      "start": "2026-09-14T08:00",
+      "end": "2026-09-14T12:00"
+     },
+     {
+      "start": "2026-09-16T08:00",
+      "end": "2026-09-16T12:00"
+     },
+     {
+      "start": "2026-09-18T08:00",
+      "end": "2026-09-18T12:00"
+     }
+    ],
+    "doseRows": [
+     {
+      "date": "2026-09-14T21:00",
+      "doseMg": "750",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-16T21:00",
+      "doseMg": "750",
+      "infMin": "60"
+     },
+     {
+      "date": "2026-09-18T21:00",
+      "doseMg": "750",
+      "infMin": "60"
+     }
+    ],
+    "levelRows": [
+     {
+      "date": "2026-09-18T07:30",
+      "conc": "17.3"
+     }
+    ],
+    "mic": "1",
+    "targetAuc": "500",
+    "altTroughStrategy": false,
+    "cand8": true,
+    "cand12": true,
+    "cand24": true,
+    "concomitant": "",
+    "otherNotes": "",
+    "customDose": "",
+    "customInf": "",
+    "customTau": ""
+   },
+   "derived": {
+    "mode": "hd",
+    "ke": 0.0013289737633599094,
+    "vd": 61.199999999999996,
+    "cl": 0.08133319431762645,
+    "tHalf": 521.4549896364834,
+    "crcl": null,
+    "auc24ss": null,
+    "cmaxSs": null,
+    "cminSs": null,
+    "auc24Actual": null,
+    "preHdTroughMeasured": 17.3,
+    "preHdTroughPredicted": 11.705706942760143,
+    "referenceTrough": 17.3,
+    "hasMeasuredLevels": true,
+    "recDose": 750,
+    "recInterval": null
+   },
+   "asOf": "2026-09-18T07:30"
+  },
+  "__alerts": []
+ },
+ "A1_amg_gent_conventional": {
+  "amgFitModeBadge": "聯合擬合 (n=2)",
+  "amgParamGrid": "ke（消除速率常數）0.233hr⁻¹t½（半衰期）3.0hrVd（分布體積）17.7L0.22 L/kgCL（清除率）4.11L/hrCrCl（Cockcroft-Gault）77mL/minIBW（Devine）Cmax,ss（現行處方推算，peak，輸注後 30 分）6.8µg/mL目標 8–10參考：Cmax(T1，開始輸注後 1 小時)6.8µg/mL讀書會共識時點；僅供對照，不納入判讀Cmin,ss（現行處方推算，trough）1.3µg/mL目標 <2近 24h 實際 AUC（依已發生給藥推算）87mg·hr/L輔助參考，本藥物主要仍以 peak/trough 為準Cmax/MIC6.8MIC 假設 1（GNR 殺菌效益門檻 ≥8）",
+  "amgFlagList": "菌種含 Pseudomonas：文獻顯示其對頻繁重複給藥（如 q8h）易產生 adaptive resistance（攝取下降、PAE 與殺菌效果逐次減弱），適度拉長間隔（ODD）之藥效學理論基礎較強，可作為策略選擇的參考之一（非強制建議）。現行處方推算：Peak 6.8 低於目標下限 8，可能療效不足；Cmax/MIC 6.8，低於革蘭氏陰性菌殺菌效益門檻 8，即使 peak 落在固定目標區間內，對此 MIC 的菌株可能仍療效不足。",
+  "amgRegimenTable": "方案劑量間隔Cmax(peak，輸注後30分)Cmin(trough)Cmax/MIC評語 q8h 現行間隔 160 mg（4.0 mL）／30 min輸注 q8h 9.0參考 T1 9.0 1.8 9.0 符合目標範圍OK q12h 180 mg（4.5 mL）／30 min輸注 q12h 9.1參考 T1 9.1 0.7 9.1 符合目標範圍OK q24h 190 mg（4.75 mL）／30 min輸注 q24h 9.1參考 T1 9.1 0.0 9.1 符合目標範圍OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "amgMonitorGrid": "下次 TDM 時機若本次調整劑量，建議於調整後第 3–4 劑（達穩態，約 1–2 天）複測；長療程穩定病人每 5–7 天追蹤一組。 重點 Lab 監測SCr／BUN：每 2–3 天至每週 臨床 Sign 監測腎毒性：SCr 上升、尿量減少、trough 逐漸上升耳毒性：耳鳴、聽力減退、眩暈、平衡失調 再評估觸發條件腎功能出現變化（改善或惡化）ODD 策略下 trough 變得可偵測（應為 undetectable）發燒／腹水／水化狀態改變併用腎／耳毒性藥物增減",
+  "amgAiPromptOut": "你是一位資深臨床藥師顧問。以下是由一套自建 aminoglycoside TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。 【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／peak／trough，並依鎖定的目標範圍投影候選劑量方案。 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、Hartford nomogram 之圖形化判讀（本工具改用個體化 ke/Vd 直接反解，理論上更精確，但未對照原始 nomogram 圖形）、辨識少見或複雜交互作用。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。 ## 一、病人與腎功能 - 年齡 58 歲，性別 男，身高 172 cm，TBW 80 kg（CrCl 計算採 IBW（Devine）） - SCr 數列：2026/9/18 → 1 mg/dL - Cockcroft-Gault CrCl：約 77 mL/min - 透析狀態：否 ## 二、藥物、策略與感染脈絡 - 目標藥物：Gentamicin；給藥策略：傳統多次給藥 - 鎖定目標：肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas：Peak 8–10／Trough <2 - 感染部位：（未填寫）；菌種／MIC：Pseudomonas aeruginosa（MIC 假設 1 µg/mL） - 嚴重度：穩定；感染源控制：尚未／不確定 ## 三、給藥紀錄（本工具計算之唯一依據） 第1劑 2026/9/17 上午9:00:00｜120 mg｜輸注 30 分 第2劑 2026/9/17 下午5:00:00｜120 mg｜輸注 30 分 第3劑 2026/9/18 上午1:00:00｜120 mg｜輸注 30 分 第4劑 2026/9/18 上午9:00:00｜120 mg｜輸注 30 分 第5劑 2026/9/18 下午5:00:00｜120 mg｜輸注 30 分 第6劑 2026/9/19 上午1:00:00｜120 mg｜輸注 30 分 第7劑 2026/9/19 上午9:00:00｜120 mg｜輸注 30 分 現行維持處方：120 mg q8h（輸注 30 分） ## 四、血中濃度量測（自由時點） 2026/9/19 上午2:00:00 → 6.8 µg/mL 2026/9/19 上午8:45:00 → 1.4 µg/mL ## 五、本工具擬合結果（可稽核） - 擬合模式：joint (n=2) - ke = 0.2331 hr⁻¹，t½ = 3.0 hr - Vd = 17.7 L，CL = 4.11 L/hr - 現行處方推算：Cmax(peak) 6.8 µg/mL／Cmin(trough) 1.3 µg/mL - 近 24 小時實際累積 AUC（輔助參考，非本藥物主要目標）：87 mg·hr/L ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序） q8h → 160 mg（輸注 30 分）：Cmax 9.0／Cmin 1.8／Cmax/MIC 9.0 q12h → 180 mg（輸注 30 分）：Cmax 9.1／Cmin 0.7／Cmax/MIC 9.1 q24h → 190 mg（輸注 30 分）：Cmax 9.1／Cmin 0.0／Cmax/MIC 9.1 （尚未於劑量調整建議表格勾選最終決定處方，以上候選方案僅供比較，本工具不做排序推薦） ## 七、本工具健全性旗標 - [OK] 菌種含 Pseudomonas：文獻顯示其對頻繁重複給藥（如 q8h）易產生 adaptive resistance（攝取下降、PAE 與殺菌效果逐次減弱），適度拉長間隔（ODD）之藥效學理論基礎較強，可作為策略選擇的參考之一（非強制建議）。 - [WARN] 現行處方推算：Peak 6.8 低於目標下限 8，可能療效不足；Cmax/MIC 6.8，低於革蘭氏陰性菌殺菌效益門檻 8，即使 peak 落在固定目標區間內，對此 MIC 的菌株可能仍療效不足。 ## 八、併用藥物與備註 - 腎／耳毒性相關併用藥物：（未填寫） - 其他備註：（未填寫） ## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出） [[請貼上：近期完整 lab trend（renal panel／CBC／發炎指標等，含日期）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應]] [[如有：耳毒性相關主觀症狀紀錄（耳鳴／聽損／眩暈）與聽力檢查結果]] [[如有：過去 TDM 紀錄與歷次劑量調整後的反應]] ## 十、請你 specifically 協助評估 1. 本工具的族群假設（Vd 係數、CrCl→CL 比例、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？ 2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略（如改變 conventional／ODD 策略）？ 3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。 4. 下一次監測時機與重點，是否需要在本工具建議之外調整？ 請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。",
+  "amgCurveSvg": "sha1:019dafd6ee02644e",
+  "amgTargetDisplay": "目前目標：Gentamicin 傳統多次給藥，肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas → Peak 8–10 µg/mL／Trough <2 µg/mL",
+  "headerMeta": "CrCl 77 mL/min ・ CL 4.11 L/hr ・ Cmax 6.8／Cmin 1.3",
+  "saved": {
+   "data": {
+    "age": "58",
+    "sex": "M",
+    "height": "172",
+    "tbw": "80",
+    "dryWeight": "",
+    "dialysis": "none",
+    "arcSuspect": false,
+    "vdHigh": false,
+    "scrRows": [
+     {
+      "date": "2026-09-18",
+      "val": "1.0"
+     }
+    ],
+    "drug": "gentamicin",
+    "strategy": "conventional",
+    "indication": "severe",
+    "site": "",
+    "organism": "Pseudomonas aeruginosa",
+    "severity": "穩定",
+    "mic": "1",
+    "sourceControlDone": false,
+    "oddExclPregnancy": false,
+    "oddExclFluid": false,
+    "oddExclNeutropenia": false,
+    "oddExclEndocarditisCns": false,
+    "therapyStart": "2026-09-17T09:00",
+    "expandTo": "2026-09-19T09:00",
+    "maintDose": "120",
+    "maintInterval": "8",
+    "maintInf": "30",
+    "assumeSteadyState": false,
+    "scheduleType": "fixed",
+    "tiwTime": "09:00",
+    "tiwDays": [
+     1,
+     3,
+     5
+    ],
+    "amgHdSlot": "am",
+    "amgHdSlotStart": "08:00",
+    "amgHdDurationHr": "4",
+    "amgHdSessionRows": [],
+    "doseRows": [
+     {
+      "date": "2026-09-17T09:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-17T17:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-18T01:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-18T09:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-18T17:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-19T01:00",
+      "doseMg": "120",
+      "infMin": "30"
+     },
+     {
+      "date": "2026-09-19T09:00",
+      "doseMg": "120",
+      "infMin": "30"
+     }
+    ],
+    "levelRows": [
+     {
+      "date": "2026-09-19T02:00",
+      "conc": "6.8"
+     },
+     {
+      "date": "2026-09-19T08:45",
+      "conc": "1.4"
+     }
+    ],
+    "cand8": true,
+    "cand12": true,
+    "cand24": true,
+    "cand36": false,
+    "cand48": false,
+    "concomitant": "",
+    "otherNotes": "",
+    "customDose": "",
+    "customInf": "",
+    "customTau": ""
+   },
+   "derived": {
+    "ke": 0.2331301027793263,
+    "vd": 17.650098870838228,
+    "cl": 4.114769363823787,
+    "tHalf": 2.9725890896894263,
+    "cmaxSs": 6.758204222949069,
+    "cminSs": 1.3216044459118066,
+    "crcl": 77.15748031496062,
+    "scheduleType": "fixed",
+    "micRatio": 6.758204222949069,
+    "peakTargetLo": 8,
+    "peakTargetHi": 10,
+    "troughHi": 2,
+    "hasMeasuredLevels": true,
+    "recDose": null,
+    "recInterval": null
+   },
+   "asOf": "2026-09-19T08:45"
+  },
+  "__alerts": []
+ },
+ "A2_amg_amikacin_odd": {
+  "amgFitModeBadge": "聯合擬合 (n=2)",
+  "amgParamGrid": "ke（消除速率常數）0.216hr⁻¹t½（半衰期）3.2hrVd（分布體積）13.5L0.25 L/kgCL（清除率）2.91L/hrCrCl（Cockcroft-Gault）73mL/minIBW（Devine）Cmax,ss（現行處方推算，peak，輸注後 30 分）52.3µg/mL此適應症無明訂 peak 目標參考：Cmax(T1，開始輸注後 1 小時)52.3µg/mL讀書會共識時點；僅供對照，不納入判讀Cmin,ss（現行處方推算，trough）0.4µg/mL目標 <2近 24h 實際 AUC（依已發生給藥推算）283mg·hr/L輔助參考，本藥物主要仍以 peak/trough 為準",
+  "amgFlagList": "依 Hartford nomogram 之 CrCl 分段依據（≥60 mL/min → q24h）建議起始間隔 q24h。（僅供起始間隔參考，仍請綜合菌種／感染部位／臨床狀況判斷；已有個體化濃度資料時，請優先參考下方候選間隔實際 Cmax/Cmin，而非此建議。）",
+  "amgRegimenTable": "方案劑量間隔Cmax(peak，輸注後30分)Cmin(trough)Cmax/MIC評語 q24h 現行間隔 建議 825 mg（3.3 mL）／30 min輸注 q24h 52.3參考 T1 52.3 0.4 — 符合目標範圍（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）OK q36h 1250 mg（5.0 mL）／30 min輸注 q36h 78.8參考 T1 78.8 0.0 — 符合目標範圍（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）OK q48h 1650 mg（6.6 mL）／30 min輸注 q48h 103.9參考 T1 103.9 0.0 — 符合目標範圍（此適應症無 peak 目標，劑量按現行每日總量比例分配，請確認現行劑量正確）OK 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "amgMonitorGrid": "下次 TDM 時機若本次調整劑量，建議於調整後第 3–4 劑（達穩態，約 1–2 天）複測；長療程穩定病人每 5–7 天追蹤一組。 重點 Lab 監測SCr／BUN：每 2–3 天至每週 臨床 Sign 監測腎毒性：SCr 上升、尿量減少、trough 逐漸上升耳毒性：耳鳴、聽力減退、眩暈、平衡失調 再評估觸發條件腎功能出現變化（改善或惡化）ODD 策略下 trough 變得可偵測（應為 undetectable）發燒／腹水／水化狀態改變併用腎／耳毒性藥物增減",
+  "amgAiPromptOut": "你是一位資深臨床藥師顧問。以下是由一套自建 aminoglycoside TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。 【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／peak／trough，並依鎖定的目標範圍投影候選劑量方案。 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、Hartford nomogram 之圖形化判讀（本工具改用個體化 ke/Vd 直接反解，理論上更精確，但未對照原始 nomogram 圖形）、辨識少見或複雜交互作用。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。 ## 一、病人與腎功能 - 年齡 45 歲，性別 女，身高 160 cm，TBW 55 kg（CrCl 計算採 IBW（Devine）） - SCr 數列：2026/9/18 → 0.8 mg/dL - Cockcroft-Gault CrCl：約 73 mL/min - 透析狀態：否 ## 二、藥物、策略與感染脈絡 - 目標藥物：Amikacin；給藥策略：ODD／HDEI - 鎖定目標：革蘭氏陰性菌：Peak 無明訂目標／Trough <2 - 感染部位：（未填寫）；菌種／MIC：（未填寫） - 嚴重度：穩定；感染源控制：尚未／不確定 ## 三、給藥紀錄（本工具計算之唯一依據） 第1劑 2026/9/17 上午10:00:00｜825 mg｜輸注 30 分 第2劑 2026/9/18 上午10:00:00｜825 mg｜輸注 30 分 第3劑 2026/9/19 上午10:00:00｜825 mg｜輸注 30 分 現行維持處方：825 mg q24h（輸注 30 分） ## 四、血中濃度量測（自由時點） 2026/9/19 下午12:30:00 → 38 µg/mL 2026/9/19 下午4:30:00 → 16 µg/mL ## 五、本工具擬合結果（可稽核） - 擬合模式：joint (n=2) - ke = 0.2158 hr⁻¹，t½ = 3.2 hr - Vd = 13.5 L，CL = 2.91 L/hr - 現行處方推算：Cmax(peak) 52.3 µg/mL／Cmin(trough) 0.4 µg/mL - 近 24 小時實際累積 AUC（輔助參考，非本藥物主要目標）：283 mg·hr/L ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序） q24h → 825 mg（輸注 30 分）：Cmax 52.3／Cmin 0.4 q36h → 1250 mg（輸注 30 分）：Cmax 78.8／Cmin 0.0 q48h → 1650 mg（輸注 30 分）：Cmax 103.9／Cmin 0.0 （尚未於劑量調整建議表格勾選最終決定處方，以上候選方案僅供比較，本工具不做排序推薦） ## 七、本工具健全性旗標 - [OK] 依 Hartford nomogram 之 CrCl 分段依據（≥60 mL/min → q24h）建議起始間隔 q24h。（僅供起始間隔參考，仍請綜合菌種／感染部位／臨床狀況判斷；已有個體化濃度資料時，請優先參考下方候選間隔實際 Cmax/Cmin，而非此建議。） ## 八、併用藥物與備註 - 腎／耳毒性相關併用藥物：（未填寫） - 其他備註：（未填寫） ## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出） [[請貼上：近期完整 lab trend（renal panel／CBC／發炎指標等，含日期）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應]] [[如有：耳毒性相關主觀症狀紀錄（耳鳴／聽損／眩暈）與聽力檢查結果]] [[如有：過去 TDM 紀錄與歷次劑量調整後的反應]] ## 十、請你 specifically 協助評估 1. 本工具的族群假設（Vd 係數、CrCl→CL 比例、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？ 2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略（如改變 conventional／ODD 策略）？ 3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。 4. 下一次監測時機與重點，是否需要在本工具建議之外調整？ 請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。",
+  "amgCurveSvg": "sha1:697ebfc594caf414",
+  "amgTargetDisplay": "目前目標：Amikacin ODD，革蘭氏陰性菌 → Peak 無明訂目標（僅監測 trough）／Trough <2 µg/mL",
+  "headerMeta": "CrCl 73 mL/min ・ CL 2.91 L/hr ・ Cmax 52.3／Cmin 0.4",
+  "__alerts": []
+ },
+ "A3_amg_tiw_hd": {
+  "amgFitModeBadge": "單點貝氏校正（V 固定為族群值）",
+  "amgParamGrid": "ke（消除速率常數）0.061hr⁻¹t½（半衰期）11.3hrVd（分布體積）15.6L0.26 L/kgCL（清除率）0.96L/hrCrCl（Cockcroft-Gault）9mL/minTBW（實際體重 < IBW）Peak（最近一劑後實測推算，輸注後 30 分）32.3µg/mL目標 25–35參考：Cmax(T1，開始輸注後 1 小時)32.3µg/mL讀書會共識時點；僅供對照，不納入判讀Trough（下次排定劑量前預測）0.4µg/mL目標 <8（依實際給藥史推算，非固定間隔公式）近 24h 實際 AUC（依已發生給藥推算）99mg·hr/L輔助參考，本藥物主要仍以 peak/trough 為準",
+  "amgFlagList": "病人接受 HD，清除率由透析主導，Cockcroft-Gault 族群方程不適用——本工具之族群 CL 先驗已放寬權重，請以觀察到的濃度資料與臨床判斷為主，並個別化評估透析時程對劑量之影響。目前為「每週固定星期」排程，非等距間隔，穩態相關數字已改以你目前輸入的實際給藥史直接推算——Peak 取自最近一劑後，Trough 取自下一次排定劑量前，而非固定間隔穩態公式；候選給藥間隔比較亦不適用，如需測試不同劑量請用下方「自訂」列。",
+  "amgRegimenTable": "方案劑量間隔Cmax(peak，輸注後30分)Cmin(trough)Cmax/MIC評語 每週固定星期排程非等距，候選間隔比較不適用（見卡片 05 說明）。可用下方「自訂」列測試不同 mg/kg 劑量在下次排定劑量前的預測 trough。 自訂 mg／ min qh — — — 輸入劑量／輸注／間隔，即時套用目前擬合參數計算",
+  "amgMonitorGrid": "下次 TDM 時機若本次調整劑量，建議於調整後第 3–4 劑（達穩態，約 1–2 天）複測；長療程穩定病人每 5–7 天追蹤一組。 重點 Lab 監測SCr／BUN：每 1–2 天（腎功能不穩定）依透析排程調整抽血時機 臨床 Sign 監測腎毒性：SCr 上升、尿量減少、trough 逐漸上升耳毒性：耳鳴、聽力減退、眩暈、平衡失調 再評估觸發條件腎功能出現變化（改善或惡化）ODD 策略下 trough 變得可偵測（應為 undetectable）發燒／腹水／水化狀態改變併用腎／耳毒性藥物增減",
+  "amgAiPromptOut": "你是一位資深臨床藥師顧問。以下是由一套自建 aminoglycoside TDM 工具（一室模型、貝氏 MAP 擬合，允許任意抽血時點）計算出的結果。 【此工具做得到的事】從任意給藥與抽血時間紀錄，回歸估算 ke／Vd／CL／peak／trough，並依鎖定的目標範圍投影候選劑量方案。 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、Hartford nomogram 之圖形化判讀（本工具改用個體化 ke/Vd 直接反解，理論上更精確，但未對照原始 nomogram 圖形）、辨識少見或複雜交互作用。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。 ## 一、病人與腎功能 - 年齡 72 歲，性別 男，身高 165 cm，TBW 60 kg（CrCl 計算採 TBW（實際體重 < IBW）） - SCr 數列：2026/9/18 → 6.5 mg/dL - Cockcroft-Gault CrCl：約 9 mL/min - 透析狀態：HD ## 二、藥物、策略與感染脈絡 - 目標藥物：Amikacin；給藥策略：傳統多次給藥 - 鎖定目標：肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas：Peak 25–35／Trough <8 - 感染部位：（未填寫）；菌種／MIC：（未填寫） - 嚴重度：穩定；感染源控制：尚未／不確定 ## 三、給藥紀錄（本工具計算之唯一依據） 第1劑 2026/9/14 下午9:00:00｜500 mg｜輸注 30 分 第2劑 2026/9/16 下午9:00:00｜500 mg｜輸注 30 分 第3劑 2026/9/18 下午9:00:00｜500 mg｜輸注 30 分 現行處方：500 mg／劑（輸注 30 分），排程為每週固定星期（見上方給藥紀錄的實際日期，非固定間隔） ## 四、血中濃度量測（自由時點） 2026/9/18 上午7:30:00 → 4.1 µg/mL ## 五、本工具擬合結果（可稽核） - 擬合模式：single-level - ke = 0.0614 hr⁻¹，t½ = 11.3 hr - Vd = 15.6 L，CL = 0.96 L/hr - 目前推算：Cmax(peak) 32.3 µg/mL／Cmin(trough) 0.4 µg/mL - 近 24 小時實際累積 AUC（輔助參考，非本藥物主要目標）：99 mg·hr/L ## 六、本工具候選劑量方案（中性列表，本工具不做推薦排序） （每週固定星期排程，候選間隔比較不適用；可參考下方自訂劑量列測試結果） （尚未於劑量調整建議表格勾選最終決定處方，以上候選方案僅供比較，本工具不做排序推薦） ## 七、本工具健全性旗標 - [WARN] 病人接受 HD，清除率由透析主導，Cockcroft-Gault 族群方程不適用——本工具之族群 CL 先驗已放寬權重，請以觀察到的濃度資料與臨床判斷為主，並個別化評估透析時程對劑量之影響。 - [OK] 目前為「每週固定星期」排程，非等距間隔，穩態相關數字已改以你目前輸入的實際給藥史直接推算——Peak 取自最近一劑後，Trough 取自下一次排定劑量前，而非固定間隔穩態公式；候選給藥間隔比較亦不適用，如需測試不同劑量請用下方「自訂」列。 ## 八、併用藥物與備註 - 腎／耳毒性相關併用藥物：（未填寫） - 其他備註：（未填寫） ## 九、尚待你整合評估的臨床資訊（請在此貼上／補充後再送出） [[請貼上：近期完整 lab trend（renal panel／CBC／發炎指標等，含日期）]] [[請貼上：近期病程摘要、感染控制進度與臨床反應]] [[如有：耳毒性相關主觀症狀紀錄（耳鳴／聽損／眩暈）與聽力檢查結果]] [[如有：過去 TDM 紀錄與歷次劑量調整後的反應]] ## 十、請你 specifically 協助評估 1. 本工具的族群假設（Vd 係數、CrCl→CL 比例、殘餘誤差）是否因為上述 lab 趨勢或臨床狀況需要修正？ 2. 是否有本工具未捕捉到的交互作用、個別狀況或風險，值得調整劑量策略（如改變 conventional／ODD 策略）？ 3. 綜合以上，你的劑量建議是否與本工具一致？若不同，請說明理由與信心程度。 4. 下一次監測時機與重點，是否需要在本工具建議之外調整？ 請保持透明：清楚區分「本工具已算出的數值」「你新增的臨床判斷」與「仍不確定、需要藥師本人現場評估的部分」。最終處方決策屬臨床藥師專業責任，你在此僅提供整合性的第二意見。",
+  "amgCurveSvg": "sha1:4b4c670589a23060",
+  "amgTargetDisplay": "目前目標：Amikacin 傳統多次給藥，肺炎／骨髓炎／菌血症／嚴重感染／Pseudomonas → Peak 25–35 µg/mL／Trough <8 µg/mL",
+  "headerMeta": "CrCl 9 mL/min ・ CL 0.96 L/hr ・ Peak 32.3／下次前Trough 0.4",
+  "amgScheduleType": "固定間隔（q_h） 每週固定星期（如 NTM TIW）",
+  "amgTiwTime": "",
+  "__alerts": []
+ },
+ "Z1_azole_vori": {
+  "azlFitModeBadge": "Voriconazole／預防",
+  "azlParamGrid": "Trough 結果0.7µg/mL目標 0.5–5.5是否達穩態已達穩態（第 7.0 天）",
+  "azlFlagList": "落在目標區間內，無明確異常影像學顯示病灶增大；神經毒性徵候（幻覺），建議評估減量，不論濃度數字——建議以臨床整體評估為主，即使濃度落在目標區間內也應重新評估治療偵測到 CYP3A4 受質、治療窗窄藥物：tacrolimus——請確認併用藥濃度／劑量是否需要因本次 azole 治療調整",
+  "azlDoseSuggestList": "濃度落在目標區間內，本工具未提出劑量調整建議。但上方 A 區的臨床交叉檢查已有需關注的發現，請一併判斷，勿僅以「濃度落在區間內」作為不需處置的依據。",
+  "azlMonitorGrid": "下次 Trough 時機 劑量/劑型調整後約 5–7 天再測（非線性代謝可視情況更密集複測） Lab 監測 CRP 追蹤（用於解讀 trough 漂移，非固定頻率規定，trough 異常時建議一併複查）；LFT 依臨床需要 臨床 Sign 監測 視覺障礙、幻覺/腦病、肝毒性、光毒性/皮膚；長期使用另留意骨痛與皮膚病灶 再評估觸發時機 CRP/發炎大幅變化、新增 CYP 交互作用藥、肝功能惡化",
+  "azlAiPromptOut": "你是感染科／臨床藥學顧問。以下是一名接受 azole 抗黴菌藥 TDM 病人的資料，本工具僅做 trough 對目標值判讀與情境交叉檢查（非 PK 擬合），請你整合下列資訊給第二意見： 【目標藥物】Voriconazole／適應症：預防 【人口學】61歲／男／170cm／66kg 【器官功能】AST/ALT 88 / 120／Bilirubin 1.8／Albumin 未填／CRP 12 mg/dL／SCr 未填 【感染脈絡】部位：未填／菌種：未填／嚴重度：穩定 【給藥處方】IV（Vfend for Solution for Infusion 200mg/vial），BID，早200mg／晚200mg，療程起始：2026-09-12T09:00 【Trough】0.7 µg/mL（2026-09-19T08:30）／是否達穩態：已達穩態（第 7.0 天） 【已觸發的情境提示】 - [OK] 落在目標區間內，無明確異常 - [DANGER] 影像學顯示病灶增大；神經毒性徵候（幻覺），建議評估減量，不論濃度數字——建議以臨床整體評估為主，即使濃度落在目標區間內也應重新評估治療 - [WARN] 偵測到 CYP3A4 受質、治療窗窄藥物：tacrolimus——請確認併用藥濃度／劑量是否需要因本次 azole 治療調整 【治療目標】未填 請你根據以上資料，整合最新的臨床病程（若有近期完整 lab 趨勢、影像報告，請一併貼上）給出你的判斷與建議，並指出本工具未涵蓋但你認為重要的面向。",
+  "azlDoseHint": "PO 最小可用單位 100mg（可剝半，不磨粉）；BID 可早晚不同劑量以提高調整彈性（見劑量建議區塊）",
+  "headerMeta": "Voriconazole／預防／Trough 0.7",
+  "saved": {
+   "data": {
+    "age": "61",
+    "sex": "M",
+    "height": "170",
+    "tbw": "66",
+    "pregnancy": "no",
+    "weightChange": "",
+    "astAlt": "88 / 120",
+    "bilirubin": "1.8",
+    "albumin": "",
+    "crp": "12 mg/dL",
+    "scr": "",
+    "labDate": "2026-09-18",
+    "fluidStatus": "",
+    "otherFactors": "",
+    "site": "",
+    "organism": "",
+    "severity": "穩定",
+    "sourceControl": false,
+    "feverTrend": "persistent",
+    "ancTrend": "",
+    "localSymptom": "",
+    "imaging": "growing",
+    "mycology": "",
+    "drug": "voriconazole",
+    "indication": "prophylaxis",
+    "formulation": "iv",
+    "freq": "bid",
+    "useLoading": false,
+    "loadingInfo": "",
+    "doseAm": "200",
+    "dosePm": "200",
+    "therapyStart": "2026-09-12T09:00",
+    "missedDoses": "",
+    "troughVal": "0.7",
+    "troughDate": "2026-09-19T08:30",
+    "cyp2c19": "UM",
+    "isaReason": "",
+    "sx": {
+     "jaundice": false,
+     "darkUrine": false,
+     "ruqPain": false,
+     "pruritus": false,
+     "photopsia": false,
+     "hallucination": true,
+     "confusion": false,
+     "myoclonus": false,
+     "photosensitivity": false,
+     "bonePain": false,
+     "hairNail": false,
+     "skinLesion": false,
+     "htn": false,
+     "edema": false,
+     "weakness": false,
+     "chills": false,
+     "dyspnea": false,
+     "hypotension": false,
+     "nausea": false,
+     "vomit": false,
+     "diarrhea": false
+    },
+    "concomitant": "tacrolimus 1mg BID\nomeprazole 40mg QD",
+    "treatmentGoal": "",
+    "expectedDuration": "",
+    "doseConstraints": "",
+    "priorAdr": "",
+    "otherNotes": ""
+   },
+   "derived": {
+    "drug": "voriconazole",
+    "indicationId": "prophylaxis",
+    "trough": 0.7,
+    "troughTag": "ok",
+    "troughLow": false,
+    "troughHigh": false,
+    "isSteady": true,
+    "infectionTrend": "worsening",
+    "infectionReasons": [
+     "影像學顯示病灶增大"
+    ],
+    "toxicityHasAlert": true,
+    "toxicityAlerts": [
+     "神經毒性徵候（幻覺），建議評估減量，不論濃度數字"
+    ],
+    "crossCheckLevels": [
+     "danger"
+    ],
+    "interactionCount": 1
+   },
+   "asOf": "2026-09-19T08:30"
+  },
+  "__alerts": []
+ },
+ "Z2_azole_posa": {
+  "azlFitModeBadge": "Posaconazole／預防",
+  "azlParamGrid": "Trough 結果3.9µg/mL目標 0.7是否達穩態已達穩態（第 9.0 天）",
+  "azlFlagList": "落在目標區間內，無明確異常Trough 3.9 超過 1.83（文獻證據不一致的肝毒性提早留意值，非絕對閾值），建議對照 LFT疑似 posaconazole 相關假性醛固酮增多症（高血壓、下肢水腫），建議加驗 renin／aldosterone／11-deoxycortisol 確認——建議以臨床整體評估為主，即使濃度落在目標區間內也應重新評估治療",
+  "azlDoseSuggestList": "IV 途徑可依配製後濃度直接抽取計算劑量，不受整顆限制。理論目標總日劑量約 150–225 mg（現行 300 mg／日，減量 25–50%）。",
+  "azlMonitorGrid": "下次 Trough 時機 劑量/劑型調整後約 7–10 天再測 Lab 監測 ALT/bilirubin：基線＋至少每週，直到治療第一個月；IV 且 CrCl<50 加強腎功能監測；電解質（低鉀） 臨床 Sign 監測 肝毒性、低鉀/水腫、（IV）腎功能 再評估觸發時機 劑型或進食/PPI 改變、新增 CYP 交互作用藥、肝功能惡化、CrCl<50 開始 IV",
+  "azlAiPromptOut": "你是感染科／臨床藥學顧問。以下是一名接受 azole 抗黴菌藥 TDM 病人的資料，本工具僅做 trough 對目標值判讀與情境交叉檢查（非 PK 擬合），請你整合下列資訊給第二意見： 【目標藥物】Posaconazole／適應症：預防 【人口學】50歲／女／155cm／50kg 【器官功能】AST/ALT 未填／Bilirubin 未填／Albumin 未填／CRP 未填／SCr 未填 【感染脈絡】部位：未填／菌種：未填／嚴重度：穩定 【給藥處方】IV（Posanol Concentrate for Solution for Infusion 300mg/16.7mL/vial），QD，300mg QD，療程起始：2026-09-10T09:00 【Trough】3.9 µg/mL（2026-09-19T08:30）／是否達穩態：已達穩態（第 9.0 天） 【已觸發的情境提示】 - [OK] 落在目標區間內，無明確異常 - [WARN] Trough 3.9 超過 1.83（文獻證據不一致的肝毒性提早留意值，非絕對閾值），建議對照 LFT - [DANGER] 疑似 posaconazole 相關假性醛固酮增多症（高血壓、下肢水腫），建議加驗 renin／aldosterone／11-deoxycortisol 確認——建議以臨床整體評估為主，即使濃度落在目標區間內也應重新評估治療 【治療目標】未填 請你根據以上資料，整合最新的臨床病程（若有近期完整 lab 趨勢、影像報告，請一併貼上）給出你的判斷與建議，並指出本工具未涵蓋但你認為重要的面向。",
+  "azlDoseHint": "PO 最小可用單位 100mg（不可剝半磨粉）",
+  "headerMeta": "Posaconazole／預防／Trough 3.9",
+  "__alerts": []
+ },
+ "E1_aed_phenytoin": {
+  "aedFitModeBadge": "Phenytoin／劑量調整後複測",
+  "aedParamGrid": "濃度結果7.5mcg/mL目標 10–20 mcg/mL／Total 是否達穩態已達穩態（第 14.0 天）",
+  "aedCorrList": "【建議採用】白蛋白校正（0.2×Alb+0.1）：12.10 mcg/mLCheng 衍生式（非院內公式，僅供參考）：9.20 mcg/mL（非院內公式，僅供敏感度參考，不參與建議與計算）",
+  "aedPkContent": "採用方法：單點法（假設族群 Km=4 mg/L，見下方敏感度帶）Vmax≈399 mg/day（依目前劇量 300 mg/day 與校正後濃度 12.10 反解，Km 假設族群值 4）以目前劇量預估穩態濃度 ≈ 12.10 mcg/mL（與實測校正值 12.10 互相印證，理論上應接近）達目標（15 mcg/mL 中點）估算每日總劇量 ≈ 315 mg（僅估算，須依本院劇型格點調整，見下方候選劇量表）調整到此劇量後，預估約 15.6 天達到新穩態的 90%（純臨床天數，不折算排班，見監測提醒 D）若想更快接近目標，補充負荷劇量估算 ≈ 126 mg（一次性給予；院內指引未規範，此為文獻族群常用法之估算，非 status epilepticus 從零負荷）Km 候選值來源Km(mg/L)反解 Vmax(mg/day)達目標所需劇量(mg/day)韓國（n=97，G1 n=36）1.45336306新加坡華人（n=66）2.307357310教科書（Winter）4399315教科書上緣示範值6449321日本（Odani 1996, n=116）9.19528327 Km 在各族群研究間差異可達 6 倍以上（見規格 §2.2.1），以上為敏感度分析，不代表其中一個「最準」——只用來讓你看到劇量建議對 Km 假設有多敏感。選取每日總劇量預估穩態濃度 250 mg/day 6.70 mcg/mL 300 mg/day 12.10 mcg/mL 350 mg/day 28.46 mcg/mL 中性呈現，不排序、不標「建議」；勾選一列後 AI Prompt 會帶入你的選擇，最終處方判斷仍屬你的專業責任。格點依本院劇型（Aleviatin Tablet 100 mg/tab，每步 50mg）。",
+  "aedVpaDoseContent": "",
+  "aedFlagList": "不在給藥前 60 分鐘內的低谷採樣窗，判讀時需留意採樣時點誤差併用 valproic acid：置換蛋白結合位置，需套用 Haidukewych 校正式（見上方濃度判讀）",
+  "aedMonitorGrid": "排班／TAT 提示（僅供參考，不折算進監測天數） 本院 total phenytoin：平日常規可送，約 1 天報告 可送 STAT phenytoin（10502BYP）：急診 30 分鐘、病房 1 小時，24 小時皆可送 Lab 監測 albumin、肝功能、腎功能（院內指引） 下次抽血建議（純臨床天數）若依此估算調整劇量，約 15.6 天後複測較能反映新穩態（純臨床天數，未折算實際送驗排班）；若未調整劇量，仍以院內建議 5–30+ 天為準。 臨床 Sign 監測 眼震、共濟失調、構音障礙、嗜睡、意識改變 再評估觸發條件 albumin／腎功能變化、新增或移除 CYP 誘導/抑制劑或 VPA、劑型或 salt 改變",
+  "aedAiPromptOut": "你是神經科／臨床藥學顧問。以下是一名接受 Phenytoin TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劇量估算，請你整合下列資訊給第二意見： 【目標藥物】Phenytoin／目的：劑量調整後複測 【人口學】70歲／男／168cm／62kg 【實驗室】Albumin 2.6／AST/ALT 未填／T-bil 未填／SCr 1.1／BUN 未填 【給藥處方】Aleviatin Tablet 100 mg/tab，τ=8h，劑量 100mg，起始 2026-09-05T09:00 【濃度】Total：7.5（抽血 2026-09-19T08:30） 【濃度校正判讀】白蛋白校正（0.2×Alb+0.1） → 12.10 mcg/mL（目標 10–20） 【PK／劇量估算】單點法（假設族群 Km=4 mg/L，見下方敏感度帶）；Vmax≈399 mg/day，Km=4；達目標(15)估算劇量≈315 mg/day，t90≈15.6天；補充負荷劇量≈126mg 【已觸發的情境提示】 - [WARN] 不在給藥前 60 分鐘內的低谷採樣窗，判讀時需留意採樣時點誤差 - [WARN] 併用 valproic acid：置換蛋白結合位置，需套用 Haidukewych 校正式（見上方濃度判讀） 【治療目標】未填 請你根據以上資料，整合最新的臨床病程給出你的判斷與建議，並指出本工具本版未涵蓋（趨勢圖）但你認為重要的面向。",
+  "aedTargetDisplay": "目標 total 10–20 mcg/mL（本院無 free phenytoin 醫令，如需 free 須外送，見校正說明）",
+  "aedRenalDisplay": "估算 CrCl（Cockcroft-Gault）≈ 54.8 mL/min",
+  "aedSamplingCheckDisplay": "",
+  "headerMeta": "Phenytoin／Total 7.5",
+  "saved": {
+   "data": {
+    "drug": "phenytoin",
+    "purpose": "titration",
+    "age": "70",
+    "sex": "M",
+    "height": "168",
+    "tbw": "62",
+    "pregnancy": "no",
+    "labs": {
+     "albumin": "2.6",
+     "astAlt": "",
+     "tbil": "",
+     "scr": "1.1",
+     "bun": "",
+     "platelet": "",
+     "nh3": "",
+     "labDate": "2026-09-18",
+     "dialysis": false
+    },
+    "regimen": {
+     "form": "ALE4JA07",
+     "tauH": "8",
+     "dose": "100",
+     "regimenStart": "2026-09-05T09:00",
+     "useLoading": false,
+     "loadingDose": "",
+     "loadingAt": "",
+     "missed": ""
+    },
+    "level": {
+     "type": "total",
+     "route": "po",
+     "value": "7.5",
+     "drawAt": "2026-09-19T08:30",
+     "lastDoseAt": "2026-09-19T01:00"
+    },
+    "pht": {
+     "cyp2c9": "",
+     "hlab1502": "",
+     "vpaLevel": "",
+     "vpaLevelAt": "",
+     "imNg": false,
+     "critical": false,
+     "sx": {
+      "nystagmus": false,
+      "ataxia": false,
+      "dysarthria": false,
+      "drowsy": false,
+      "confusion": false
+     }
+    },
+    "vpa": {
+     "indication": "",
+     "icu": false,
+     "propofol": false,
+     "carbapenem": false,
+     "sx": {
+      "tremor": false,
+      "encephalopathy": false,
+      "bleeding": false,
+      "giUpset": false
+     }
+    },
+    "clinical": {
+     "seizureControl": "",
+     "trigger": ""
+    },
+    "concomitant": "valproate 500mg BID",
+    "goal": "",
+    "duration": "",
+    "constraints": "",
+    "priorAdr": "",
+    "otherNotes": "",
+    "ssPairs": [],
+    "pickedCandidate": null
+   },
+   "derived": {
+    "drug": "phenytoin",
+    "purpose": "titration",
+    "levelType": "total",
+    "levelValue": 7.5,
+    "renalFailure": false,
+    "crcl": 54.7979797979798,
+    "steadyStatus": "steady",
+    "flagLevels": [
+     "warn",
+     "warn"
+    ]
+   },
+   "asOf": "2026-09-19T08:30"
+  },
+  "__alerts": []
+ },
+ "E2_aed_vpa": {
+  "aedFitModeBadge": "Valproic Acid／常規監測",
+  "aedParamGrid": "濃度結果42.0mcg/mL目標 50–100 mcg/mL／Total 是否達穩態已達穩態（第 9.0 天）",
+  "aedCorrList": "Hermida-Tutor 白蛋白校正：適用範圍內——⚠️公式數值尚待以原始文獻 Table 1 驗證，本版暫不顯示計算後數字【本院檢驗科列名】低白蛋白症",
+  "aedPkContent": "",
+  "aedVpaDoseContent": "存在 free fraction 風險因子，total 換算劇量的比例關係不可靠，建議先測 free 再決定劇量 方向：建議增量——不提供具體劇量數字，待 free 結果出來後再決定。",
+  "aedFlagList": "存在 free fraction 上升風險因子：total 可能低估有效藥量，建議測 free（本院醫令 10510CYP，僅週二、週五執行）併用 carbapenem 類抗生素：VPA 濃度可在數日內大幅下降，原則避免併用，如無法避免請密切複測不在給藥前 60 分鐘內的低谷採樣窗，判讀時需留意採樣時點誤差",
+  "aedMonitorGrid": "排班／TAT 提示（僅供參考，不折算進監測天數） 本院 total VPA：平日常規可送，約 1 天報告 本院 free VPA 僅週二、週五（W2、W5）執行，報告需 3 天 Lab 監測 肝功能、albumin（院內指引）＋ammonia、platelet（收案表補充） 臨床 Sign 監測 嗜睡/意識改變（可能為高血氨腦病）、震顫、出血傾向、腸胃症狀 再評估觸發條件 albumin 變化、新增 carbapenem、其他 AED 增減、肝功能惡化、懷孕",
+  "aedAiPromptOut": "你是神經科／臨床藥學顧問。以下是一名接受 Valproic Acid TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劇量估算，請你整合下列資訊給第二意見： 【目標藥物】Valproic Acid／目的：常規監測 【人口學】35歲／女／160cm／55kg 【實驗室】Albumin 3.0／AST/ALT 未填／T-bil 未填／SCr 未填／BUN 未填 【給藥處方】Depakine Lyophilized Injection 400 mg/vial，τ=12h，劑量 500mg，起始 2026-09-10T09:00 【濃度】Total：42（抽血 2026-09-19T08:30） 【濃度校正判讀】Total 42 mcg/mL（目標 total 50–100） 【PK／劇量估算】比例劇量估算已因風險因子暫停：存在 free fraction 風險因子，total 換算劇量的比例關係不可靠，建議先測 free 再決定劇量（方向：建議增量） 【已觸發的情境提示】 - [WARN] 存在 free fraction 上升風險因子：total 可能低估有效藥量，建議測 free（本院醫令 10510CYP，僅週二、週五執行） - [DANGER] 併用 carbapenem 類抗生素：VPA 濃度可在數日內大幅下降，原則避免併用，如無法避免請密切複測 - [WARN] 不在給藥前 60 分鐘內的低谷採樣窗，判讀時需留意採樣時點誤差 【治療目標】未填 請你根據以上資料，整合最新的臨床病程給出你的判斷與建議，並指出本工具本版未涵蓋（趨勢圖）但你認為重要的面向。",
+  "aedTargetDisplay": "目標 total 50–100 mcg/mL；free 5–15 µg/mL（本院醫令 10510CYP）",
+  "aedRenalDisplay": "",
+  "aedSamplingCheckDisplay": "",
+  "headerMeta": "Valproic Acid／Total 42.0",
+  "__alerts": []
+ }
+}

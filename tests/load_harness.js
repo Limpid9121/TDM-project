@@ -39,7 +39,11 @@ const EXPORT_NAMES = [
   'phtT90', 'phtLoadingDose', 'vpaProportionalDose'
 ];
 
-const INDEX_HTML_PATH = path.join(__dirname, 'index.html');
+// tests/ 內若有 index.html（舊用法：手動複製進來）就用它；否則用 repo 根目錄的 index.html
+// （2026-09-18 整理成 git repo 後 index.html 位於上一層，舊寫法會找不到檔案）。
+const INDEX_HTML_PATH = fs.existsSync(path.join(__dirname, 'index.html'))
+  ? path.join(__dirname, 'index.html')
+  : path.join(__dirname, '..', 'index.html');
 
 // The exact tail of the DOMContentLoaded handler in index.html, used as the insertion
 // anchor. If this stops matching (because index.html's drug-switcher wiring section was

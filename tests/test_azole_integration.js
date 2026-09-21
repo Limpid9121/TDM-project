@@ -91,7 +91,7 @@ async function main() {
   setAndFire(win, doc, 'azlDrug', 'isavuconazole');
   assert(doc.getElementById('azlIsaBanner').style.display !== 'none', 'isavuconazole "TDM not routine" banner shown');
   setAndFire(win, doc, 'azlTroughVal', '6.0'); // above the 4.6-5.1 toxicity zone
-  assert(doc.getElementById('azlDoseSuggestBlock').style.display === 'none', 'isavuconazole never shows a dose-adjustment-magnitude suggestion, even with an out-of-range trough');
+  assert(/本工具不提供 isavuconazole 的劑量調整幅度建議/.test(doc.getElementById('azlDoseSuggestList').textContent) && !/mg/.test(doc.getElementById('azlDoseSuggestList').textContent), 'isavuconazole never shows a dose-adjustment-magnitude suggestion, even with an out-of-range trough (block stays visible but explains why; no mg magnitude)');
   flagsHtml = doc.getElementById('azlFlagList').innerHTML;
   assert(/毒性關切區間/.test(flagsHtml), 'isavuconazole high trough still flags the toxicity concern zone');
 
@@ -111,12 +111,12 @@ async function main() {
   setAndFire(win, doc, 'azlPatientLabel', 'TEST001');
   doc.getElementById('azlSavePatientBtn').click();
   const metaAfterSave = doc.getElementById('azlPatientMeta').textContent;
-  assert(/已儲存/.test(metaAfterSave), 'patient save produces a confirmation message');
-  const savedRaw = win.localStorage.getItem('azole_tdm_patients_v1');
+  assert(/已存為新收案/.test(metaAfterSave), 'patient save produces a confirmation message');
+  const savedRaw = win.localStorage.getItem('azole_tdm_patients_v2');
   assert(!!savedRaw, 'patient record actually persisted to localStorage under its own key (separate from vanco/AMG)');
   const savedList = JSON.parse(savedRaw);
   assert(savedList.length === 1 && savedList[0].label === 'TEST001', 'saved record has the expected label');
-  assert(savedList[0].data.drug === 'voriconazole', 'saved record captures the current drug selection');
+  assert(savedList[0].visits[0].data.drug === 'voriconazole', 'saved record captures the current drug selection');
 
   console.log(`\n${pass} passed, ${fail} failed`);
   if (fail > 0) process.exit(1);
