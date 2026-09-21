@@ -5200,7 +5200,7 @@ ${flagText || '（無特別旗標）'}
 
   // ---------------- prospective (pre-dose) population-PK prediction ----------------
   function renderProspectiveAmg(ctx){
-    const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr, target, mic, drugLabel, strategyLabel, scheduleType, tiwDays} = ctx;
+    const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr, target, mic, drug, drugLabel, strategyLabel, scheduleType, tiwDays, oddSuggestedTau} = ctx;
     const ke = CLpop/Vpop, tHalf = 0.693/ke;
 
     flags.push({level:'ok', text:`這是純族群 PK 的起始劑量預測——尚未輸入任何實際給藥或濃度資料，所有數值僅來自年齡／性別／體重／SCr 推算的族群 CL、Vd，個體差異可能不小。開始給藥、取得第一批濃度後，請回來輸入實際給藥紀錄與抽血值，讓引擎改用資料擬合校正。`});
@@ -5431,7 +5431,7 @@ ${flagText || '（無特別旗標）'}
         ? (isFinite(maintDoseP)&&isFinite(maintInfHrP)&&maintDoseP>0&&maintInfHrP>0&&tiwDaysP.length>0)
         : (isFinite(maintDoseP)&&isFinite(tauP)&&isFinite(maintInfHrP)&&maintDoseP>0&&tauP>0&&maintInfHrP>0);
       if(hasPlannedRegimen){
-        renderProspectiveAmg({crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose:maintDoseP, tau:tauP, maintInfHr:maintInfHrP, target, mic, drugLabel, strategyLabel, scheduleType:scheduleTypeP, tiwDays:tiwDaysP});
+        renderProspectiveAmg({crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose:maintDoseP, tau:tauP, maintInfHr:maintInfHrP, target, mic, drug, drugLabel, strategyLabel, scheduleType:scheduleTypeP, tiwDays:tiwDaysP, oddSuggestedTau});
         return;
       }
       paramGrid.innerHTML = '<div class="empty-note" style="padding:16px 20px;">請先在下方「給藥處方與紀錄」填妥計畫處方（維持劑量／間隔／輸注時間），即可看到起始劑量的族群 PK 預測；輸入實際給藥紀錄後則會改用資料擬合。</div>';
