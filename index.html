@@ -298,6 +298,7 @@
   .param-cell .label{font-size:11px;color:var(--ink-faint);margin-bottom:3px;}
   .param-cell .value{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--ink);}
   .param-cell .value .unit{font-size:12px;font-weight:500;color:var(--ink-soft);margin-left:2px;}
+  .param-cell .value.text{font-family:var(--sans);font-size:15px;line-height:1.35;}
   .param-cell .sub{font-size:11px;color:var(--ink-faint);margin-top:2px;}
   .param-cell.flag-ok .value{color:var(--trace-strong);}
   .param-cell.flag-warn .value{color:var(--amber);}
@@ -836,7 +837,7 @@
       <div class="card">
         <h2><span class="idx">02</span>藥物、給藥策略與感染脈絡</h2>
         <p class="hint">目標 peak／trough 隨「藥物 × 給藥策略 × 適應症」三維變動，請先鎖定三者，下方會自動帶出對應的院內目標範圍。</p>
-        <div class="field-row">
+        <div class="field-row stacked">
           <div class="field"><label>目標藥物</label>
             <select id="amgDrug">
               <option value="gentamicin">Gentamicin</option>
@@ -886,9 +887,11 @@
           <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="amgTherapyStart"></div>
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
         </div>
-        <div class="field-row three">
+        <div class="field-row">
           <div class="field"><label>維持劑量（mg）</label><input type="number" id="amgMaintDose" value="420" step="10"></div>
           <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="amgMaintInf" value="30" step="5"></div>
+        </div>
+        <div class="field-row stacked">
           <div class="field"><label>給藥排程型態</label>
             <select id="amgScheduleType">
               <option value="fixed">固定間隔（q_h）</option>
@@ -6239,7 +6242,8 @@ ${flagText||'（無）'}
     document.getElementById('azlParamGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
       let cls='';
       if(label==='Trough 結果' && isFinite(trough)) cls = troughResult.tag==='warn'?'flag-warn':'flag-ok';
-      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="value">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+      const valueCls = label==='是否達穩態' ? 'value text' : 'value';
+      return `<div class="param-cell ${cls}"><div class="label">${label}</div><div class="${valueCls}">${val}${unit?`<span class="unit">${unit}</span>`:''}</div>${sub?`<div class="sub">${sub}</div>`:''}</div>`;
     }).join('');
 
     document.getElementById('azlFlagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
@@ -7169,7 +7173,7 @@ ${flagText||'（無）'}
       : `目標 ${AED_RULES.valproate.range.lo}–${AED_RULES.valproate.range.hi} ${AED_RULES.valproate.range.unit}`;
     document.getElementById('aedParamGrid').innerHTML = `
       <div class="param-cell"><div class="label">濃度結果</div><div class="value">${isFinite(levelValue)?levelValue.toFixed(1):'—'}<span class="unit">${levelType==='free'?'µg/mL':'mcg/mL'}</span></div><div class="sub">${targetLine}／${levelType==='free'?'Free':'Total'}</div></div>
-      <div class="param-cell"><div class="label">是否達穩態</div><div class="value" style="font-size:16px;">${ss.text}</div></div>`;
+      <div class="param-cell"><div class="label">是否達穩態</div><div class="value text">${ss.text}</div></div>`;
 
     document.getElementById('aedMonitorGrid').innerHTML = buildAedMonitorGrid(drug, nextDrawNote);
     setHeaderMeta('drug-aed', `${drugLabels[drug]}／${levelType==='free'?'Free':'Total'} ${isFinite(levelValue)?levelValue.toFixed(1):'—'}`);
