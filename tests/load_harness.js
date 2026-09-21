@@ -59,7 +59,10 @@ const ANCHOR = `    document.querySelectorAll('.drug-switch-btn[data-drug]').for
 function buildInstrumentedHtml(indexHtmlPath) {
   let html = fs.readFileSync(indexHtmlPath, 'utf-8');
 
-  const hookStub = '<script>window.__TDM_TEST_EXPORTS__=function(e){window.__captured=e;};</script>\n';
+  // WP1.1：示範資料改手動載入後，開頁預設不再自動帶入示範資料；既有測試多半依賴開頁
+  // 就是示範狀態（等同舊版 initDefaults() 的行為），故測試環境一律強制走 loadDemo(...,true)
+  // 開頁路徑，維持這些測試原有的行為與斷言不必改動。
+  const hookStub = '<script>window.__TDM_AUTOLOAD_DEMO__=true;window.__TDM_TEST_EXPORTS__=function(e){window.__captured=e;};</script>\n';
   html = html.replace('</head>', hookStub + '</head>');
 
   if (!html.includes(ANCHOR)) {

@@ -32,6 +32,7 @@ const BASELINE = path.join(__dirname, 'golden', 'ui_golden_baseline.json');
 const UPDATE = process.argv.includes('--update');
 
 const HEAD_STUB = `<script>
+window.__TDM_AUTOLOAD_DEMO__=true;
 (function(){
   var FIX = new Date(2026, 8, 19, 12, 0, 0, 0).getTime();
   var _D = Date;

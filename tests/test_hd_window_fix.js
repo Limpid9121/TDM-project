@@ -14,7 +14,11 @@ const path = require('path');
 const INDEX_HTML_PATH = fs.existsSync(path.join(__dirname, 'index.html'))
   ? path.join(__dirname, 'index.html')
   : path.join(__dirname, '..', 'index.html');
-const html = fs.readFileSync(INDEX_HTML_PATH, 'utf-8');
+// WP1.1：index.html 開頁預設不再自動帶入示範資料；這支測試直接建構 JSDOM（不經過
+// load_harness.js），故在此比照 load_harness.js 的作法自行注入同一個旗標，維持測試
+// 原本依賴「開頁即示範狀態」的既有行為與斷言不必改動。
+const html = fs.readFileSync(INDEX_HTML_PATH, 'utf-8')
+  .replace('</head>', '<script>window.__TDM_AUTOLOAD_DEMO__=true;<\/script>\n</head>');
 let pass = 0, fail = 0;
 function ok(cond, label){ if(cond) pass++; else { fail++; console.log('FAIL:', label); } }
 

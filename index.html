@@ -220,6 +220,15 @@
   .btn.primary{background:var(--trace);border-color:var(--trace);color:#fff;}
   .btn.primary:hover{background:var(--trace-strong);border-color:var(--trace-strong);color:#fff;}
   .btn.small{font-size:11.5px;padding:5px 9px;}
+
+  /* WP1.1：示範病例常駐橫幅（S1/D1）——示範資料載入後在輸入欄與結果面板頂端各顯示一次，
+     提醒目前畫面上是虛構數值，不是真實病人資料。 */
+  .demo-banner{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    font-size:12.5px;color:#6B4610;background:var(--amber-soft);border:1px solid var(--amber);
+    border-radius:8px;padding:9px 12px;margin-bottom:14px;
+  }
+  .demo-banner[hidden]{display:none;}
   .pop-model-toggle{margin:2px 0 14px;}
   .pop-model-toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .pop-model-toggle-label{font-size:12px;color:var(--ink-soft);}
@@ -446,6 +455,8 @@
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL ============ -->
     <section class="stack" id="inputPanel">
+
+      <div class="demo-banner" id="vancoDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="patientManagerCard">
@@ -686,6 +697,7 @@
           <span class="mode-badge" id="fitModeBadge">尚無資料</span>
         </div>
       </div>
+      <div class="demo-banner" id="vancoDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="curve-wrap">
         <svg class="curve" id="curveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
@@ -770,6 +782,8 @@
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AMINOGLYCOSIDE) ============ -->
     <section class="stack" id="amgInputPanel">
+
+      <div class="demo-banner" id="amgDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="amgPatientManagerCard">
@@ -1013,6 +1027,7 @@
           <span class="mode-badge" id="amgFitModeBadge">尚無資料</span>
         </div>
       </div>
+      <div class="demo-banner" id="amgDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="curve-wrap">
         <svg class="curve" id="amgCurveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
@@ -1079,6 +1094,8 @@
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AZOLE) ============ -->
     <section class="stack" id="azlInputPanel">
+
+      <div class="demo-banner" id="azlDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <!-- 0. 病人資料存檔 -->
       <div class="card" id="azlPatientManagerCard">
@@ -1348,6 +1365,7 @@
           <span class="mode-badge" id="azlFitModeBadge">尚無資料</span>
         </div>
       </div>
+      <div class="demo-banner" id="azlDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="param-grid" id="azlParamGrid"></div>
 
@@ -1385,6 +1403,8 @@
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AED) ============ -->
     <section class="stack" id="aedInputPanel">
+
+      <div class="demo-banner" id="aedDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <!-- 00. 病人資料存檔 -->
       <div class="card" id="aedPatientManagerCard">
@@ -1627,6 +1647,7 @@
           <span class="mode-badge" id="aedFitModeBadge">尚無資料</span>
         </div>
       </div>
+      <div class="demo-banner" id="aedDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="param-grid" id="aedParamGrid"></div>
 
@@ -2287,10 +2308,7 @@
     }
   }
 
-  function clearAllFn(){
-    const ok = confirm('確定要清除所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
-    if(!ok) return;
-
+  function resetModuleVanco(){
     // 病人存檔狀態(不影響已儲存的紀錄本身,只是離開目前這位病人)
     document.getElementById('patientLabel').value='';
     document.getElementById('patientSelect').value='';
@@ -2370,6 +2388,12 @@
     document.getElementById('customTau').value='';
 
     render();
+    setDemoFlag('vancomycin', false);
+  }
+  function clearAllFn(){
+    const ok = confirm('確定要清除所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    if(!ok) return;
+    resetModuleVanco();
   }
 
   // ---------------- patient state collection / restoration ----------------
@@ -4941,10 +4965,7 @@ ${flagText || '（無特別旗標）'}
     if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
   }
 
-  function clearAllFnAmg(){
-    const ok = confirm('確定要清除 Aminoglycoside 模組所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
-    if(!ok) return;
-
+  function resetModuleAmg(){
     document.getElementById('amgPatientLabel').value='';
     document.getElementById('amgPatientSelect').value='';
     document.getElementById('amgPatientAsOf').value='';
@@ -5014,6 +5035,12 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgCustomTau').value='';
 
     renderAmino();
+    setDemoFlag('aminoglycoside', false);
+  }
+  function clearAllFnAmg(){
+    const ok = confirm('確定要清除 Aminoglycoside 模組所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    if(!ok) return;
+    resetModuleAmg();
   }
 
   // ---------------- patient state (localStorage, separate namespace from vancomycin) ----------------
@@ -6430,9 +6457,7 @@ ${flagText||'（無）'}
     collectState: collectStateAzole, applyState: applyStateAzole, getDerived:()=>lastAzoleDerived, getAsOfDefault:azoleAsOfDefault
   });
 
-  function clearAllFnAzl(){
-    const ok = confirm('確定要清空目前畫面上的 azole 資料嗎？已儲存的病人存檔不會受影響。');
-    if(!ok) return;
+  function resetModuleAzole(){
     document.querySelectorAll('#azlInputPanel input[type=text], #azlInputPanel input[type=number], #azlInputPanel input[type=date], #azlInputPanel input[type=datetime-local], #azlInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#azlInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
     document.getElementById('azlDrug').value='voriconazole';
@@ -6446,6 +6471,12 @@ ${flagText||'（無）'}
     azoleStore.clearCurrent();
     azoleStore.refreshPatientSelect('');
     renderAzole();
+    setDemoFlag('azole', false);
+  }
+  function clearAllFnAzl(){
+    const ok = confirm('確定要清空目前畫面上的 azole 資料嗎？已儲存的病人存檔不會受影響。');
+    if(!ok) return;
+    resetModuleAzole();
   }
 
   function initDefaultsAzole(){
@@ -6878,9 +6909,7 @@ ${flagText||'（無）'}
     metaId:'aedPatientMeta', asOfId:'aedPatientAsOf', updateBtnId:'aedUpdateVisitBtn',
     collectState: collectStateAed, applyState: applyStateAed, getDerived:()=>lastAedDerived, getAsOfDefault:aedAsOfDefault
   });
-  function clearAllFnAed(){
-    const ok = confirm('確定要清空目前畫面上的抗癲癇藥物資料嗎？已儲存的病人存檔不會受影響。');
-    if(!ok) return;
+  function resetModuleAed(){
     document.querySelectorAll('#aedInputPanel input[type=text], #aedInputPanel input[type=number], #aedInputPanel input[type=date], #aedInputPanel input[type=datetime-local], #aedInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#aedInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
     document.getElementById('aedDrug').value='phenytoin'; document.getElementById('aedSex').value='M'; document.getElementById('aedPregnancy').value='no';
@@ -6892,6 +6921,12 @@ ${flagText||'（無）'}
     aedPickedCandidate = null;
     aedStore.clearCurrent(); aedStore.refreshPatientSelect('');
     renderAed();
+    setDemoFlag('aed', false);
+  }
+  function clearAllFnAed(){
+    const ok = confirm('確定要清空目前畫面上的抗癲癇藥物資料嗎？已儲存的病人存檔不會受影響。');
+    if(!ok) return;
+    resetModuleAed();
   }
   function initDefaultsAed(){
     const now = new Date();
@@ -7284,7 +7319,89 @@ ${flagText||'（無）'}
     render();
   }
 
+  // ---------------- WP1.1：示範資料改手動載入 — 起始值擷取／還原 ----------------
+  // 在任何 init／示範資料寫入之前，把四個輸入面板當下（即 HTML 原始標記）的值存起來，
+  // 讓「載入示範病例」按鈕可以先還原成這個基準狀態，再套用示範值——確保按鈕觸發的示範
+  // 狀態與開頁直接 ?demo=1 的狀態逐位元相同。
+  const INITIAL_VALUES = {};
+  function captureInitialValues(panelId){
+    const panel = document.getElementById(panelId);
+    if(!panel) return;
+    const snap = {};
+    panel.querySelectorAll('input, select, textarea').forEach(el=>{
+      if(!el.id) return;
+      snap[el.id] = (el.type==='checkbox'||el.type==='radio') ? {c:el.checked} : {v:el.value};
+    });
+    INITIAL_VALUES[panelId] = snap;
+  }
+  function restoreInitialValues(panelId){
+    const snap = INITIAL_VALUES[panelId] || {};
+    Object.entries(snap).forEach(([id,s])=>{
+      const el = document.getElementById(id);
+      if(!el) return;
+      if('c' in s) el.checked = s.c; else el.value = s.v;
+    });
+  }
+  function shouldAutoloadDemo(){
+    try{ return window.__TDM_AUTOLOAD_DEMO__===true || /[?&]demo=1\b/.test(location.search); }
+    catch(e){ return false; }
+  }
+
+  const DEMO_MODULE_CFG = {
+    vancomycin:     {panelId:'inputPanel',    reset:()=>resetModuleVanco(),  init:()=>initDefaults(),      banners:['vancoDemoBannerTop','vancoDemoBannerResults']},
+    aminoglycoside: {panelId:'amgInputPanel', reset:()=>resetModuleAmg(),    init:()=>initDefaultsAmg(),   banners:['amgDemoBannerTop','amgDemoBannerResults']},
+    azole:          {panelId:'azlInputPanel', reset:()=>resetModuleAzole(), init:()=>initDefaultsAzole(), banners:['azlDemoBannerTop','azlDemoBannerResults']},
+    aed:            {panelId:'aedInputPanel', reset:()=>resetModuleAed(),   init:()=>initDefaultsAed(),   banners:['aedDemoBannerTop','aedDemoBannerResults']}
+  };
+  // setDemoFlag：純顯示，只控制常駐橫幅的 hidden 屬性，不影響任何欄位值或計算。
+  function setDemoFlag(module, on){
+    const cfg = DEMO_MODULE_CFG[module];
+    if(!cfg) return;
+    cfg.banners.forEach(id=>{ const el = document.getElementById(id); if(el) el.hidden = !on; });
+  }
+  // loadDemo：isStartup=true 用於開頁時的 ?demo=1／window.__TDM_AUTOLOAD_DEMO__ 路徑，此時
+  // HTML 尚未被任何 JS 動過，直接呼叫原 initDefaultsX()（該函式本身完全不改），與現況逐位元
+  // 相同；使用者按鈕觸發（isStartup=false）時，先重置、再還原成 captureInitialValues 存下的
+  // HTML 原始值（也就是原本寫死在 HTML 裡的示範人口學數值），才呼叫 initDefaultsX() 補上其餘
+  // 示範資料（相對時間的給藥/濃度紀錄等）。兩種路徑最後都會顯示示範橫幅。
+  function loadDemo(module, isStartup){
+    const cfg = DEMO_MODULE_CFG[module];
+    if(!cfg) return;
+    if(!isStartup){
+      cfg.reset();
+      restoreInitialValues(cfg.panelId);
+    }
+    cfg.init();
+    setDemoFlag(module, true);
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
+    // WP1.1：擷取四個輸入面板的 HTML 原始值，供「載入示範病例」按鈕還原用（必須在任何
+    // init／示範資料寫入之前執行）。
+    captureInitialValues('inputPanel');
+    captureInitialValues('amgInputPanel');
+    captureInitialValues('azlInputPanel');
+    captureInitialValues('aedInputPanel');
+
+    // WP1.1：示範橫幅上的「清空，開始新病人」鈕——與各模組主要的「清空此頁」按鈕呼叫同一個
+    // 有確認對話框的函式，行為一致，不另外發明無確認的清除路徑。
+    ['vancoDemoBannerTop','vancoDemoBannerResults'].forEach(id=>{
+      const btn = document.querySelector('#'+id+' button');
+      if(btn) btn.addEventListener('click', clearAllFn);
+    });
+    ['amgDemoBannerTop','amgDemoBannerResults'].forEach(id=>{
+      const btn = document.querySelector('#'+id+' button');
+      if(btn) btn.addEventListener('click', clearAllFnAmg);
+    });
+    ['azlDemoBannerTop','azlDemoBannerResults'].forEach(id=>{
+      const btn = document.querySelector('#'+id+' button');
+      if(btn) btn.addEventListener('click', clearAllFnAzl);
+    });
+    ['aedDemoBannerTop','aedDemoBannerResults'].forEach(id=>{
+      const btn = document.querySelector('#'+id+' button');
+      if(btn) btn.addEventListener('click', clearAllFnAed);
+    });
+
     // static field listeners
     ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
@@ -7345,7 +7462,7 @@ ${flagText||'（無）'}
 
     document.getElementById('savePatientBtn').addEventListener('click', ()=>vancoStore.saveAsNewVisit());
     document.getElementById('updateVisitBtn').addEventListener('click', ()=>vancoStore.updateCurrentVisit());
-    document.getElementById('loadPatientBtn').addEventListener('click', ()=>vancoStore.loadSelected());
+    document.getElementById('loadPatientBtn').addEventListener('click', ()=>{ vancoStore.loadSelected(); setDemoFlag('vancomycin', false); });
     document.getElementById('deletePatientBtn').addEventListener('click', ()=>vancoStore.deleteSelectedPatient());
     document.getElementById('patientSelect').addEventListener('change', ()=>vancoStore.refreshVisitSelect());
     document.getElementById('exportPatientsBtn').addEventListener('click', ()=>vancoStore.exportAll());
@@ -7371,7 +7488,7 @@ ${flagText||'（無）'}
       });
     });
 
-    initDefaults();
+    if(shouldAutoloadDemo()) loadDemo('vancomycin', true); else resetModuleVanco();
 
     // ---------------- aminoglycoside module wiring ----------------
     ['amgAge','amgSex','amgHeight','amgTbw','amgDryWeight','amgDialysis','amgArcSuspect','amgVdHigh',
@@ -7441,7 +7558,7 @@ ${flagText||'（無）'}
 
     document.getElementById('amgSavePatientBtn').addEventListener('click', ()=>amgStore.saveAsNewVisit());
     document.getElementById('amgUpdateVisitBtn').addEventListener('click', ()=>amgStore.updateCurrentVisit());
-    document.getElementById('amgLoadPatientBtn').addEventListener('click', ()=>amgStore.loadSelected());
+    document.getElementById('amgLoadPatientBtn').addEventListener('click', ()=>{ amgStore.loadSelected(); setDemoFlag('aminoglycoside', false); });
     document.getElementById('amgDeletePatientBtn').addEventListener('click', ()=>amgStore.deleteSelectedPatient());
     document.getElementById('amgPatientSelect').addEventListener('change', ()=>amgStore.refreshVisitSelect());
     document.getElementById('amgExportPatientsBtn').addEventListener('click', ()=>amgStore.exportAll());
@@ -7467,7 +7584,7 @@ ${flagText||'（無）'}
       });
     });
 
-    initDefaultsAmg();
+    if(shouldAutoloadDemo()) loadDemo('aminoglycoside', true); else resetModuleAmg();
 
     // ---------------- azole wiring ----------------
     ['azlAge','azlSex','azlHeight','azlTbw','azlPregnancy','azlWeightChange',
@@ -7495,7 +7612,7 @@ ${flagText||'（無）'}
 
     document.getElementById('azlSavePatientBtn').addEventListener('click', ()=>azoleStore.saveAsNewVisit());
     document.getElementById('azlUpdateVisitBtn').addEventListener('click', ()=>azoleStore.updateCurrentVisit());
-    document.getElementById('azlLoadPatientBtn').addEventListener('click', ()=>azoleStore.loadSelected());
+    document.getElementById('azlLoadPatientBtn').addEventListener('click', ()=>{ azoleStore.loadSelected(); setDemoFlag('azole', false); });
     document.getElementById('azlDeletePatientBtn').addEventListener('click', ()=>azoleStore.deleteSelectedPatient());
     document.getElementById('azlPatientSelect').addEventListener('change', ()=>azoleStore.refreshVisitSelect());
     document.getElementById('azlExportPatientsBtn').addEventListener('click', ()=>azoleStore.exportAll());
@@ -7521,7 +7638,7 @@ ${flagText||'（無）'}
       });
     });
 
-    initDefaultsAzole();
+    if(shouldAutoloadDemo()) loadDemo('azole', true); else resetModuleAzole();
 
     // ---------------- aed wiring ----------------
     ['aedAge','aedSex','aedHeight','aedTbw','aedPregnancy',
@@ -7548,7 +7665,7 @@ ${flagText||'（無）'}
 
     document.getElementById('aedSavePatientBtn').addEventListener('click', ()=>aedStore.saveAsNewVisit());
     document.getElementById('aedUpdateVisitBtn').addEventListener('click', ()=>aedStore.updateCurrentVisit());
-    document.getElementById('aedLoadPatientBtn').addEventListener('click', ()=>aedStore.loadSelected());
+    document.getElementById('aedLoadPatientBtn').addEventListener('click', ()=>{ aedStore.loadSelected(); setDemoFlag('aed', false); });
     document.getElementById('aedDeletePatientBtn').addEventListener('click', ()=>aedStore.deleteSelectedPatient());
     document.getElementById('aedPatientSelect').addEventListener('change', ()=>aedStore.refreshVisitSelect());
     document.getElementById('aedExportPatientsBtn').addEventListener('click', ()=>aedStore.exportAll());
@@ -7596,7 +7713,7 @@ ${flagText||'（無）'}
       }
     });
 
-    initDefaultsAed();
+    if(shouldAutoloadDemo()) loadDemo('aed', true); else resetModuleAed();
 
     initCollapsibleCards();
 
