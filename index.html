@@ -3610,8 +3610,21 @@
     const t0MsProspective = isFinite(parseLocal(document.getElementById('therapyStart').value)) ? parseLocal(document.getElementById('therapyStart').value) : Date.now();
     const customResultP = updateCustomRow(CLpop, ke, mic);
     const vancoWhatIfP = resolveWhatIf('vanco', regimenRows, customResultP, {t0Ms:t0MsProspective, defaultStartMs:t0MsProspective});
-    const cMaxDomain = Math.max(22, CmaxSS*1.15, (virtualDoses[0] && useLoading ? (loadingDose/loadingInfHr/CLpop)*1.15 : 0),
-      vancoWhatIfP ? ((vancoWhatIfP.doseMg/vancoWhatIfP.infHr/CLpop)*(1-Math.exp(-ke*vancoWhatIfP.infHr))/(1-Math.exp(-ke*vancoWhatIfP.tau)))*1.15 : 0);
+    // Y 軸上限：改用曲線實際會畫出來的最高濃度（在每一劑輸注結束的時間點取樣 predictConc，
+    // what-if 方案的假想劑量也一併納入），而不是「loading 劑量若無限持續輸注會趨近的穩態
+    // 濃度」這種粗估上限——後者在 loading 劑量大、輸注時間短、清除率偏低時會嚴重高估，
+    // 把整條曲線壓扁在圖表最下緣（2026-09 Brandon 回報）。純顯示用途，不影響任何劑量建議
+    // 或數值判讀，且只呼叫既有的 predictConc，未更動其內部邏輯。
+    let whatIfDosesForDomain = [];
+    if(vancoWhatIfP){
+      let cur = vancoWhatIfP.startRel;
+      const nWi = Math.max(4, Math.ceil((5*tHalf)/vancoWhatIfP.tau) + 3);
+      for(let i=0;i<nWi;i++){ whatIfDosesForDomain.push({t_rel:cur, doseMg:vancoWhatIfP.doseMg, infHr:vancoWhatIfP.infHr}); cur += vancoWhatIfP.tau; }
+    }
+    const domainDosesForPeak = virtualDoses.concat(whatIfDosesForDomain).map(d=>({tHr:d.t_rel, doseMg:d.doseMg, infHr:d.infHr}));
+    const peakSampleTimes = virtualDoses.map(d=>d.t_rel+d.infHr).concat(whatIfDosesForDomain.map(d=>d.t_rel+d.infHr));
+    const observedPeak = peakSampleTimes.length ? Math.max(...peakSampleTimes.map(t=>predictConc(t, domainDosesForPeak, CLpop, Vpop))) : 0;
+    const cMaxDomain = Math.max(22, CmaxSS*1.15, observedPeak*1.15);
     drawCurve({
       doses: virtualDoses, levels: [], CL: CLpop, V: Vpop, ke, tau, maintDose, maintInf: maintInfHr,
       isFutureRel: cursor, cMaxDomain, t0Ms: t0MsProspective,
