@@ -180,6 +180,31 @@
   .entry-row input:focus{outline:2px solid var(--trace-dim);outline-offset:0;border-color:var(--trace);}
   .entry-row .row-del{flex:0 0 auto;margin-left:auto;}
 
+  /* WP2.5：SCr／給藥／濃度／HD 時程列改單行 grid 排版（B5）。既有 .entry-row 規則
+     （flex-wrap）維持不變，供 AED 穩態配對表沿用；下列修飾 class 疊加在同一列上覆寫排版。 */
+  .entry-row--scr,.entry-row--dose,.entry-row--level,.entry-row--hd{display:grid;gap:6px;padding:5px 8px;align-items:center;}
+  .entry-row--scr  {grid-template-columns:minmax(0,1fr) 84px 28px;}
+  .entry-row--dose {grid-template-columns:20px minmax(0,1fr) 72px 60px 28px;}
+  .entry-row--level{grid-template-columns:minmax(0,1fr) 80px 28px;}
+  .entry-row--hd   {grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;}
+  .entry-row--scr input[type="date"],.entry-row--dose input[type="datetime-local"],
+  .entry-row--level input[type="datetime-local"],.entry-row--hd input[type="datetime-local"]{min-width:0;max-width:none;width:100%;font-size:12.5px;padding:5px 6px;}
+  .entry-row--scr .num-field,.entry-row--dose .num-field,.entry-row--level .num-field{min-width:0;}
+  .entry-row--scr .num-field input,.entry-row--dose .num-field input,.entry-row--level .num-field input{width:100%;min-width:0;padding:5px 6px;}
+  .entry-row--scr .unit,.entry-row--dose .unit,.entry-row--level .unit{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);} /* 單位改由表頭顯示，保留給螢幕閱讀器 */
+  .entry-row--hd .num-field{min-width:0;} .entry-row--hd .num-field input{min-width:0;width:100%;}
+  .entry-row .row-del{margin-left:0;}
+  .entry-rows{gap:4px;}
+
+  .entry-head{display:grid;gap:6px;padding:0 8px;font-size:11px;color:var(--ink-faint);margin-bottom:2px;}
+  .entry-head:has(+ .entry-rows:empty){display:none;}
+  .entry-head--scr  {grid-template-columns:minmax(0,1fr) 84px 28px;}
+  .entry-head--dose {grid-template-columns:20px minmax(0,1fr) 72px 60px 28px;}
+  .entry-head--level{grid-template-columns:minmax(0,1fr) 80px 28px;}
+  .entry-head--hd   {grid-template-columns:minmax(0,1fr) minmax(0,1fr) 28px;}
+
+  .entry-list{display:flex;flex-direction:column;gap:6px;margin-top:8px;}
+
   .row-del{
     background:none;border:none;color:var(--ink-faint);cursor:pointer;font-size:15px;line-height:1;
     padding:2px 6px;border-radius:4px;
@@ -491,6 +516,7 @@
           <p class="hint" style="margin-top:-6px;">HD 病人 Cockcroft-Gault／族群 AUC 模型不適用，本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis &amp; Nolin, <em>Kidney360</em> 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。通量僅供資訊參考（低通量移除約 0–5%、高通量約 24–50%，AJHP 2004;61:1812），不直接進入計算。給藥處方請至卡片 03 填寫透析時程與透析後劑量。</p>
         </div>
 
+        <div class="entry-head entry-head--scr" aria-hidden="true"><span>日期</span><span>SCr mg/dL</span><span></span></div>
         <div class="entry-rows" id="scrTable"></div>
         <div class="btn-row"><button class="btn small" id="addScrRow" type="button">+ 新增一筆 SCr</button></div>
       </div>
@@ -582,6 +608,7 @@
             </div>
           </div>
 
+          <div class="entry-head entry-head--hd" aria-hidden="true"><span>開始</span><span>結束</span><span></span></div>
           <div class="entry-rows" id="hdSessionTable"></div>
           <div class="btn-row"><button class="btn small" id="addHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
           <div class="field-row three" style="margin-top:12px;">
@@ -595,6 +622,7 @@
           </div>
         </div>
 
+        <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
         <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button>
@@ -610,6 +638,7 @@
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
         <p class="hint">不限同一給藥區間——給藥前 trough、任一劑後 peak、隔天單點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算。</p>
+        <div class="entry-head entry-head--level" aria-hidden="true"><span>抽血時間</span><span>濃度 µg/mL</span><span></span></div>
         <div class="entry-rows" id="levelTable"></div>
         <div class="btn-row"><button class="btn small" id="addLevelRow" type="button">+ 新增一筆濃度</button></div>
       </div>
@@ -798,6 +827,7 @@
         <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）— 清除快，標準劑量常 underdose</label></div>
         <div class="checkline"><input type="checkbox" id="amgVdHigh"><label for="amgVdHigh">臨床懷疑 Vd 偏高（水腫／腹水／重症／敗血症）— 族群 Vd 先驗上修至 0.35 L/kg</label></div>
 
+        <div class="entry-head entry-head--scr" aria-hidden="true"><span>日期</span><span>SCr mg/dL</span><span></span></div>
         <div class="entry-rows" id="amgScrTable"></div>
         <div class="btn-row"><button class="btn small" id="amgAddScrRow" type="button">+ 新增一筆 SCr</button></div>
       </div>
@@ -905,6 +935,7 @@
             <div class="btn-row">
               <button class="btn primary small" id="amgHdGenerateSessionsBtn" type="button">依星期規則產生透析時程</button>
             </div>
+            <div class="entry-head entry-head--hd" aria-hidden="true"><span>開始</span><span>結束</span><span></span></div>
             <div class="entry-rows" id="amgHdSessionTable" style="margin-top:10px;"></div>
             <div class="btn-row"><button class="btn small" id="addAmgHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
           </div>
@@ -915,6 +946,7 @@
         <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
         <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
 
+        <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
         <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="amgAddDoseRow" type="button">+ 手動新增一劑</button>
@@ -930,6 +962,7 @@
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
         <p class="hint">不限傳統時點慣例——傳統法 peak（輸注結束後 30 分）＋trough（下一劑前）、ODD 兩點法（輸注結束後 2h 與 6h）、或任意其他時點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算，不要求兩點落在同一給藥區間。</p>
+        <div class="entry-head entry-head--level" aria-hidden="true"><span>抽血時間</span><span>濃度 µg/mL</span><span></span></div>
         <div class="entry-rows" id="amgLevelTable"></div>
         <div class="btn-row"><button class="btn small" id="amgAddLevelRow" type="button">+ 新增一筆濃度</button></div>
       </div>
@@ -1981,7 +2014,7 @@
   function addScrRow(dateVal, val){
     const container = document.getElementById('scrTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--scr';
     row.innerHTML = `<input type="date" class="scr-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
       <button class="row-del" type="button">×</button>`;
@@ -1992,7 +2025,7 @@
   function addDoseRow(dateVal, doseMg, infMin){
     const container = document.getElementById('doseTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--dose';
     row.innerHTML = `<span class="idx-badge dose-idx">—</span>
       <input type="datetime-local" class="dose-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
@@ -2005,7 +2038,7 @@
   function addLevelRow(dateVal, conc){
     const container = document.getElementById('levelTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--level';
     row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
       <button class="row-del" type="button">×</button>`;
@@ -2016,7 +2049,7 @@
   function addHdSessionRowGeneric(tableId, renderFn, startVal, endVal){
     const container = document.getElementById(tableId);
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--hd';
     row.innerHTML = `<div class="num-field"><span class="unit">開始</span><input type="datetime-local" class="hd-start" value="${startVal||''}"></div>
       <div class="num-field"><span class="unit">結束</span><input type="datetime-local" class="hd-end" value="${endVal||''}"></div>
       <button class="row-del" type="button">×</button>`;
@@ -4769,7 +4802,7 @@ ${flagText || '（無特別旗標）'}
   function addScrRowAmg(dateVal, val){
     const container = document.getElementById('amgScrTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--scr';
     row.innerHTML = `<input type="date" class="scr-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
       <button class="row-del" type="button">×</button>`;
@@ -4780,7 +4813,7 @@ ${flagText || '（無特別旗標）'}
   function addDoseRowAmg(dateVal, doseMg, infMin){
     const container = document.getElementById('amgDoseTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--dose';
     row.innerHTML = `<span class="idx-badge dose-idx">—</span>
       <input type="datetime-local" class="dose-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
@@ -4793,7 +4826,7 @@ ${flagText || '（無特別旗標）'}
   function addLevelRowAmg(dateVal, conc){
     const container = document.getElementById('amgLevelTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--level';
     row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
       <button class="row-del" type="button">×</button>`;
@@ -6751,12 +6784,12 @@ ${flagText||'（無）'}
   function addAedSsPairRow(dateVal, doseVal, levelVal, albVal, confirmed){
     const container = document.getElementById('aedSsPairsTable');
     const row = document.createElement('div');
-    row.className = 'entry-row';
+    row.className = 'entry-row entry-row--sspair';
     row.innerHTML = `<input type="date" class="ssp-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="10" class="ssp-dose" value="${doseVal!=null?doseVal:''}"><span class="unit">mg/day</span></div>
       <div class="num-field"><input type="number" step="0.1" class="ssp-level" value="${levelVal!=null?levelVal:''}"><span class="unit">mcg/mL total</span></div>
       <div class="num-field"><input type="number" step="0.1" class="ssp-albumin" value="${albVal!=null?albVal:''}"><span class="unit">Alb(選填)</span></div>
-      <span class="checkline" style="margin:0;"><input type="checkbox" class="ssp-confirmed" ${confirmed?'checked':''}><label>已達穩態</label></span>
+      <label class="checkline" style="margin:0;"><input type="checkbox" class="ssp-confirmed" ${confirmed?'checked':''}> 已達穩態</label>
       <button class="row-del" type="button">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>{ i.addEventListener('input', renderAed); i.addEventListener('change', renderAed); });
