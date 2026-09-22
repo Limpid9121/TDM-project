@@ -7481,6 +7481,12 @@ ${flagText||'（無）'}
     setDemoFlag(module, true);
   }
 
+  // ---------------- overwrite confirmation (WP1.3, S3) ----------------
+  function confirmOverwrite(containerId, what){
+    const n = document.querySelectorAll('#'+containerId+' .entry-row').length;
+    return n===0 || confirm(`這會清空並重建目前 ${n} 筆${what}（包含你手動修改過的內容），確定嗎？`);
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     // WP1.1：擷取四個輸入面板的 HTML 原始值，供「載入示範病例」按鈕還原用（必須在任何
     // init／示範資料寫入之前執行）。
@@ -7529,13 +7535,14 @@ ${flagText||'（無）'}
     });
     document.getElementById('dialysis').addEventListener('change', toggleDialysisUI);
     document.getElementById('addHdSessionRow').addEventListener('click', ()=>{ addHdSessionRow('', ''); render(); });
-    document.getElementById('expandDosesHD').addEventListener('click', expandDosesFnHD);
+    document.getElementById('expandDosesHD').addEventListener('click', ()=>{ if(confirmOverwrite('doseTable','給藥紀錄')) expandDosesFnHD(); });
     document.getElementById('hdPresetMWF').addEventListener('click', ()=>{ applyWeekdayPreset('hdDay', [1,3,5]); });
     document.getElementById('hdPresetTTS').addEventListener('click', ()=>{ applyWeekdayPreset('hdDay', [2,4,6]); });
     document.getElementById('hdSlot').addEventListener('change', ()=>{
       document.getElementById('hdSlotStart').value = document.getElementById('hdSlot').value==='pm' ? '13:00' : '08:00';
     });
     document.getElementById('hdGenerateSessionsBtn').addEventListener('click', ()=>{
+      if(!confirmOverwrite('hdSessionTable','透析時程')) return;
       generateHdSessionsFn({
         getDaysFn: ()=>getCheckedWeekdays('hdDay'),
         slotTimeId:'hdSlotStart', durationId:'hdDurationHr',
@@ -7562,7 +7569,7 @@ ${flagText||'（無）'}
     document.getElementById('addScrRow').addEventListener('click', ()=>{ addScrRow('', ''); render(); });
     document.getElementById('addDoseRow').addEventListener('click', ()=>{ addDoseRow('', '', ''); renumberDoseRows(); render(); });
     document.getElementById('addLevelRow').addEventListener('click', ()=>{ addLevelRow('', ''); render(); });
-    document.getElementById('expandDoses').addEventListener('click', expandDosesFn);
+    document.getElementById('expandDoses').addEventListener('click', ()=>{ if(confirmOverwrite('doseTable','給藥紀錄')) expandDosesFn(); });
     document.getElementById('pruneBeforeBtn').addEventListener('click', pruneDosesBeforeFn);
     document.getElementById('clearAllBtn').addEventListener('click', ()=>clearCurrentDrug());
 
@@ -7634,6 +7641,7 @@ ${flagText||'（無）'}
       document.getElementById('amgHdSlotStart').value = document.getElementById('amgHdSlot').value==='pm' ? '13:00' : '08:00';
     });
     document.getElementById('amgHdGenerateSessionsBtn').addEventListener('click', ()=>{
+      if(!confirmOverwrite('amgHdSessionTable','透析時程')) return;
       generateHdSessionsFn({
         getDaysFn: ()=>getCheckedWeekdays('amgTiwDay'),
         slotTimeId:'amgHdSlotStart', durationId:'amgHdDurationHr',
@@ -7659,7 +7667,7 @@ ${flagText||'（無）'}
     document.getElementById('amgAddScrRow').addEventListener('click', ()=>{ addScrRowAmg('', ''); renderAmino(); });
     document.getElementById('amgAddDoseRow').addEventListener('click', ()=>{ addDoseRowAmg('', '', ''); renumberDoseRowsAmg(); renderAmino(); });
     document.getElementById('amgAddLevelRow').addEventListener('click', ()=>{ addLevelRowAmg('', ''); renderAmino(); });
-    document.getElementById('amgExpandDoses').addEventListener('click', expandDosesFnAmg);
+    document.getElementById('amgExpandDoses').addEventListener('click', ()=>{ if(confirmOverwrite('amgDoseTable','給藥紀錄')) expandDosesFnAmg(); });
     document.getElementById('amgPruneBeforeBtn').addEventListener('click', pruneDosesBeforeFnAmg);
 
     document.getElementById('amgSavePatientBtn').addEventListener('click', ()=>amgStore.saveAsNewVisit());
