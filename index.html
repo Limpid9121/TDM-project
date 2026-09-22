@@ -124,6 +124,7 @@
     .panel-tools, .card-chev{display:none;}
   }
   .hint{font-size:12px;color:var(--ink-faint);margin:0 0 14px;}
+  .hint-inline{font-size:11px;color:var(--ink-faint);font-weight:400;}
   #aedPkContent > p, #aedVpaDoseContent > p{font-size:12.5px;}
 
   .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;}
@@ -522,7 +523,7 @@
           <div class="field"></div>
         </div>
         <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
-        <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）</label></div>
+        <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
 
         <div id="hdInfoBlock" style="display:none;">
           <div class="field-row">
@@ -670,7 +671,7 @@
         <h2><span class="idx">05</span>目標與情境設定</h2>
         <div class="field-row">
           <div class="field"><label>MIC 假設（µg/mL）</label><input type="number" id="mic" value="1" step="0.1"></div>
-          <div class="field"><label>目標 AUC₂₄/MIC</label><input type="number" id="targetAuc" value="500" step="10"></div>
+          <div class="field"><label>目標 AUC₂₄（mg·h/L）</label><input type="number" id="targetAuc" value="500" step="10"><div class="hint" id="targetAucReadout"></div></div>
         </div>
         <p class="hint">目標建議落在 400–600（嚴重／深部感染取上緣，腎毒性風險高者取下緣）。</p>
         <div class="checkline"><input type="checkbox" id="altTroughStrategy"><label for="altTroughStrategy">抽血困難／病情不複雜 → 改採替代 trough 10–15 µg/mL 策略呈現</label></div>
@@ -850,7 +851,7 @@
           <div class="field"></div>
         </div>
         <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
-        <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）— 清除快，標準劑量常 underdose</label></div>
+        <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）— 清除快，標準劑量常 underdose<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
         <div class="checkline"><input type="checkbox" id="amgVdHigh"><label for="amgVdHigh">臨床懷疑 Vd 偏高（水腫／腹水／重症／敗血症）— 族群 Vd 先驗上修至 0.35 L/kg</label></div>
 
         <div class="entry-head entry-head--scr" aria-hidden="true"><span>日期</span><span>SCr mg/dL</span><span></span></div>
@@ -4336,7 +4337,22 @@ ${flagText || '（無特別旗標）'}
     }
   }
 
+  // ---------------- target AUC/MIC readout (WP1.6, D7) ----------------
+  // #targetAuc's label now honestly reads "目標 AUC24（mg·h/L）" (D7) since the field
+  // itself only ever held the AUC value, not an AUC/MIC ratio; this pure-display
+  // helper shows the derived AUC/MIC ratio alongside it. Display-only: does not
+  // change #targetAuc's id or feed into any calculation (R2/R3).
+  function updateTargetAucReadout(){
+    const out = document.getElementById('targetAucReadout');
+    if(!out) return;
+    const mic = parseFloat(document.getElementById('mic').value);
+    const targetAuc = parseFloat(document.getElementById('targetAuc').value);
+    if(!(mic > 0) || !(targetAuc >= 0)){ out.textContent = ''; return; }
+    out.textContent = `對應 AUC/MIC ≈ ${Math.round(targetAuc / mic)}（MIC 假設 ${mic}）`;
+  }
+
   function render(){
+    updateTargetAucReadout();
     // Keep the visual "第 N 劑" badges in sync with actual chronological order on
     // every render — not just after expand/add/prune — so directly editing an
     // existing dose row's date (which can reorder it relative to its neighbors)
