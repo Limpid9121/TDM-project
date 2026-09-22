@@ -580,6 +580,7 @@
         </div>
         <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
         <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
+        <div class="hint" id="vancoSsBasis"></div>
 
         <div id="fixedRegimenFields">
           <div class="field-row three">
@@ -972,6 +973,7 @@
         </div>
         <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
         <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
+        <div class="hint" id="amgSsBasis"></div>
 
         <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
         <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
@@ -4296,6 +4298,44 @@ ${flagText || '（無特別旗標）'}
     });
   }
 
+  // ---------------- steady-state assumption basis (WP1.5, S5) ----------------
+  // 純顯示：勾選「已達穩態」時，說明虛擬劑次是依處方欄位（維持劑量／間隔／輸注）往前補，
+  // 而非依給藥表第一劑；若給藥表第一劑本身跟處方欄位對不上，改用警示樣式提醒依據是哪一組數字。
+  const STEADY_STATE_BASIS_CFG = {
+    vanco: {checkboxId:'assumeSteadyState', basisId:'vancoSsBasis', doseTableId:'doseTable',
+      maintDoseId:'maintDose', maintIntervalId:'maintInterval', maintInfId:'maintInf'},
+    amg: {checkboxId:'amgAssumeSteadyState', basisId:'amgSsBasis', doseTableId:'amgDoseTable',
+      maintDoseId:'amgMaintDose', maintIntervalId:'amgMaintInterval', maintInfId:'amgMaintInf'}
+  };
+  function updateSteadyStateBasis(moduleKey){
+    const cfg = STEADY_STATE_BASIS_CFG[moduleKey];
+    if(!cfg) return;
+    const basisEl = document.getElementById(cfg.basisId);
+    const checkboxEl = document.getElementById(cfg.checkboxId);
+    if(!basisEl || !checkboxEl) return;
+    if(!checkboxEl.checked){ basisEl.innerHTML = ''; return; }
+
+    const maintDose = parseFloat(document.getElementById(cfg.maintDoseId).value);
+    const tau = parseFloat(document.getElementById(cfg.maintIntervalId).value);
+    const inf = parseFloat(document.getElementById(cfg.maintInfId).value);
+
+    const rows = Array.from(document.querySelectorAll('#'+cfg.doseTableId+' .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.dose-date').value),
+      doseMg: parseFloat(row.querySelector('.dose-mg').value),
+      infMin: parseFloat(row.querySelector('.dose-inf').value)
+    })).filter(r=>isFinite(r.t)).sort((a,b)=>a.t-b.t);
+    const first = rows[0];
+
+    if(first && isFinite(first.doseMg) && isFinite(first.infMin) &&
+       (Math.abs(first.doseMg-maintDose)>1e-6 || Math.abs(first.infMin-inf)>1e-6)){
+      basisEl.innerHTML = `<div class="flag-item warn"><span class="dot"></span><span>給藥表第一劑為 ${first.doseMg} mg／${first.infMin} 分，與處方欄位不同；虛擬劑次依處方欄位</span></div>`;
+    } else {
+      basisEl.textContent = (isFinite(maintDose)&&isFinite(tau)&&isFinite(inf))
+        ? `將以 ${maintDose} mg q${tau}h（輸注 ${inf} 分）往前補入虛擬劑次（取自上方處方欄位）`
+        : '';
+    }
+  }
+
   function render(){
     // Keep the visual "第 N 劑" badges in sync with actual chronological order on
     // every render — not just after expand/add/prune — so directly editing an
@@ -4305,6 +4345,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('scrTable', 'scr');
     markRowValidity('doseTable', 'dose');
     markRowValidity('levelTable', 'level');
+    updateSteadyStateBasis('vanco');
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
     if(guardRequired('vanco')) return;
 
@@ -5567,6 +5608,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('amgScrTable', 'scr');
     markRowValidity('amgDoseTable', 'dose');
     markRowValidity('amgLevelTable', 'level');
+    updateSteadyStateBasis('amg');
     lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
     if(guardRequired('amg')) return;
 
