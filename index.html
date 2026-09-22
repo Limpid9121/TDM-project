@@ -76,6 +76,19 @@
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
   .stack{display:flex;flex-direction:column;gap:18px;}
 
+  /* ---------- Patient manager bar (WP3.2, D4) ---------- */
+  .pm-bar{display:flex;flex-wrap:wrap;align-items:end;gap:8px 10px;padding:10px 14px;margin:0 0 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
+  .pm-bar .pm-field{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink-soft);min-width:0;}
+  .pm-bar .pm-field select, .pm-bar .pm-field input{font-size:13px;padding:6px 8px;min-width:0;}
+  .pm-bar #patientLabel, .pm-bar #amgPatientLabel, .pm-bar #azlPatientLabel, .pm-bar #aedPatientLabel{width:120px;}
+  .pm-bar #patientSelect, .pm-bar #patientVisitSelect,
+  .pm-bar #amgPatientSelect, .pm-bar #amgPatientVisitSelect,
+  .pm-bar #azlPatientSelect, .pm-bar #azlPatientVisitSelect,
+  .pm-bar #aedPatientSelect, .pm-bar #aedPatientVisitSelect{max-width:220px;}
+  .pm-bar .pm-more{margin-left:auto;position:relative;}
+  .pm-bar .pm-more-body{position:absolute;right:0;top:100%;z-index:15;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-width:280px;box-shadow:0 4px 14px rgba(0,0,0,.08);}
+  .pm-bar #patientMeta, .pm-bar #amgPatientMeta, .pm-bar #azlPatientMeta, .pm-bar #aedPatientMeta{flex-basis:100%;order:99;margin:2px 0 0;min-height:14px;}
+
   /* ---------- Input panel ---------- */
   .card{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -437,6 +450,7 @@
     .row-del{padding:6px 10px;font-size:17px;}
   }
   @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
+  @media (max-width:640px){ .pm-bar{gap:6px;} .pm-bar .pm-field{flex:1 1 100%;} }
   @media (max-width:640px){
     .drug-switch{margin-top:8px;width:100%;}
     .drug-switch-btn{flex:1 1 auto;}
@@ -467,37 +481,33 @@
   </header>
 
   <div id="drug-vancomycin" class="drug-module active">
+  <div class="pm-bar" id="pmBarVanco">
+    <div class="pm-field"><label for="patientLabel">病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
+    <div class="pm-field"><label for="patientSelect">已存病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
+    <div class="pm-field"><label for="patientVisitSelect">收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+    <button class="btn small" id="loadPatientBtn" type="button">載入</button>
+    <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button>
+    <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+    <details class="pm-more">
+      <summary title="評估時點、備份、刪除">更多</summary>
+      <div class="pm-more-body">
+        <div class="pm-field"><label for="patientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
+        <div class="btn-row">
+          <button class="btn small" id="exportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
+          <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本（未來將用於趨勢圖）。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
+      </div>
+    </details>
+    <div class="hint" id="patientMeta"></div>
+  </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL ============ -->
     <section class="stack" id="inputPanel">
 
       <div class="demo-banner" id="vancoDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
-
-      <!-- 0. 病人資料存檔 -->
-      <div class="card" id="patientManagerCard">
-        <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本（未來將用於趨勢圖）。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</p>
-        <div class="field-row">
-          <div class="field"><label>病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
-          <div class="field"><label>評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>選擇已儲存的病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
-          <div class="field"><label>收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-        </div>
-        <div class="btn-row">
-          <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button>
-          <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-          <button class="btn small" id="loadPatientBtn" type="button">載入</button>
-          <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn small" id="exportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
-          <input type="file" id="importFileInput" accept="application/json" style="display:none;">
-        </div>
-        <div class="hint" id="patientMeta" style="margin-top:8px;min-height:14px;"></div>
-      </div>
 
       <!-- 1. 病人與腎功能 -->
       <div class="card">
@@ -795,37 +805,33 @@
   </div>
   <!-- ============ AMINOGLYCOSIDE DRUG MODULE (injected below, mirrors structure above) ============ -->
   <div id="drug-aminoglycoside" class="drug-module">
+  <div class="pm-bar" id="pmBarAmg">
+    <div class="pm-field"><label for="amgPatientLabel">病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
+    <div class="pm-field"><label for="amgPatientSelect">已存病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+    <div class="pm-field"><label for="amgPatientVisitSelect">收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+    <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
+    <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+    <details class="pm-more">
+      <summary title="評估時點、備份、刪除">更多</summary>
+      <div class="pm-more-body">
+        <div class="pm-field"><label for="amgPatientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
+        <div class="btn-row">
+          <button class="btn small" id="amgExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
+          <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
+        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      </div>
+    </details>
+    <div class="hint" id="amgPatientMeta"></div>
+  </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AMINOGLYCOSIDE) ============ -->
     <section class="stack" id="amgInputPanel">
 
       <div class="demo-banner" id="amgDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
-
-      <!-- 0. 病人資料存檔 -->
-      <div class="card" id="amgPatientManagerCard">
-        <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
-        <div class="field-row">
-          <div class="field"><label>病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
-          <div class="field"><label>評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>選擇已儲存的病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-          <div class="field"><label>收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-        </div>
-        <div class="btn-row">
-          <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button>
-          <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-          <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
-          <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn small" id="amgExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
-          <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
-        </div>
-        <div class="hint" id="amgPatientMeta" style="margin-top:8px;min-height:14px;"></div>
-      </div>
 
       <!-- 1. 病人與腎功能 -->
       <div class="card">
@@ -1108,37 +1114,33 @@
   </div>
 
   <div id="drug-azole" class="drug-module">
+  <div class="pm-bar" id="pmBarAzole">
+    <div class="pm-field"><label for="azlPatientLabel">病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
+    <div class="pm-field"><label for="azlPatientSelect">已存病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+    <div class="pm-field"><label for="azlPatientVisitSelect">收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+    <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
+    <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+    <details class="pm-more">
+      <summary title="評估時點、備份、刪除">更多</summary>
+      <div class="pm-more-body">
+        <div class="pm-field"><label for="azlPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
+        <div class="btn-row">
+          <button class="btn small" id="azlExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
+          <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
+        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      </div>
+    </details>
+    <div class="hint" id="azlPatientMeta"></div>
+  </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AZOLE) ============ -->
     <section class="stack" id="azlInputPanel">
 
       <div class="demo-banner" id="azlDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
-
-      <!-- 0. 病人資料存檔 -->
-      <div class="card" id="azlPatientManagerCard">
-        <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
-        <div class="field-row">
-          <div class="field"><label>病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
-          <div class="field"><label>評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>選擇已儲存的病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-          <div class="field"><label>收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-        </div>
-        <div class="btn-row">
-          <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button>
-          <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-          <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
-          <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn small" id="azlExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
-          <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
-        </div>
-        <div class="hint" id="azlPatientMeta" style="margin-top:8px;min-height:14px;"></div>
-      </div>
 
       <!-- 1. 目標藥物與適應症 -->
       <div class="card">
@@ -1417,37 +1419,33 @@
   </div>
 
   <div id="drug-aed" class="drug-module">
+  <div class="pm-bar" id="pmBarAed">
+    <div class="pm-field"><label for="aedPatientLabel">病歷號</label><input type="text" id="aedPatientLabel" placeholder=""></div>
+    <div class="pm-field"><label for="aedPatientSelect">已存病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+    <div class="pm-field"><label for="aedPatientVisitSelect">收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+    <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
+    <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+    <details class="pm-more">
+      <summary title="評估時點、備份、刪除">更多</summary>
+      <div class="pm-more-body">
+        <div class="pm-field"><label for="aedPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
+        <div class="btn-row">
+          <button class="btn small" id="aedExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
+          <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
+        </div>
+        <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
+        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      </div>
+    </details>
+    <div class="hint" id="aedPatientMeta"></div>
+  </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AED) ============ -->
     <section class="stack" id="aedInputPanel">
 
       <div class="demo-banner" id="aedDemoBannerTop" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
-
-      <!-- 00. 病人資料存檔 -->
-      <div class="card" id="aedPatientManagerCard">
-        <h2><span class="idx">⟳</span>病人資料存檔</h2>
-        <p class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</p>
-        <div class="field-row">
-          <div class="field"><label>病歷號</label><input type="text" id="aedPatientLabel" placeholder=""></div>
-          <div class="field"><label>評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
-        </div>
-        <div class="field-row">
-          <div class="field"><label>選擇已儲存的病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-          <div class="field"><label>收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-        </div>
-        <div class="btn-row">
-          <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button>
-          <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-          <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
-          <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <div class="btn-row">
-          <button class="btn small" id="aedExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
-          <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
-        </div>
-        <div class="hint" id="aedPatientMeta" style="margin-top:8px;min-height:14px;"></div>
-      </div>
 
       <!-- 01. 藥物與目的 -->
       <div class="card">
