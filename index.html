@@ -386,6 +386,8 @@
   .empty-state .empty-onboarding{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
   .empty-state .empty-onboarding p{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;}
   #curveSvg:empty,#amgCurveSvg:empty{display:none;}
+  .entry-row.row-invalid{border-left:3px solid var(--crimson);}
+  .row-note{grid-column:1/-1;font-size:11px;color:var(--crimson);padding:0 2px;}
 
   /* ---------- Drug switcher ---------- */
   .drug-switch{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
@@ -4249,12 +4251,60 @@ ${flagText || '（無特別旗標）'}
     return true;
   }
 
+  // ---------------- row validity marking (WP1.4, S8) ----------------
+  // 純顯示：逐列標示「已填但不完整、因此被 read*Rows 靜默濾掉」的列，條件與
+  // readDoseRows／readLevelRows／readScrRows（及 amg 對應）完全一致，不判斷其他業務邏輯。
+  const ROW_VALIDITY_FIELDS = {
+    scr: [
+      {cls:'scr-date', label:'日期', parse:v=>parseLocal(v), ok:v=>isFinite(v)},
+      {cls:'scr-val',  label:'SCr 數值', parse:v=>parseFloat(v), ok:v=>isFinite(v)}
+    ],
+    dose: [
+      {cls:'dose-date', label:'給藥時間', parse:v=>parseLocal(v), ok:v=>isFinite(v)},
+      {cls:'dose-mg',   label:'劑量', parse:v=>parseFloat(v), ok:v=>isFinite(v)},
+      {cls:'dose-inf',  label:'輸注時間', parse:v=>parseFloat(v), ok:v=>isFinite(v)&&v>0}
+    ],
+    level: [
+      {cls:'level-date', label:'抽血時間', parse:v=>parseLocal(v), ok:v=>isFinite(v)},
+      {cls:'level-val',  label:'濃度', parse:v=>parseFloat(v), ok:v=>isFinite(v)&&v>0}
+    ]
+  };
+  function markRowValidity(containerId, kind){
+    const fields = ROW_VALIDITY_FIELDS[kind];
+    if(!fields) return;
+    document.querySelectorAll('#'+containerId+' .entry-row').forEach(row=>{
+      row.classList.remove('row-invalid');
+      const oldNote = row.querySelector('.row-note');
+      if(oldNote) oldNote.remove();
+
+      const cells = fields.map(f=>{
+        const el = row.querySelector('.'+f.cls);
+        const raw = el ? String(el.value) : '';
+        return {f, filled: raw.trim()!=='', ok: el ? f.ok(f.parse(el.value)) : false};
+      });
+      const anyFilled = cells.some(c=>c.filled);
+      if(!anyFilled) return; // 剛新增的全空列不標紅
+
+      const missing = cells.filter(c=>!c.ok);
+      if(!missing.length) return;
+
+      row.classList.add('row-invalid');
+      const note = document.createElement('span');
+      note.className = 'row-note';
+      note.textContent = '未納入計算：缺' + missing.map(c=>c.f.label).join('、');
+      row.appendChild(note);
+    });
+  }
+
   function render(){
     // Keep the visual "第 N 劑" badges in sync with actual chronological order on
     // every render — not just after expand/add/prune — so directly editing an
     // existing dose row's date (which can reorder it relative to its neighbors)
     // never leaves the on-screen numbering stale relative to what the engine uses.
     renumberDoseRows();
+    markRowValidity('scrTable', 'scr');
+    markRowValidity('doseTable', 'dose');
+    markRowValidity('levelTable', 'level');
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
     if(guardRequired('vanco')) return;
 
@@ -5514,6 +5564,9 @@ ${flagText || '（無特別旗標）'}
     // every render — see the matching comment in render() for why this can't rely
     // solely on the expand/add/prune call sites.
     renumberDoseRowsAmg();
+    markRowValidity('amgScrTable', 'scr');
+    markRowValidity('amgDoseTable', 'dose');
+    markRowValidity('amgLevelTable', 'level');
     lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
     if(guardRequired('amg')) return;
 
