@@ -168,7 +168,7 @@ const SCENARIOS = {
     h.tab('aminoglycoside'); h.reset();
     h.set('amgAge', '58'); h.set('amgSex', 'M'); h.set('amgHeight', '172'); h.set('amgTbw', '80');
     h.addRow('amgAddScrRow', 'amgScrTable', { 'scr-date': '2026-09-18', 'scr-val': '1.0' });
-    h.set('amgDrug', 'gentamicin'); h.set('amgStrategy', 'conventional');
+    h.set('amgDrug', 'gentamicin'); h.set('amgStrategy', 'conventional'); h.set('amgIndication', 'severe');
     h.set('amgTherapyStart', '2026-09-17T09:00'); h.set('amgExpandTo', '2026-09-19T09:00');
     h.set('amgMaintDose', '120'); h.set('amgMaintInf', '30'); h.set('amgMaintInterval', '8');
     h.click('amgExpandDoses');
@@ -183,7 +183,7 @@ const SCENARIOS = {
     h.tab('aminoglycoside'); h.reset();
     h.set('amgAge', '45'); h.set('amgSex', 'F'); h.set('amgHeight', '160'); h.set('amgTbw', '55');
     h.addRow('amgAddScrRow', 'amgScrTable', { 'scr-date': '2026-09-18', 'scr-val': '0.8' });
-    h.set('amgDrug', 'amikacin'); h.set('amgStrategy', 'odd');
+    h.set('amgDrug', 'amikacin'); h.set('amgStrategy', 'odd'); h.set('amgIndication', 'gnr');
     h.set('amgTherapyStart', '2026-09-17T10:00'); h.set('amgExpandTo', '2026-09-19T11:00');
     h.set('amgMaintDose', '825'); h.set('amgMaintInf', '30'); h.set('amgMaintInterval', '24');
     h.click('amgExpandDoses');
@@ -195,7 +195,7 @@ const SCENARIOS = {
     h.tab('aminoglycoside'); h.reset();
     h.set('amgAge', '72'); h.set('amgSex', 'M'); h.set('amgHeight', '165'); h.set('amgTbw', '60');
     h.addRow('amgAddScrRow', 'amgScrTable', { 'scr-date': '2026-09-18', 'scr-val': '6.5' });
-    h.set('amgDrug', 'amikacin');
+    h.set('amgDrug', 'amikacin'); h.set('amgIndication', 'severe');
     h.set('amgDialysis', 'HD');
     h.set('amgTherapyStart', '2026-09-14T00:00'); h.set('amgExpandTo', '2026-09-19T11:00');
     h.set('amgMaintDose', '500'); h.set('amgMaintInf', '30');

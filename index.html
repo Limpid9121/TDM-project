@@ -378,6 +378,14 @@
   footer.disclaimer strong{color:var(--ink);}
 
   .empty-note{font-size:12px;color:var(--ink-faint);padding:6px 2px;}
+  .is-missing{outline:2px solid var(--crimson-soft);border-color:var(--crimson);}
+  .empty-state{padding:20px;border-bottom:1px solid var(--line);grid-column:1/-1;}
+  .empty-state h4{margin:0 0 10px;font-size:14px;color:var(--ink);}
+  .empty-state .req-missing-list{list-style:none;margin:0 0 4px;padding:0;display:flex;flex-direction:column;gap:6px;}
+  .empty-state .req-missing-list li{cursor:pointer;color:var(--trace);text-decoration:underline;font-size:13px;width:fit-content;}
+  .empty-state .empty-onboarding{margin-top:14px;padding-top:14px;border-top:1px dashed var(--line);}
+  .empty-state .empty-onboarding p{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;}
+  #curveSvg:empty,#amgCurveSvg:empty{display:none;}
 
   /* ---------- Drug switcher ---------- */
   .drug-switch{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
@@ -4145,6 +4153,102 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('aiPromptOut').value = prompt;
   }
 
+  // ---------------- required-input guard (WP1.2, D2) ----------------
+  // amgIndication 納入 amg 必要清單：此欄位決定劑量計算的 peak/trough 目標（見
+  // getAminoTarget／computeCandidateAmino／regimenTagAmino）。清空後若使用者未主動
+  // 選過，舊行為會悄悄落在清單第一個選項而非有意義的預設值——2026-09-21 與 Brandon
+  // 確認後，比照 WP1.1 示範資料調查的發現擴大納入必要欄位（原 spec D2 僅列人口學三項）。
+  const REQUIRED_INPUTS = {
+    vanco:    [{id:'age',label:'年齡'},{id:'height',label:'身高'},{id:'tbw',label:'實際體重 TBW'}],
+    vancoHD:  [{id:'tbw',label:'實際體重 TBW（或填乾體重）', altId:'dryWeight'}],
+    amg:      [{id:'amgAge',label:'年齡'},{id:'amgHeight',label:'身高'},{id:'amgTbw',label:'實際體重 TBW'},{id:'amgIndication',label:'嚴重度／適應症', kind:'select'}]
+  };
+  function requiredFieldFilled(field){
+    const el = document.getElementById(field.id);
+    if(!el) return false;
+    const ok = field.kind==='select' ? el.value!=='' : (parseFloat(el.value)>0);
+    if(ok) return true;
+    if(field.altId){
+      const altEl = document.getElementById(field.altId);
+      if(altEl && parseFloat(altEl.value)>0) return true;
+    }
+    return false;
+  }
+  function buildRequiredEmptyStateHtml(moduleKey, missing){
+    const items = missing.map(f=>`<li tabindex="0" data-req-id="${f.id}">${f.label}</li>`).join('');
+    let onboarding = '';
+    try{
+      if(!localStorage.getItem('tdm_ui_onboarded')){
+        const demoModule = {vanco:'vancomycin', amg:'aminoglycoside'}[moduleKey];
+        onboarding = `<div class="empty-onboarding"><p>① 左欄 01 填病人與 SCr → ② 03 填處方並產生給藥紀錄 → ③ 04 填濃度；右側即時更新</p><div class="btn-row"><button type="button" class="btn small" data-req-demo="${demoModule}">載入示範病例</button><button type="button" class="btn small" data-req-ack="1">知道了</button></div></div>`;
+      }
+    }catch(e){}
+    return `<div class="empty-state"><h4>還需要以下資料才能計算</h4><ul class="req-missing-list">${items}</ul>${onboarding}</div>`;
+  }
+  function wireRequiredEmptyState(container){
+    container.querySelectorAll('[data-req-id]').forEach(li=>{
+      li.addEventListener('click', ()=>{
+        const el = document.getElementById(li.getAttribute('data-req-id'));
+        if(!el) return;
+        const card = el.closest('.card');
+        if(card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+        el.scrollIntoView({block:'center'});
+        el.focus();
+      });
+    });
+    const demoBtn = container.querySelector('[data-req-demo]');
+    if(demoBtn) demoBtn.addEventListener('click', ()=>loadDemo(demoBtn.getAttribute('data-req-demo'), false));
+    const ackBtn = container.querySelector('[data-req-ack]');
+    if(ackBtn) ackBtn.addEventListener('click', ()=>{
+      try{ localStorage.setItem('tdm_ui_onboarded','1'); }catch(e){}
+      const box = ackBtn.closest('.empty-onboarding');
+      if(box) box.remove();
+    });
+  }
+  function guardRequired(moduleKey){
+    const isHD = moduleKey==='vanco' && document.getElementById('dialysis') && document.getElementById('dialysis').value==='HD';
+    const listKey = isHD ? 'vancoHD' : moduleKey;
+    const list = REQUIRED_INPUTS[listKey] || [];
+    const missing = [];
+    list.forEach(field=>{
+      const el = document.getElementById(field.id);
+      const ok = requiredFieldFilled(field);
+      if(el) el.classList.toggle('is-missing', !ok);
+      if(!ok) missing.push(field);
+    });
+    if(!missing.length) return false;
+
+    if(moduleKey==='vanco'){
+      const paramGrid = document.getElementById('paramGrid');
+      paramGrid.innerHTML = buildRequiredEmptyStateHtml('vanco', missing);
+      wireRequiredEmptyState(paramGrid);
+      document.getElementById('fitModeBadge').textContent = '尚缺必要資料';
+      document.getElementById('curveSvg').innerHTML='';
+      document.getElementById('flagList').innerHTML='';
+      document.getElementById('regimenTable').querySelector('tbody').innerHTML='';
+      document.getElementById('loadingSuggestion').innerHTML='';
+      document.getElementById('monitorGrid').innerHTML='';
+      document.getElementById('aiPromptOut').value='';
+      ['customCmax','customCmin','customAuc'].forEach(id=>document.getElementById(id).textContent='—');
+      document.getElementById('customReason').innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
+      setHeaderMeta('drug-vancomycin', '尚缺必要資料');
+    } else if(moduleKey==='amg'){
+      const paramGrid = document.getElementById('amgParamGrid');
+      paramGrid.innerHTML = buildRequiredEmptyStateHtml('amg', missing);
+      wireRequiredEmptyState(paramGrid);
+      document.getElementById('amgFitModeBadge').textContent = '尚缺必要資料';
+      document.getElementById('amgCurveSvg').innerHTML='';
+      document.getElementById('amgFlagList').innerHTML='';
+      document.querySelector('#amgRegimenTable tbody').innerHTML='';
+      document.getElementById('amgMonitorGrid').innerHTML='';
+      document.getElementById('amgAiPromptOut').value='';
+      ['amgCustomCmax','amgCustomCmin','amgCustomRatio'].forEach(id=>document.getElementById(id).textContent='—');
+      document.getElementById('amgCustomReason').innerHTML='輸入劑量／輸注／間隔，即時套用目前擬合參數計算';
+      if(document.getElementById('drug-aminoglycoside').classList.contains('active')) setHeaderMeta('drug-aminoglycoside', '尚缺必要資料');
+    }
+    return true;
+  }
+
   function render(){
     // Keep the visual "第 N 劑" badges in sync with actual chronological order on
     // every render — not just after expand/add/prune — so directly editing an
@@ -4152,6 +4256,7 @@ ${flagText || '（無特別旗標）'}
     // never leaves the on-screen numbering stale relative to what the engine uses.
     renumberDoseRows();
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
+    if(guardRequired('vanco')) return;
 
     const dialysis0 = document.getElementById('dialysis').value;
     if(dialysis0 === 'HD'){
@@ -4667,8 +4772,8 @@ ${flagText || '（無特別旗標）'}
     const sel = document.getElementById('amgIndication');
     const keep = sel.value;
     const list = getAminoTargetList();
-    sel.innerHTML = list.map(t=>`<option value="${t.id}">${t.label}</option>`).join('');
-    if(list.some(t=>t.id===keep)) sel.value = keep;
+    sel.innerHTML = '<option value="">— 請選擇 —</option>' + list.map(t=>`<option value="${t.id}">${t.label}</option>`).join('');
+    if(keep && list.some(t=>t.id===keep)) sel.value = keep;
     updateAminoTargetDisplay();
     document.getElementById('amgTobraNote').style.display = (document.getElementById('amgDrug').value==='tobramycin') ? 'block' : 'none';
   }
@@ -5410,6 +5515,7 @@ ${flagText || '（無特別旗標）'}
     // solely on the expand/add/prune call sites.
     renumberDoseRowsAmg();
     lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
+    if(guardRequired('amg')) return;
 
     const age = parseFloat(document.getElementById('amgAge').value);
     const sex = document.getElementById('amgSex').value;

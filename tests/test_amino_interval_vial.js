@@ -108,6 +108,10 @@ setTimeout(()=>{
   // 6. Vial-aware dose rounding — gentamicin (V-Genta 80mg/2mL = 40mg/mL)
   // =================================================================
   $('amgDrug').value = 'gentamicin'; fireChange($('amgDrug'));
+  // 明確選擇適應症（WP1.2 之後，未選過時不再悄悄套用第一個選項，這裡挑一個在
+  // gentamicin/amikacin/tobramycin 的傳統與 ODD 清單中都存在的選項，避免這支測試
+  // 因為換藥物/策略而落到「尚缺必要資料」的空狀態）
+  $('amgIndication').value = 'severe'; fireChange($('amgIndication'));
   $('amgCand24').checked = true; $('amgCand36').checked = false; $('amgCand48').checked = false;
   $('amgCand8').checked = false; $('amgCand12').checked = false;
   fireChange($('amgCand24'));
@@ -128,6 +132,8 @@ setTimeout(()=>{
   // 7. Vial-aware dose rounding — amikacin (Acemycin 500mg/2mL = 250mg/mL)
   // =================================================================
   $('amgDrug').value = 'amikacin'; fireChange($('amgDrug'));
+  // strategy 仍是上面步驟留下的 'odd'；amikacin 的 ODD 清單沒有 'severe'，改選 'gnr'
+  $('amgIndication').value = 'gnr'; fireChange($('amgIndication'));
   fireChange($('amgCand24'));
   regimenHtml = document.querySelector('#amgRegimenTable tbody').innerHTML;
   const mlMatchAmk = regimenHtml.match(/（([\d.]+)\s*mL）/);
@@ -144,6 +150,7 @@ setTimeout(()=>{
   // 8. Tobramycin — no vial info, falls back to generic rounding + flag
   // =================================================================
   $('amgDrug').value = 'tobramycin'; fireChange($('amgDrug'));
+  $('amgIndication').value = 'severe'; fireChange($('amgIndication'));
   fireChange($('amgCand24'));
   regimenHtml = document.querySelector('#amgRegimenTable tbody').innerHTML;
   ok(!/mL/.test(regimenHtml), 'tobramycin candidate rows show mg only, no mL (no local vial info)');
