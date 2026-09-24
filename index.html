@@ -43,8 +43,7 @@
   /* ---------- Header ---------- */
   header.top{
     display:flex;justify-content:space-between;align-items:flex-end;
-    gap:24px;padding-bottom:20px;margin-bottom:24px;
-    border-bottom:1px solid var(--line-strong);
+    gap:24px;padding-bottom:10px;margin-bottom:0;
     flex-wrap:wrap;
     position:sticky;top:0;z-index:30;background:var(--paper);
   }
@@ -77,15 +76,15 @@
   .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
   .stack{display:flex;flex-direction:column;gap:18px;}
 
-  /* ---------- Patient manager bar (WP3.2, D4) ---------- */
-  .pm-bar{display:flex;flex-wrap:wrap;align-items:end;gap:8px 10px;padding:10px 14px;margin:0 0 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);position:sticky;top:125px;z-index:25;}
-  .pm-bar .pm-field{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink-soft);min-width:0;}
-  .pm-bar .pm-field select, .pm-bar .pm-field input{font-size:13px;padding:6px 8px;min-width:0;}
-  .pm-bar #patientLabel, .pm-bar #amgPatientLabel, .pm-bar #azlPatientLabel, .pm-bar #aedPatientLabel{width:120px;}
+  /* ---------- Patient manager bar (WP3.2, D4; compacted into header, ad-hoc 2026-09) ---------- */
+  .pm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:4px 14px;padding:6px 0 10px;margin:0 0 20px;background:var(--paper);border:none;border-bottom:1px solid var(--line-strong);border-radius:0;}
+  .pm-bar .pm-field{display:flex;flex-direction:row;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft);min-width:0;white-space:nowrap;}
+  .pm-bar .pm-field select, .pm-bar .pm-field input{font-size:13px;padding:4px 7px;min-width:0;}
+  .pm-bar #patientLabel, .pm-bar #amgPatientLabel, .pm-bar #azlPatientLabel, .pm-bar #aedPatientLabel{width:110px;}
   .pm-bar #patientSelect, .pm-bar #patientVisitSelect,
   .pm-bar #amgPatientSelect, .pm-bar #amgPatientVisitSelect,
   .pm-bar #azlPatientSelect, .pm-bar #azlPatientVisitSelect,
-  .pm-bar #aedPatientSelect, .pm-bar #aedPatientVisitSelect{max-width:220px;}
+  .pm-bar #aedPatientSelect, .pm-bar #aedPatientVisitSelect{max-width:200px;}
   .pm-bar .pm-more{margin-left:auto;position:relative;}
   .pm-bar .pm-more-body{position:absolute;right:0;top:100%;z-index:15;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-width:280px;box-shadow:0 4px 14px rgba(0,0,0,.08);}
   .pm-bar #patientMeta, .pm-bar #amgPatientMeta, .pm-bar #azlPatientMeta, .pm-bar #aedPatientMeta{flex-basis:100%;order:99;margin:2px 0 0;min-height:14px;}
@@ -510,10 +509,9 @@
     .row-del{padding:6px 10px;font-size:17px;}
   }
   @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
-  @media (max-width:640px){ .pm-bar{gap:6px;} .pm-bar .pm-field{flex:1 1 100%;} }
+  @media (max-width:640px){ .pm-bar{gap:4px 8px;} .pm-bar .pm-field{flex:1 1 100%;} }
   @media (max-width:640px){
     header.top{position:static;top:auto;}
-    .pm-bar{position:static;top:auto;}
     .drug-switch{margin-top:8px;width:100%;}
     .drug-switch-btn{flex:1 1 auto;}
   }
