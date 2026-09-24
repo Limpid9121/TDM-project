@@ -426,6 +426,7 @@
   .entry-row.row-invalid{border-left:3px solid var(--crimson);}
   .row-note{grid-column:1/-1;font-size:11px;color:var(--crimson);padding:0 2px;}
   .level-timing{grid-column:1/-1;font-size:11px;color:var(--ink-soft);padding:0 2px;}
+  .entry-row.row-autofill{background:#FBF3E4;}
 
   /* ---------- Drug switcher (WP3.4, D8：改分頁觀感) ---------- */
   /* #drugSwitch 前綴：.drug-switch-btn 同時帶 .btn.small（specificity 0,2,0），
@@ -4520,6 +4521,7 @@ ${flagText || '（無特別旗標）'}
     const fields = ROW_VALIDITY_FIELDS[kind];
     if(!fields) return;
     document.querySelectorAll('#'+containerId+' .entry-row').forEach(row=>{
+      if(row.classList.contains('row-autofill')) return; // WP4.3：自動帶入列的樣式與提示由 markRowAutofill 自己管理，使用者編輯該列前這裡不介入
       row.classList.remove('row-invalid');
       const oldNote = row.querySelector('.row-note');
       if(oldNote) oldNote.remove();
@@ -4587,6 +4589,61 @@ ${flagText || '（無特別旗標）'}
         }
       }
       span.textContent = text;
+    });
+  }
+
+  // ---------------- new-row autofill + Enter-to-add-row (WP4.3, D10/W12) ----------------
+  // 這些是按鈕 wiring／鍵盤輔助用的函式，不是計算或渲染函式：addDoseRow／addDoseRowAmg／
+  // addScrRow／addScrRowAmg 這幾個既有函式的簽名與內部邏輯完全不變，只有呼叫它們的按鈕
+  // click handler 改成先算出要帶入的值再呼叫。
+  function computeDoseAutofillTime(doseContainerId, fixedTauMs){
+    const rows = Array.from(document.querySelectorAll('#'+doseContainerId+' .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.dose-date').value),
+      doseMg: parseFloat(row.querySelector('.dose-mg').value),
+      infMin: parseFloat(row.querySelector('.dose-inf').value)
+    })).filter(r=>isFinite(r.t)&&isFinite(r.doseMg)&&isFinite(r.infMin)&&r.infMin>0).sort((a,b)=>a.t-b.t);
+    if(!rows.length) return null;
+    const L = rows[rows.length-1];
+    let tauMs = (isFinite(fixedTauMs) && fixedTauMs>0) ? fixedTauMs : null;
+    if(tauMs===null){
+      if(rows.length<2) return null;
+      tauMs = L.t - rows[rows.length-2].t;
+      if(!(isFinite(tauMs) && tauMs>0)) return null;
+    }
+    return { dateVal: toLocalInputValue(new Date(L.t+tauMs)), doseMg: L.doseMg, infMin: L.infMin };
+  }
+
+  function markRowAutofill(row){
+    if(!row) return;
+    row.classList.remove('row-invalid'); // 防呆：即使呼叫順序在某次 render() 之後才補上，也要蓋掉 markRowValidity 先前可能留下的痕跡
+    const oldNote = row.querySelector('.row-note');
+    if(oldNote) oldNote.remove();
+    row.classList.add('row-autofill');
+    const note = document.createElement('span');
+    note.className = 'row-note';
+    note.textContent = '自動帶入，請確認';
+    row.appendChild(note);
+    const clearAutofill = ()=>{ row.classList.remove('row-autofill'); const n=row.querySelector('.row-note'); if(n) n.remove(); };
+    row.querySelectorAll('input').forEach(i=>i.addEventListener('input', clearAutofill, {once:true}));
+  }
+
+  function wireEnterToAddRow(containerId, addBtnId){
+    const container = document.getElementById(containerId);
+    if(!container) return;
+    container.addEventListener('keydown', e=>{
+      if(e.key !== 'Enter') return;
+      const rows = container.querySelectorAll('.entry-row');
+      if(!rows.length) return;
+      const lastRow = rows[rows.length-1];
+      const inputs = lastRow.querySelectorAll('input');
+      if(!inputs.length || e.target !== inputs[inputs.length-1]) return;
+      e.preventDefault();
+      const btn = document.getElementById(addBtnId);
+      if(!btn) return;
+      btn.click();
+      const newRows = container.querySelectorAll('.entry-row');
+      const newFirstInput = newRows.length ? newRows[newRows.length-1].querySelector('input') : null;
+      if(newFirstInput) newFirstInput.focus();
     });
   }
 
@@ -8225,9 +8282,28 @@ ${flagText||'（無）'}
     document.getElementById('vancoPopModelBtnA').addEventListener('click', ()=>{ vancoProspectiveModel = 'A'; render(); });
     document.getElementById('vancoPopModelBtnB').addEventListener('click', ()=>{ vancoProspectiveModel = 'B'; render(); });
 
-    document.getElementById('addScrRow').addEventListener('click', ()=>{ addScrRow('', ''); render(); });
-    document.getElementById('addDoseRow').addEventListener('click', ()=>{ addDoseRow('', '', ''); renumberDoseRows(); render(); });
+    document.getElementById('addScrRow').addEventListener('click', ()=>{
+      addScrRow(toLocalDateValue(new Date()), '');
+      markRowAutofill(document.querySelector('#scrTable .entry-row:last-child'));
+      render();
+    });
+    document.getElementById('addDoseRow').addEventListener('click', ()=>{
+      const isHD = document.getElementById('dialysis').value === 'HD';
+      let fixedTauMs = null;
+      if(!isHD){
+        const tauHr = parseFloat(document.getElementById('maintInterval').value);
+        if(isFinite(tauHr) && tauHr>0) fixedTauMs = tauHr*3600000;
+      }
+      const auto = computeDoseAutofillTime('doseTable', fixedTauMs);
+      if(auto) addDoseRow(auto.dateVal, auto.doseMg, auto.infMin); else addDoseRow('', '', '');
+      renumberDoseRows();
+      if(auto) markRowAutofill(document.querySelector('#doseTable .entry-row:last-child'));
+      render();
+    });
     document.getElementById('addLevelRow').addEventListener('click', ()=>{ addLevelRow('', ''); render(); });
+    wireEnterToAddRow('scrTable', 'addScrRow');
+    wireEnterToAddRow('doseTable', 'addDoseRow');
+    wireEnterToAddRow('levelTable', 'addLevelRow');
     document.getElementById('expandDoses').addEventListener('click', ()=>{ if(confirmOverwrite('doseTable','給藥紀錄')) expandDosesFn(); });
     document.getElementById('pruneBeforeBtn').addEventListener('click', pruneDosesBeforeFn);
     document.getElementById('clearAllBtn').addEventListener('click', ()=>clearCurrentDrug());
@@ -8325,9 +8401,28 @@ ${flagText||'（無）'}
     });
     document.getElementById('amgIndication').addEventListener('change', ()=>{ updateAminoTargetDisplay(); renderAmino(); });
 
-    document.getElementById('amgAddScrRow').addEventListener('click', ()=>{ addScrRowAmg('', ''); renderAmino(); });
-    document.getElementById('amgAddDoseRow').addEventListener('click', ()=>{ addDoseRowAmg('', '', ''); renumberDoseRowsAmg(); renderAmino(); });
+    document.getElementById('amgAddScrRow').addEventListener('click', ()=>{
+      addScrRowAmg(toLocalDateValue(new Date()), '');
+      markRowAutofill(document.querySelector('#amgScrTable .entry-row:last-child'));
+      renderAmino();
+    });
+    document.getElementById('amgAddDoseRow').addEventListener('click', ()=>{
+      const isFixed = document.getElementById('amgScheduleType').value === 'fixed';
+      let fixedTauMs = null;
+      if(isFixed){
+        const tauHr = parseFloat(document.getElementById('amgMaintInterval').value);
+        if(isFinite(tauHr) && tauHr>0) fixedTauMs = tauHr*3600000;
+      }
+      const auto = computeDoseAutofillTime('amgDoseTable', fixedTauMs);
+      if(auto) addDoseRowAmg(auto.dateVal, auto.doseMg, auto.infMin); else addDoseRowAmg('', '', '');
+      renumberDoseRowsAmg();
+      if(auto) markRowAutofill(document.querySelector('#amgDoseTable .entry-row:last-child'));
+      renderAmino();
+    });
     document.getElementById('amgAddLevelRow').addEventListener('click', ()=>{ addLevelRowAmg('', ''); renderAmino(); });
+    wireEnterToAddRow('amgScrTable', 'amgAddScrRow');
+    wireEnterToAddRow('amgDoseTable', 'amgAddDoseRow');
+    wireEnterToAddRow('amgLevelTable', 'amgAddLevelRow');
     document.getElementById('amgExpandDoses').addEventListener('click', ()=>{ if(confirmOverwrite('amgDoseTable','給藥紀錄')) expandDosesFnAmg(); });
     document.getElementById('amgPruneBeforeBtn').addEventListener('click', pruneDosesBeforeFnAmg);
 
