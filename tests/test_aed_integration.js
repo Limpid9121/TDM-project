@@ -27,7 +27,9 @@ async function main() {
   assert(!!aedBtn && !aedBtn.disabled, 'aed switcher button exists and is enabled (not "coming soon")');
   aedBtn.click();
   assert(doc.getElementById('drug-aed').classList.contains('active'), 'aed module becomes the active panel after clicking its switcher button');
-  assert(doc.getElementById('appTitle').textContent === '抗癲癇藥物 TDM 判讀引擎', 'header title switches to the AED module title');
+  // WP3.4 (D8)：appTitle 固定為「TDM 工作台」，模組名稱改由 appSubtitle 前綴呈現。
+  assert(doc.getElementById('appTitle').textContent === 'TDM 工作台', 'header title stays fixed as "TDM 工作台" after switching modules (WP3.4)');
+  assert(doc.getElementById('appSubtitle').textContent.startsWith('抗癲癇藥物 · '), 'header subtitle is prefixed with the AED module name (WP3.4)');
 
   // default state sanity
   assert(doc.getElementById('aedDrug').value === 'phenytoin', 'default drug is phenytoin');

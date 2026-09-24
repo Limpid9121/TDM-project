@@ -46,6 +46,7 @@
     gap:24px;padding-bottom:20px;margin-bottom:24px;
     border-bottom:1px solid var(--line-strong);
     flex-wrap:wrap;
+    position:sticky;top:0;z-index:30;background:var(--paper);
   }
   header.top .brand-mark{
     display:flex;align-items:baseline;gap:12px;
@@ -77,7 +78,7 @@
   .stack{display:flex;flex-direction:column;gap:18px;}
 
   /* ---------- Patient manager bar (WP3.2, D4) ---------- */
-  .pm-bar{display:flex;flex-wrap:wrap;align-items:end;gap:8px 10px;padding:10px 14px;margin:0 0 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);}
+  .pm-bar{display:flex;flex-wrap:wrap;align-items:end;gap:8px 10px;padding:10px 14px;margin:0 0 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);position:sticky;top:125px;z-index:25;}
   .pm-bar .pm-field{display:flex;flex-direction:column;gap:2px;font-size:12px;color:var(--ink-soft);min-width:0;}
   .pm-bar .pm-field select, .pm-bar .pm-field input{font-size:13px;padding:6px 8px;min-width:0;}
   .pm-bar #patientLabel, .pm-bar #amgPatientLabel, .pm-bar #azlPatientLabel, .pm-bar #aedPatientLabel{width:120px;}
@@ -409,14 +410,37 @@
   .entry-row.row-invalid{border-left:3px solid var(--crimson);}
   .row-note{grid-column:1/-1;font-size:11px;color:var(--crimson);padding:0 2px;}
 
-  /* ---------- Drug switcher ---------- */
-  .drug-switch{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;}
+  /* ---------- Drug switcher (WP3.4, D8：改分頁觀感) ---------- */
+  /* #drugSwitch 前綴：.drug-switch-btn 同時帶 .btn.small（specificity 0,2,0），
+     單純 .drug-switch-btn（0,1,0）字級/padding 會被蓋掉，改用 #drugSwitch 前綴
+     （1,1,0／1,2,0）確保穩贏，不改動 .btn/.btn.small 本身。 */
+  .drug-switch{display:flex;gap:2px;margin-top:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
   .drug-switch-btn{position:relative;}
+  #drugSwitch .drug-switch-btn{
+    height:34px;font-size:13px;font-weight:600;
+    background:transparent;border:none;border-bottom:3px solid transparent;
+    border-radius:0;color:var(--ink-soft);padding:0 10px;margin-bottom:-1px;
+  }
+  #drugSwitch .drug-switch-btn:not(.coming-soon):hover{color:var(--trace);}
+  #drugSwitch .drug-switch-btn.primary{background:transparent;border-color:transparent;border-bottom-color:var(--trace);color:var(--trace-strong);}
   .drug-switch-btn.coming-soon{opacity:.55;cursor:default;}
   .drug-switch-btn.coming-soon:hover{border-color:var(--line-strong);color:var(--ink);}
   .drug-switch-btn .soon-tag{
     font-family:var(--mono);font-size:9.5px;margin-left:5px;color:var(--ink-faint);
   }
+  /* ---------- 模組內「計算／病人資料」子分頁（WP3.4, D5） ---------- */
+  .mod-tabs{display:flex;gap:2px;margin:14px 0 16px;border-bottom:1px solid var(--line);}
+  .mod-tab{
+    font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;
+    border:none;background:transparent;color:var(--ink-soft);
+    padding:8px 14px;border-bottom:3px solid transparent;margin-bottom:-1px;
+  }
+  .mod-tab:hover{color:var(--trace);}
+  .mod-tab.active{color:var(--trace-strong);border-bottom-color:var(--trace);}
+  /* main.grid 本身已有 display:grid（0,1,1）；[hidden] 屬性選擇器單獨用不夠力蓋過它，
+     這裡用 [data-modtab-panel][hidden]（0,2,0）確保切到「病人資料」分頁時 main.grid
+     真的被隱藏，而不只是 aria/hidden 屬性打勾但畫面沒變。 */
+  [data-modtab-panel][hidden]{display:none;}
   .drug-module{display:none;}
   .drug-module.active{display:block;}
   @media (min-width:981px){
@@ -458,6 +482,8 @@
   @media (max-width:640px){.monitor-grid{grid-template-columns:1fr;}}
   @media (max-width:640px){ .pm-bar{gap:6px;} .pm-bar .pm-field{flex:1 1 100%;} }
   @media (max-width:640px){
+    header.top{position:static;top:auto;}
+    .pm-bar{position:static;top:auto;}
     .drug-switch{margin-top:8px;width:100%;}
     .drug-switch-btn{flex:1 1 auto;}
   }
@@ -469,20 +495,20 @@
   <header class="top">
     <div>
       <div class="brand-mark">
-        <h1 id="appTitle">Vancomycin TDM 擬合引擎</h1>
+        <h1 id="appTitle">TDM 工作台</h1>
         <span class="eyebrow" id="appEyebrow">Free-Sampling PK</span>
       </div>
-      <div class="subtitle" id="appSubtitle">任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議</div>
-      <div class="drug-switch" id="drugSwitch">
-        <button class="btn small primary drug-switch-btn" type="button" data-drug="vancomycin">Vancomycin</button>
-        <button class="btn small drug-switch-btn" type="button" data-drug="aminoglycoside">Aminoglycoside</button>
-        <button class="btn small drug-switch-btn" type="button" data-drug="azole">Azole</button>
-        <button class="btn small drug-switch-btn" type="button" data-drug="aed">抗癲癇藥物</button>
+      <div class="subtitle" id="appSubtitle">Vancomycin · 任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議</div>
+      <div class="drug-switch" id="drugSwitch" role="tablist" aria-label="藥物模組切換">
+        <button class="btn small primary drug-switch-btn" type="button" role="tab" aria-selected="true" data-drug="vancomycin">Vancomycin</button>
+        <button class="btn small drug-switch-btn" type="button" role="tab" aria-selected="false" data-drug="aminoglycoside">Aminoglycoside</button>
+        <button class="btn small drug-switch-btn" type="button" role="tab" aria-selected="false" data-drug="azole">Azole</button>
+        <button class="btn small drug-switch-btn" type="button" role="tab" aria-selected="false" data-drug="aed">抗癲癇藥物</button>
       </div>
     </div>
     <div class="header-right">
       <div class="meta-line" id="headerMeta">尚未輸入資料</div>
-      <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始">重置目前藥物資料</button>
+      <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始；已儲存的病人存檔不受影響">清空此頁（開始新病人）</button>
     </div>
   </header>
 
@@ -519,7 +545,11 @@
       </div>
     </div>
   </div>
-  <main class="grid">
+  <div class="mod-tabs" role="tablist" aria-label="模組內分頁">
+    <button class="mod-tab active" role="tab" aria-selected="true" data-modtab="calc" type="button">計算</button>
+    <button class="mod-tab" role="tab" aria-selected="false" data-modtab="explorer" type="button">病人資料</button>
+  </div>
+  <main class="grid" data-modtab-panel="calc">
     <!-- ============ LEFT: INPUT PANEL ============ -->
     <section class="stack" id="inputPanel">
 
@@ -853,7 +883,11 @@
       </div>
     </div>
   </div>
-  <main class="grid">
+  <div class="mod-tabs" role="tablist" aria-label="模組內分頁">
+    <button class="mod-tab active" role="tab" aria-selected="true" data-modtab="calc" type="button">計算</button>
+    <button class="mod-tab" role="tab" aria-selected="false" data-modtab="explorer" type="button">病人資料</button>
+  </div>
+  <main class="grid" data-modtab-panel="calc">
     <!-- ============ LEFT: INPUT PANEL (AMINOGLYCOSIDE) ============ -->
     <section class="stack" id="amgInputPanel">
 
@@ -1172,7 +1206,11 @@
       </div>
     </div>
   </div>
-  <main class="grid">
+  <div class="mod-tabs" role="tablist" aria-label="模組內分頁">
+    <button class="mod-tab active" role="tab" aria-selected="true" data-modtab="calc" type="button">計算</button>
+    <button class="mod-tab" role="tab" aria-selected="false" data-modtab="explorer" type="button">病人資料</button>
+  </div>
+  <main class="grid" data-modtab-panel="calc">
     <!-- ============ LEFT: INPUT PANEL (AZOLE) ============ -->
     <section class="stack" id="azlInputPanel">
 
@@ -1487,7 +1525,11 @@
       </div>
     </div>
   </div>
-  <main class="grid">
+  <div class="mod-tabs" role="tablist" aria-label="模組內分頁">
+    <button class="mod-tab active" role="tab" aria-selected="true" data-modtab="calc" type="button">計算</button>
+    <button class="mod-tab" role="tab" aria-selected="false" data-modtab="explorer" type="button">病人資料</button>
+  </div>
+  <main class="grid" data-modtab-panel="calc">
     <!-- ============ LEFT: INPUT PANEL (AED) ============ -->
     <section class="stack" id="aedInputPanel">
 
@@ -2453,7 +2495,7 @@
     setDemoFlag('vancomycin', false);
   }
   function clearAllFn(){
-    const ok = confirm('確定要清除所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    const ok = confirm('確定要清空目前畫面上的輸入嗎？已儲存的病人存檔不會受影響。');
     if(!ok) return;
     resetModuleVanco();
   }
@@ -5304,7 +5346,7 @@ ${flagText || '（無特別旗標）'}
     setDemoFlag('aminoglycoside', false);
   }
   function clearAllFnAmg(){
-    const ok = confirm('確定要清除 Aminoglycoside 模組所有已輸入的病人、給藥與濃度資料嗎？此動作無法復原。');
+    const ok = confirm('確定要清空目前畫面上的輸入嗎？已儲存的病人存檔不會受影響。');
     if(!ok) return;
     resetModuleAmg();
   }
@@ -7513,26 +7555,26 @@ ${flagText||'（無）'}
   // ---------------- drug switcher ----------------
   let currentDrugModule = 'vancomycin';
   const AMINO_HEADER = {
-    title:'Aminoglycoside TDM 擬合引擎', eyebrow:'Free-Sampling PK',
-    subtitle:'任意抽血時點 · 貝氏 MAP 一室模型擬合 · Peak／Trough 導向劑量建議',
+    title:'TDM 工作台', eyebrow:'Free-Sampling PK',
+    subtitle:'Aminoglycoside · 任意抽血時點 · 貝氏 MAP 一室模型擬合 · Peak／Trough 導向劑量建議',
     docTitle:'Aminoglycoside TDM 擬合引擎',
     footer:'<strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映院內 TDM protocol 與當代主流實務（見院內 aminoglycoside TDM 收案表），可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。本工具不自動判讀 Hartford nomogram，改採個體化 ke／Vd 反解劑量。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
   const VANCO_HEADER = {
-    title:'Vancomycin TDM 擬合引擎', eyebrow:'Free-Sampling PK',
-    subtitle:'任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議',
+    title:'TDM 工作台', eyebrow:'Free-Sampling PK',
+    subtitle:'Vancomycin · 任意抽血時點 · 貝氏 MAP 一室模型擬合 · AUC₂₄ 導向劑量建議',
     docTitle:'Vancomycin TDM 擬合引擎',
     footer:'<strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
   const AZOLE_HEADER = {
-    title:'Azole TDM 判讀引擎', eyebrow:'Trough-Only · 非 PK 擬合',
-    subtitle:'Trough 對目標值判讀 · 臨床病程交叉核對 · 情境檢查清單',
+    title:'TDM 工作台', eyebrow:'Trough-Only · 非 PK 擬合',
+    subtitle:'Azole · Trough 對目標值判讀 · 臨床病程交叉核對 · 情境檢查清單',
     docTitle:'Azole TDM 判讀引擎',
     footer:'<strong>定位聲明：</strong>本模組為 trough 對目標值判讀＋情境交叉檢查工具，不做 PK 擬合（不計算 Cpeak／Vd／CL／AUC／ke／t½，例行 azole TDM 不建模）。目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles；Prevention of invasive fungal infections in adults with hematologic malignancies and HCT recipients）、Segal 等人 MSG/EORTC 治療反應共識標準、IDSA 2016 Aspergillosis Guideline 與本院實際藥局品項，可能與特定院內 protocol 有出入，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
   const AED_HEADER = {
-    title:'抗癲癇藥物 TDM 判讀引擎', eyebrow:'Trough／Free 判讀 · 非線性劑量提示',
-    subtitle:'濃度校正判讀 ＋ 非線性／比例劑量推估 ＋ 情境檢查',
+    title:'TDM 工作台', eyebrow:'Trough／Free 判讀 · 非線性劑量提示',
+    subtitle:'抗癲癇藥物 · 濃度校正判讀 ＋ 非線性／比例劑量推估 ＋ 情境檢查',
     docTitle:'抗癲癇藥物 TDM 判讀引擎',
     footer:'<strong>定位聲明：</strong>本模組為濃度校正判讀＋情境交叉檢查工具，Phenytoin 非線性動力學相關劑量提示為輔助估算，不取代個別化貝氏擬合；VPA 目前僅做濃度區間判讀與情境檢查，不做劑量反解。校正公式（Winter-Tozer、腎衰竭校正、Haidukewych 併用 VPA 校正）與族群參數出自明列文獻（見文件末參考文獻），Km 敏感度帶反映多篇亞洲／台灣族群研究之異質性，絕不杜撰未由資料支持的數值；院內檢驗排班與 TAT 僅為文字提醒，不代入日期計算。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
@@ -7554,7 +7596,9 @@ ${flagText||'（無）'}
     const target = document.getElementById('drug-'+name);
     if(target) target.classList.add('active');
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
-      btn.classList.toggle('primary', btn.dataset.drug===name);
+      const selected = btn.dataset.drug===name;
+      btn.classList.toggle('primary', selected);
+      btn.setAttribute('aria-selected', String(selected));
     });
     const entry = DRUG_MODULE_REGISTRY[name];
     if(!entry) return;
@@ -7719,6 +7763,22 @@ ${flagText||'（無）'}
     const cur = DRUG_NAME_TO_MODULE_KEY[currentDrugModule];
     if(cur && uiDirty[cur]) guardUnsaved(cur, `切換到${DRUG_MODULE_LABEL[name]}`, ()=>showDrugModule(name));
     else showDrugModule(name);
+  }
+
+  // ---------------- 模組內「計算／病人資料」子分頁（WP3.4, D5） ----------------
+  // 純顯示切換：只 toggle .mod-tab 的 active/aria-selected 與 [data-modtab-panel] 的
+  // hidden，不重跑任何計算、不觸發 render、不影響 uiDirty。moduleRoot 由呼叫端傳入
+  // （呼叫端用 btn.closest('.drug-module') 取得），四個模組的分頁狀態互不影響。
+  function switchModTab(moduleRoot, name){
+    if(!moduleRoot) return;
+    moduleRoot.querySelectorAll('.mod-tab[data-modtab]').forEach(btn=>{
+      const active = btn.dataset.modtab===name;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+    moduleRoot.querySelectorAll('[data-modtab-panel]').forEach(panel=>{
+      panel.hidden = panel.dataset.modtabPanel !== name;
+    });
   }
 
   document.addEventListener('DOMContentLoaded', function(){
@@ -8084,6 +8144,14 @@ ${flagText||'（無）'}
     });
     window.addEventListener('beforeunload', e=>{
       if(Object.values(uiDirty).some(Boolean)){ e.preventDefault(); e.returnValue=''; }
+    });
+
+    // ---------------- mod-tabs wiring (WP3.4, D5：模組內「計算／病人資料」子分頁殼) ----------------
+    document.querySelectorAll('.mod-tab[data-modtab]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const moduleRoot = btn.closest('.drug-module');
+        if(moduleRoot) switchModTab(moduleRoot, btn.dataset.modtab);
+      });
     });
 
     // ---------------- drug switcher wiring ----------------
