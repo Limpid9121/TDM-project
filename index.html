@@ -441,6 +441,18 @@
      這裡用 [data-modtab-panel][hidden]（0,2,0）確保切到「病人資料」分頁時 main.grid
      真的被隱藏，而不只是 aria/hidden 屬性打勾但畫面沒變。 */
   [data-modtab-panel][hidden]{display:none;}
+  /* ---------- 病人資料 explorer（WP3.5, D4：唯讀彙整＋批次刪除） ---------- */
+  .explorer{padding:14px 2px 4px;}
+  .explorer-toolbar{display:flex;align-items:center;gap:14px;margin-bottom:10px;flex-wrap:wrap;font-size:13px;}
+  .explorer-list{border:1px solid var(--line);border-radius:var(--radius);background:var(--card);}
+  .explorer-list > div{display:flex;align-items:center;gap:12px;padding:8px 12px;border-bottom:1px solid var(--line);cursor:pointer;font-size:13px;}
+  .explorer-list > div:last-child{border-bottom:none;}
+  .explorer-list > div:hover{background:var(--paper);}
+  .explorer-list > div > span:nth-of-type(1){flex:1 1 auto;font-weight:600;}
+  .explorer-list > div > span:nth-of-type(2){color:var(--ink-soft);font-size:12px;}
+  .ghost-danger{background:transparent;border-color:var(--crimson);color:var(--crimson);}
+  .ghost-danger:hover{background:var(--crimson-soft);border-color:var(--crimson);color:var(--crimson);}
+  .ghost-danger:disabled{opacity:.45;cursor:default;background:transparent;color:var(--crimson);}
   .drug-module{display:none;}
   .drug-module.active{display:block;}
   @media (min-width:981px){
@@ -848,6 +860,23 @@
 
     </section>
   </main>
+  <section class="explorer" id="vancoExplorer" data-modtab-panel="explorer" hidden>
+    <div class="explorer-toolbar">
+      <label><input type="checkbox" id="vancoExplorerSelectAll"> 全選</label>
+      <span id="vancoExplorerCount">0 位病人</span>
+      <button class="btn small ghost-danger" id="vancoExplorerDeleteBtn" disabled type="button">刪除選取的病人</button>
+    </div>
+    <div class="explorer-list" id="vancoExplorerList"></div>
+    <div class="guard-modal hide" id="vancoExplorerDeleteModal" role="alertdialog" aria-modal="true">
+      <div class="guard-modal-box">
+        <p id="vancoExplorerDeleteMsg"></p>
+        <div class="btn-row">
+          <button class="btn small" id="vancoExplorerDeleteCancel" type="button">取消</button>
+          <button class="btn primary small" id="vancoExplorerDeleteConfirm" type="button">確定刪除</button>
+        </div>
+      </div>
+    </div>
+  </section>
   </div>
   <!-- ============ AMINOGLYCOSIDE DRUG MODULE (injected below, mirrors structure above) ============ -->
   <div id="drug-aminoglycoside" class="drug-module">
@@ -1170,6 +1199,23 @@
 
     </section>
   </main>
+  <section class="explorer" id="amgExplorer" data-modtab-panel="explorer" hidden>
+    <div class="explorer-toolbar">
+      <label><input type="checkbox" id="amgExplorerSelectAll"> 全選</label>
+      <span id="amgExplorerCount">0 位病人</span>
+      <button class="btn small ghost-danger" id="amgExplorerDeleteBtn" disabled type="button">刪除選取的病人</button>
+    </div>
+    <div class="explorer-list" id="amgExplorerList"></div>
+    <div class="guard-modal hide" id="amgExplorerDeleteModal" role="alertdialog" aria-modal="true">
+      <div class="guard-modal-box">
+        <p id="amgExplorerDeleteMsg"></p>
+        <div class="btn-row">
+          <button class="btn small" id="amgExplorerDeleteCancel" type="button">取消</button>
+          <button class="btn primary small" id="amgExplorerDeleteConfirm" type="button">確定刪除</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   </div>
 
@@ -1489,6 +1535,23 @@
 
     </section>
   </main>
+  <section class="explorer" id="azlExplorer" data-modtab-panel="explorer" hidden>
+    <div class="explorer-toolbar">
+      <label><input type="checkbox" id="azlExplorerSelectAll"> 全選</label>
+      <span id="azlExplorerCount">0 位病人</span>
+      <button class="btn small ghost-danger" id="azlExplorerDeleteBtn" disabled type="button">刪除選取的病人</button>
+    </div>
+    <div class="explorer-list" id="azlExplorerList"></div>
+    <div class="guard-modal hide" id="azlExplorerDeleteModal" role="alertdialog" aria-modal="true">
+      <div class="guard-modal-box">
+        <p id="azlExplorerDeleteMsg"></p>
+        <div class="btn-row">
+          <button class="btn small" id="azlExplorerDeleteCancel" type="button">取消</button>
+          <button class="btn primary small" id="azlExplorerDeleteConfirm" type="button">確定刪除</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   </div>
 
@@ -1791,6 +1854,23 @@
 
     </section>
   </main>
+  <section class="explorer" id="aedExplorer" data-modtab-panel="explorer" hidden>
+    <div class="explorer-toolbar">
+      <label><input type="checkbox" id="aedExplorerSelectAll"> 全選</label>
+      <span id="aedExplorerCount">0 位病人</span>
+      <button class="btn small ghost-danger" id="aedExplorerDeleteBtn" disabled type="button">刪除選取的病人</button>
+    </div>
+    <div class="explorer-list" id="aedExplorerList"></div>
+    <div class="guard-modal hide" id="aedExplorerDeleteModal" role="alertdialog" aria-modal="true">
+      <div class="guard-modal-box">
+        <p id="aedExplorerDeleteMsg"></p>
+        <div class="btn-row">
+          <button class="btn small" id="aedExplorerDeleteCancel" type="button">取消</button>
+          <button class="btn primary small" id="aedExplorerDeleteConfirm" type="button">確定刪除</button>
+        </div>
+      </div>
+    </div>
+  </section>
 
   </div>
 
@@ -2826,6 +2906,23 @@
       updateBtnState();
     }
 
+    // 陣列版的 deleteSelectedPatient（WP3.5, D4：病人資料分頁的批次刪除）。確認 UI 交給
+    // 呼叫端（explorer 的刪除確認 modal）處理，這裡不彈 confirm；其餘行為（loadList／
+    // saveList、currentPatientId 命中時同步清空、refreshPatientSelect、updateBtnState）
+    // 比照既有 deleteSelectedPatient。新增方法，不改動 deleteSelectedPatient 本身。
+    function deletePatients(ids){
+      if(!ids || !ids.length) return;
+      const idSet = new Set(ids);
+      const list = loadList();
+      const removed = list.filter(x=>idSet.has(x.id));
+      if(!removed.length) return;
+      saveList(list.filter(x=>!idSet.has(x.id)));
+      if(currentPatientId && idSet.has(currentPatientId)){ currentPatientId=null; currentVisitId=null; }
+      refreshPatientSelect('');
+      $(cfg.metaId).textContent = `已刪除 ${removed.length} 位病人：${removed.map(x=>x.label).join('、')}`;
+      updateBtnState();
+    }
+
     function exportAll(){
       const list = loadList();
       if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
@@ -2885,8 +2982,8 @@
     function getSelectedPatient(){ const id = $(cfg.patientSelectId).value; return id ? patientById(id) : null; }
 
     return { refreshPatientSelect, refreshVisitSelect, saveAsNewVisit, updateCurrentVisit,
-             loadSelected, deleteSelectedPatient, exportAll, importMerge, clearCurrent, updateBtnState,
-             getSelectedPatient, getList: loadList,
+             loadSelected, deleteSelectedPatient, deletePatients, exportAll, importMerge, clearCurrent, updateBtnState,
+             getSelectedPatient, getList: loadList, fmtAsOf,
              _debug: ()=>({currentPatientId, currentVisitId}) };
   }
 
@@ -7779,6 +7876,137 @@ ${flagText||'（無）'}
     moduleRoot.querySelectorAll('[data-modtab-panel]').forEach(panel=>{
       panel.hidden = panel.dataset.modtabPanel !== name;
     });
+    // WP3.5 (D4)：切到「病人資料」分頁時重新彙整一次列表（唯讀，不動任何存檔）。
+    if(name==='explorer'){
+      const moduleKey = DRUG_NAME_TO_MODULE_KEY[moduleRoot.id.replace(/^drug-/,'')];
+      if(moduleKey && MODULE_STORE[moduleKey]) renderExplorer(MODULE_STORE[moduleKey](), moduleKey+'ExplorerList');
+    }
+  }
+
+  // ---------------- 病人資料 explorer：唯讀彙整＋批次刪除（WP3.5, D4） ----------------
+  // 參照 TPN 的「病人資料」頁籤，但只做唯讀彙整＋批次刪除；匯出/合併等既有於 WP3.2 的
+  // .pm-more 裡，這裡不重做。
+  function explorerLatestVisit(p){
+    const s = (p.visits||[]).slice().sort((a,b)=>{
+      const ta = a.asOf ? Date.parse(a.asOf) : NaN;
+      const tb = b.asOf ? Date.parse(b.asOf) : NaN;
+      const ka = isFinite(ta) ? ta : (a.savedAt||0);
+      const kb = isFinite(tb) ? tb : (b.savedAt||0);
+      return kb - ka;
+    });
+    return s.length ? s[0] : null;
+  }
+  function escExplorer(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  // 純顯示函式：讀 store.getList()（唯讀，不動任何存檔），每位病人一列。
+  function renderExplorer(store, listElId){
+    const el = document.getElementById(listElId);
+    if(!el) return;
+    const moduleKey = listElId.replace(/ExplorerList$/, '');
+    const list = store.getList().slice().sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+    if(!list.length){
+      el.innerHTML = '<div class="hint" style="padding:10px 4px;cursor:default;">尚無已儲存的病人。</div>';
+    } else {
+      el.innerHTML = list.map(p=>{
+        const n = (p.visits||[]).length;
+        const latest = explorerLatestVisit(p);
+        const asOfTxt = latest ? store.fmtAsOf(latest.asOf) : '—';
+        return `<div data-patient-id="${escExplorer(p.id)}">`
+          + `<input type="checkbox" value="${escExplorer(p.id)}">`
+          + `<span>${escExplorer(p.label)}（${n} 筆）</span>`
+          + `<span>最新評估時點：${asOfTxt}</span>`
+          + `</div>`;
+      }).join('');
+    }
+    const selectAll = document.getElementById(moduleKey+'ExplorerSelectAll');
+    if(selectAll) selectAll.checked = false;
+    updateExplorerToolbar(moduleKey);
+  }
+
+  function updateExplorerToolbar(moduleKey){
+    const list = document.getElementById(moduleKey+'ExplorerList');
+    const countEl = document.getElementById(moduleKey+'ExplorerCount');
+    const delBtn = document.getElementById(moduleKey+'ExplorerDeleteBtn');
+    if(!list || !countEl || !delBtn) return;
+    const total = list.querySelectorAll('input[type="checkbox"]').length;
+    const checked = list.querySelectorAll('input[type="checkbox"]:checked').length;
+    countEl.textContent = `${total} 位病人`;
+    delBtn.disabled = checked===0;
+  }
+
+  // 一次性掛好某模組 explorer 區塊的所有互動：勾選、全選、點列帶入 pm-bar 選單（不自動載入）、
+  // 批次刪除確認 modal。moduleKey 為 'vanco'／'amg'／'azl'／'aed'，store 為對應的
+  // makeVersionedPatientStore 實例。
+  function wireExplorer(moduleKey, store){
+    const section = document.getElementById(moduleKey+'Explorer');
+    const list = document.getElementById(moduleKey+'ExplorerList');
+    const selectAll = document.getElementById(moduleKey+'ExplorerSelectAll');
+    const delBtn = document.getElementById(moduleKey+'ExplorerDeleteBtn');
+    const modal = document.getElementById(moduleKey+'ExplorerDeleteModal');
+    const msg = document.getElementById(moduleKey+'ExplorerDeleteMsg');
+    const cancelBtn = document.getElementById(moduleKey+'ExplorerDeleteCancel');
+    const confirmBtn = document.getElementById(moduleKey+'ExplorerDeleteConfirm');
+    if(!section || !list) return;
+
+    const patientSelId = moduleKey==='vanco' ? 'patientSelect' : moduleKey+'PatientSelect';
+    const visitSelId = moduleKey==='vanco' ? 'patientVisitSelect' : moduleKey+'PatientVisitSelect';
+
+    list.addEventListener('change', (e)=>{
+      if(e.target && e.target.type==='checkbox'){
+        if(selectAll) selectAll.checked = false;
+        updateExplorerToolbar(moduleKey);
+      }
+    });
+    // 點列（非 checkbox）＝在 pm-bar 選單選中該病人最新一筆並切回「計算」分頁，但不自動載入
+    // （避免蓋掉使用者正在編輯、未存的畫面；真正載入仍需按「載入」，走 WP3.3 的 guardUnsaved）。
+    list.addEventListener('click', (e)=>{
+      if(e.target && e.target.type==='checkbox') return;
+      const row = e.target.closest('[data-patient-id]');
+      if(!row) return;
+      const pid = row.dataset.patientId;
+      const p = store.getList().find(x=>x.id===pid);
+      if(!p) return;
+      const latest = explorerLatestVisit(p);
+      const patientSel = document.getElementById(patientSelId);
+      const visitSel = document.getElementById(visitSelId);
+      if(patientSel){
+        patientSel.value = pid;
+        patientSel.dispatchEvent(new Event('change', {bubbles:true}));
+        if(visitSel && latest) visitSel.value = latest.visitId;
+      }
+      const moduleRoot = section.closest('.drug-module');
+      if(moduleRoot) switchModTab(moduleRoot, 'calc');
+    });
+    if(selectAll){
+      selectAll.addEventListener('change', ()=>{
+        list.querySelectorAll('input[type="checkbox"]').forEach(cb=>{ cb.checked = selectAll.checked; });
+        updateExplorerToolbar(moduleKey);
+      });
+    }
+    if(delBtn && modal && msg){
+      delBtn.addEventListener('click', ()=>{
+        const checked = Array.from(list.querySelectorAll('input[type="checkbox"]:checked'));
+        if(!checked.length) return;
+        const ids = checked.map(cb=>cb.value);
+        const labels = ids.map(id=>{ const p = store.getList().find(x=>x.id===id); return p ? p.label : id; });
+        msg.innerHTML = `確定刪除以下 ${ids.length} 位病人的全部收案紀錄嗎？此動作無法復原：<ul>`
+          + labels.map(l=>`<li>${escExplorer(l)}</li>`).join('') + `</ul>`;
+        modal.dataset.pendingIds = JSON.stringify(ids);
+        modal.classList.remove('hide');
+      });
+    }
+    if(cancelBtn && modal){
+      cancelBtn.addEventListener('click', ()=>{ modal.classList.add('hide'); });
+    }
+    if(confirmBtn && modal){
+      confirmBtn.addEventListener('click', ()=>{
+        const ids = JSON.parse(modal.dataset.pendingIds||'[]');
+        store.deletePatients(ids);
+        modal.classList.add('hide');
+        renderExplorer(store, moduleKey+'ExplorerList');
+        store.refreshPatientSelect();
+      });
+    }
   }
 
   document.addEventListener('DOMContentLoaded', function(){
@@ -8153,6 +8381,12 @@ ${flagText||'（無）'}
         if(moduleRoot) switchModTab(moduleRoot, btn.dataset.modtab);
       });
     });
+
+    // ---------------- 病人資料 explorer wiring (WP3.5, D4) ----------------
+    wireExplorer('vanco', vancoStore);
+    wireExplorer('amg', amgStore);
+    wireExplorer('azl', azoleStore);
+    wireExplorer('aed', aedStore);
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
