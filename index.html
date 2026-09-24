@@ -425,6 +425,7 @@
   #curveSvg:empty,#amgCurveSvg:empty{display:none;}
   .entry-row.row-invalid{border-left:3px solid var(--crimson);}
   .row-note{grid-column:1/-1;font-size:11px;color:var(--crimson);padding:0 2px;}
+  .level-timing{grid-column:1/-1;font-size:11px;color:var(--ink-soft);padding:0 2px;}
 
   /* ---------- Drug switcher (WP3.4, D8：改分頁觀感) ---------- */
   /* #drugSwitch 前綴：.drug-switch-btn 同時帶 .btn.small（specificity 0,2,0），
@@ -2297,7 +2298,8 @@
     row.className = 'entry-row entry-row--level';
     row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
-      <button class="row-del" type="button">×</button>`;
+      <button class="row-del" type="button">×</button>
+      <span class="level-timing"></span>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
     wireDelete(row.querySelector('.row-del'), row, render);
@@ -4541,6 +4543,53 @@ ${flagText || '（無特別旗標）'}
     });
   }
 
+  // ---------------- level row relative-timing annotation (WP4.2, W11) ----------------
+  // 純顯示：在每筆濃度列旁標示相對於給藥紀錄的時間關係。劑次編號基準與 renumberDoseRows
+  // 相同：取 dose 容器內「時間有效」的列，依時間排序，1 起編號——只看時間有效性，不要求
+  // 劑量／輸注時間也有效，這樣畫面上的「第 N 劑」徽章與這裡的說明文字才會一致。
+  function annotateLevelRows(levelContainerId, doseContainerId){
+    const doses = Array.from(document.querySelectorAll('#'+doseContainerId+' .entry-row')).map(row=>({
+      t: parseLocal(row.querySelector('.dose-date').value),
+      infMin: parseFloat(row.querySelector('.dose-inf').value)
+    })).filter(d=>isFinite(d.t)).sort((a,b)=>a.t-b.t);
+
+    document.querySelectorAll('#'+levelContainerId+' .entry-row').forEach(row=>{
+      const span = row.querySelector('.level-timing');
+      if(!span) return;
+      const t = parseLocal(row.querySelector('.level-date').value);
+      if(!isFinite(t) || !doses.length){ span.textContent = ''; return; }
+
+      let i = -1;
+      for(let k=0;k<doses.length;k++){ if(doses[k].t<=t) i=k; else break; }
+
+      if(i===-1){
+        const hrsBefore = (doses[0].t - t)/3600000;
+        span.textContent = `第 1 劑前 ${hrsBefore.toFixed(1)} h`;
+        return;
+      }
+
+      const doseNum = i+1;
+      const hrsAfter = (t - doses[i].t)/3600000;
+      let text = `第 ${doseNum} 劑開始後 +${hrsAfter.toFixed(1)} h`;
+      if(isFinite(doses[i].infMin)){
+        const infEndMs = doses[i].t + doses[i].infMin*60000;
+        if(t < infEndMs){
+          text += `（輸注中）`;
+        } else {
+          const hrsAfterInfEnd = (t - infEndMs)/3600000;
+          text += `（輸注結束後 +${hrsAfterInfEnd.toFixed(1)} h）`;
+        }
+      }
+      if(i+1 < doses.length){
+        const diffMin = (doses[i+1].t - t)/60000;
+        if(diffMin <= 120){
+          text = `第 ${doseNum+1} 劑前 ${Math.round(diffMin)} 分｜` + text;
+        }
+      }
+      span.textContent = text;
+    });
+  }
+
   // ---------------- steady-state assumption basis (WP1.5, S5) ----------------
   // 純顯示：勾選「已達穩態」時，說明虛擬劑次是依處方欄位（維持劑量／間隔／輸注）往前補，
   // 而非依給藥表第一劑；若給藥表第一劑本身跟處方欄位對不上，改用警示樣式提醒依據是哪一組數字。
@@ -4636,6 +4685,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('scrTable', 'scr');
     markRowValidity('doseTable', 'dose');
     markRowValidity('levelTable', 'level');
+    annotateLevelRows('levelTable', 'doseTable');
     updateSteadyStateBasis('vanco');
     syncAdvSummary('vanco');
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
@@ -5344,7 +5394,8 @@ ${flagText || '（無特別旗標）'}
     row.className = 'entry-row entry-row--level';
     row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
       <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
-      <button class="row-del" type="button">×</button>`;
+      <button class="row-del" type="button">×</button>
+      <span class="level-timing"></span>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
     wireDelete(row.querySelector('.row-del'), row, renderAmino);
@@ -5902,6 +5953,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('amgScrTable', 'scr');
     markRowValidity('amgDoseTable', 'dose');
     markRowValidity('amgLevelTable', 'level');
+    annotateLevelRows('amgLevelTable', 'amgDoseTable');
     updateSteadyStateBasis('amg');
     syncAdvSummary('amg');
     lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
