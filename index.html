@@ -167,6 +167,22 @@
   .checkline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin:6px 0;}
   .checkline input{width:14px;height:14px;}
 
+  /* ---- WP4.1 (W3): card-03 internal reorg helpers ---- */
+  .card h3{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;margin:10px 0 5px;}
+  .card h3:first-of-type{margin-top:8px;}
+  details.adv, details.batch-ops{margin:8px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);}
+  details.adv > summary, details.batch-ops > summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:6px 12px;list-style:revert;}
+  details.adv[open] > summary, details.batch-ops[open] > summary{border-bottom:1px solid var(--line);}
+  details.adv > *:not(summary), details.batch-ops > *:not(summary){padding:0 12px;}
+  details.adv > *:last-child:not(summary), details.batch-ops > *:last-child:not(summary){padding-bottom:8px;}
+  details.adv > .field-row:not(summary), details.adv > .checkline:not(summary){padding-left:12px;padding-right:12px;}
+  .hint-more{display:inline;}
+  .hint-more summary{display:inline;cursor:pointer;color:var(--trace);font-size:11.5px;}
+  .hint-more[open]{display:block;margin-top:4px;}
+  .weekday-group{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-top:6px;}
+  .weekday-group .checkline{margin:0;justify-content:center;border:1px solid var(--line);border-radius:6px;padding:4px 2px;}
+  .weekday-group .checkline:has(input:checked){background:var(--trace-soft);border-color:var(--trace);}
+
   #regimenTable{min-width:640px;}
   .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
 
@@ -640,40 +656,51 @@
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</p>
-        <div class="field-row stacked">
-          <div class="field"><label id="therapyStartLabel">分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
-          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
-        </div>
-        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
-        <div class="field-row" id="loadingFields" style="display:none;">
-          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
-          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
-          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
-        </div>
-        <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
-        <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
-        <div class="hint" id="vancoSsBasis"></div>
+        <div class="hint">先填目前處方 → 產生給藥紀錄 → 再手動修正實際延遲／漏給。<details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</details></div>
 
+        <h3>處方</h3>
         <div id="fixedRegimenFields">
           <div class="field-row three">
             <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
             <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
             <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="60" step="5"></div>
           </div>
+        </div>
+
+        <h3>產生範圍</h3>
+        <div class="field-row">
+          <div class="field"><label id="therapyStartLabel">分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
+          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
+        </div>
+
+        <details class="adv" id="vancoAdv">
+          <summary>進階：首劑 loading／已達穩態假設</summary>
+          <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
+          <div class="field-row" id="loadingFields" style="display:none;">
+            <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
+            <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
+            <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
+          </div>
+          <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+          <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
+          <div class="hint" id="vancoSsBasis"></div>
+        </details>
+
+        <div id="fixedRegimenButtonBlock">
           <div class="btn-row">
             <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
           </div>
-          <p class="hint" style="margin-top:-4px;">未勾選 loading：「分析起點」即第一劑維持劑量的確切時間，之後每一劑固定間隔 τ 小時展開。已勾選 loading：「分析起點」是 loading 的確切時間，「第一劑維持劑量時間」另外獨立填寫，之後同樣每 τ 小時展開——兩者互不相關，不會互相帶入。院內常見固定給藥時段僅供你填寫時參考，不會自動代入或強制對齊：QD 09:00；Q12H 09:00／21:00；Q8H 05:00／13:00／21:00；Q6H 05:00／11:00／17:00／23:00。</p>
+          <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>未勾選 loading：「分析起點」即第一劑維持劑量的確切時間，之後每一劑固定間隔 τ 小時展開。已勾選 loading：「分析起點」是 loading 的確切時間，「第一劑維持劑量時間」另外獨立填寫，之後同樣每 τ 小時展開——兩者互不相關，不會互相帶入。院內常見固定給藥時段僅供你填寫時參考，不會自動代入或強制對齊：QD 09:00；Q12H 09:00／21:00；Q8H 05:00／13:00／21:00；Q6H 05:00／11:00／17:00／23:00。</details></div>
         </div>
 
         <div id="hdDoseFields" style="display:none;">
-          <p class="hint" style="margin-top:0;">HD 病人給藥頻次跟著透析排程走（多為 TIWQN，透析當日固定時刻給予），不是固定小時間隔。下方可依星期規則批次產生透析時程，或用「手動新增一劑」直接輸入實際給藥時間。</p>
+          <h3 style="margin-top:0;">① 透析排程（星期／時段／時長）→ 產生透析時程</h3>
+          <div class="hint" style="margin-top:-4px;">HD 病人給藥頻次跟著透析排程走（多為 TIWQN，透析當日固定時刻給予），不是固定小時間隔。<details class="hint-more"><summary>ⓘ 詳細說明</summary>下方可依星期規則批次產生透析時程，或用「手動新增一劑」直接輸入實際給藥時間。</details></div>
 
           <div style="padding:12px;background:var(--paper);border-radius:var(--radius);margin-bottom:12px;">
             <div class="field-row">
               <div class="field"><label>透析星期</label>
-                <div style="display:flex;gap:8px;padding-top:6px;flex-wrap:wrap;">
+                <div class="weekday-group">
                   <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay1" checked><label for="hdDay1">一</label></span>
                   <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay2"><label for="hdDay2">二</label></span>
                   <span class="checkline" style="margin:0;"><input type="checkbox" id="hdDay3" checked><label for="hdDay3">三</label></span>
@@ -704,30 +731,38 @@
             </div>
           </div>
 
+          <h3>② 透析時程（可逐筆修改或刪除）</h3>
           <div class="entry-head entry-head--hd" aria-hidden="true"><span>開始</span><span>結束</span><span></span></div>
           <div class="entry-rows" id="hdSessionTable"></div>
           <div class="btn-row"><button class="btn small" id="addHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
-          <div class="field-row three" style="margin-top:12px;">
+
+          <h3>③ 透析後劑量 → 依透析時程展開給藥紀錄</h3>
+          <div class="field-row three" style="margin-top:0;">
             <div class="field"><label>透析後維持劑量（mg）</label><input type="number" id="hdMaintDose" step="50" placeholder="如：700"></div>
             <div class="field"><label>固定給藥時刻</label><input type="time" id="hdFixedTime" value="21:00"></div>
             <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="hdMaintInf" value="60" step="5"></div>
           </div>
-          <p class="hint" style="margin-top:-6px;">院內慣例 TIWQN：透析當日固定時刻給藥（預設 21:00，確保透析後給予），不依當次實際透析結束時間往後推算。個別病人如需不同給藥時間，展開後直接修改該筆給藥紀錄即可，不影響其他劑次。</p>
+          <div class="hint" style="margin-top:-6px;">院內慣例 TIWQN：透析當日固定時刻給藥（預設 21:00，確保透析後給予），不依當次實際透析結束時間往後推算。<details class="hint-more"><summary>ⓘ 詳細說明</summary>個別病人如需不同給藥時間，展開後直接修改該筆給藥紀錄即可，不影響其他劑次。</details></div>
           <div class="btn-row">
             <button class="btn primary small" id="expandDosesHD" type="button">依透析時程展開給藥紀錄</button>
           </div>
         </div>
 
+        <h3>實際給藥紀錄（計算只採用這張表）</h3>
         <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
         <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button>
+        </div>
+
+        <details class="batch-ops">
+          <summary>批次操作</summary>
           <span class="prune-tool">
             移除此時間之前的紀錄
             <input type="datetime-local" id="pruneBeforeInput">
             <button class="btn small" id="pruneBeforeBtn" type="button">套用</button>
           </span>
-        </div>
+        </details>
       </div>
 
       <!-- 4. 血中濃度量測 -->
@@ -1007,11 +1042,9 @@
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <p class="hint">先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。「分析起點」不必是整個療程最早的一劑：長期療程中若腎功能改變需重新評估，直接把起點設成想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度建議達懷疑的目前半衰期的 4–5 倍。</p>
-        <div class="field-row stacked">
-          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="amgTherapyStart"></div>
-          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
-        </div>
+        <div class="hint">先填目前處方 → 產生給藥紀錄 → 再手動修正實際延遲／漏給。<details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。「分析起點」不必是整個療程最早的一劑：長期療程中若腎功能改變需重新評估，直接把起點設成想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度建議達懷疑的目前半衰期的 4–5 倍。</details></div>
+
+        <h3>處方</h3>
         <div class="field-row">
           <div class="field"><label>維持劑量（mg）</label><input type="number" id="amgMaintDose" value="420" step="10"></div>
           <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="amgMaintInf" value="30" step="5"></div>
@@ -1031,7 +1064,7 @@
           <p class="hint" style="margin-top:-2px;">NTM 等適應症常用 10–25 mg/kg TIW（如週一／三／五）；HD 病人給藥亦跟著透析排程走（TIWQN，非等距間隔）——請勾選實際給藥的星期與時刻，下方「自動展開」會依日曆逐日產生給藥紀錄；穩態相關數字改以你目前輸入的實際給藥史直接推算下一劑前的預測 trough，而非固定間隔公式。</p>
           <div class="field-row">
             <div class="field"><label>給藥星期</label>
-              <div style="display:flex;gap:8px;padding-top:6px;flex-wrap:wrap;">
+              <div class="weekday-group">
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgTiwDay1" checked><label for="amgTiwDay1">一</label></span>
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgTiwDay2"><label for="amgTiwDay2">二</label></span>
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgTiwDay3" checked><label for="amgTiwDay3">三</label></span>
@@ -1068,23 +1101,39 @@
             <div class="btn-row"><button class="btn small" id="addAmgHdSessionRow" type="button">+ 手動新增一次透析時程</button></div>
           </div>
         </div>
+
+        <h3>產生範圍</h3>
+        <div class="field-row">
+          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="amgTherapyStart"></div>
+          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
+        </div>
+
+        <details class="adv" id="amgAdv">
+          <summary>進階：已達穩態假設</summary>
+          <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+          <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
+          <div class="hint" id="amgSsBasis"></div>
+        </details>
+
         <div class="btn-row">
           <button class="btn primary small" id="amgExpandDoses" type="button">依上述處方自動展開給藥紀錄</button>
         </div>
-        <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
-        <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
-        <div class="hint" id="amgSsBasis"></div>
 
+        <h3>實際給藥紀錄（計算只採用這張表）</h3>
         <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
         <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="amgAddDoseRow" type="button">+ 手動新增一劑</button>
+        </div>
+
+        <details class="batch-ops">
+          <summary>批次操作</summary>
           <span class="prune-tool">
             移除此時間之前的紀錄
             <input type="datetime-local" id="amgPruneBeforeInput">
             <button class="btn small" id="amgPruneBeforeBtn" type="button">套用</button>
           </span>
-        </div>
+        </details>
       </div>
 
       <!-- 4. 血中濃度量測 -->
@@ -2476,6 +2525,7 @@
     const isHD = document.getElementById('dialysis').value === 'HD';
     document.getElementById('hdInfoBlock').style.display = isHD ? 'block' : 'none';
     document.getElementById('fixedRegimenFields').style.display = isHD ? 'none' : 'block';
+    document.getElementById('fixedRegimenButtonBlock').style.display = isHD ? 'none' : 'block';
     document.getElementById('hdDoseFields').style.display = isHD ? 'block' : 'none';
     if(isHD){
       // what-if pick mechanism doesn't apply to HD's simplified single-suggestion output
@@ -4529,6 +4579,39 @@ ${flagText || '（無特別旗標）'}
     }
   }
 
+  // ---------------- WP4.1 (W3): card-03 <details class="adv"> summary ----------------
+  // 安全要求：details 收起時，summary 仍要顯示目前啟用的進階選項；任一核取方塊勾選時
+  // details 自動展開（open=true），但使用者手動打開、兩個核取方塊都沒勾時，這裡不會
+  // 把它自動關掉（只設 true，不設 false）。純顯示，不影響任何欄位值或計算（R2）。
+  const ADV_SUMMARY_CFG = {
+    vanco: {detailsId:'vancoAdv', loadingCheckboxId:'useLoading', loadingDoseId:'loadingDose', loadingInfId:'loadingInf',
+      ssCheckboxId:'assumeSteadyState', baseLabel:'進階：首劑 loading／已達穩態假設'},
+    amg: {detailsId:'amgAdv', loadingCheckboxId:null, loadingDoseId:null, loadingInfId:null,
+      ssCheckboxId:'amgAssumeSteadyState', baseLabel:'進階：已達穩態假設'}
+  };
+  function syncAdvSummary(moduleKey){
+    const cfg = ADV_SUMMARY_CFG[moduleKey];
+    if(!cfg) return;
+    const detailsEl = document.getElementById(cfg.detailsId);
+    const summaryEl = detailsEl ? detailsEl.querySelector('summary') : null;
+    if(!detailsEl || !summaryEl) return;
+
+    const parts = [];
+    if(cfg.loadingCheckboxId){
+      const loadingEl = document.getElementById(cfg.loadingCheckboxId);
+      if(loadingEl && loadingEl.checked){
+        const d = document.getElementById(cfg.loadingDoseId).value;
+        const i = document.getElementById(cfg.loadingInfId).value;
+        parts.push(`✓ loading ${d} mg／${i} 分`);
+      }
+    }
+    const ssEl = document.getElementById(cfg.ssCheckboxId);
+    if(ssEl && ssEl.checked) parts.push('✓ 已達穩態假設');
+
+    summaryEl.textContent = parts.length ? ('進階：' + parts.join('\u3000')) : cfg.baseLabel;
+    if(parts.length && !detailsEl.open) detailsEl.open = true;
+  }
+
   // ---------------- target AUC/MIC readout (WP1.6, D7) ----------------
   // #targetAuc's label now honestly reads "目標 AUC24（mg·h/L）" (D7) since the field
   // itself only ever held the AUC value, not an AUC/MIC ratio; this pure-display
@@ -4554,6 +4637,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('doseTable', 'dose');
     markRowValidity('levelTable', 'level');
     updateSteadyStateBasis('vanco');
+    syncAdvSummary('vanco');
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
     if(guardRequired('vanco')) return;
 
@@ -5819,6 +5903,7 @@ ${flagText || '（無特別旗標）'}
     markRowValidity('amgDoseTable', 'dose');
     markRowValidity('amgLevelTable', 'level');
     updateSteadyStateBasis('amg');
+    syncAdvSummary('amg');
     lastAmgDerived = null; // reset; repopulated at the successful bottom of renderAmino
     if(guardRequired('amg')) return;
 
