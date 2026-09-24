@@ -50,7 +50,7 @@ const INDEX_HTML_PATH = fs.existsSync(path.join(__dirname, 'index.html'))
 // edited), loadHarness() throws immediately with a clear message rather than silently
 // capturing nothing — update this constant to match the new tail when that happens.
 const ANCHOR = `    document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ if(!btn.disabled) showDrugModule(btn.dataset.drug); });
+      btn.addEventListener('click', ()=>{ if(!btn.disabled) guardSwitchDrugModule(btn.dataset.drug); });
     });
   });
 

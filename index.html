@@ -89,6 +89,12 @@
   .pm-bar .pm-more-body{position:absolute;right:0;top:100%;z-index:15;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:12px;min-width:280px;box-shadow:0 4px 14px rgba(0,0,0,.08);}
   .pm-bar #patientMeta, .pm-bar #amgPatientMeta, .pm-bar #azlPatientMeta, .pm-bar #aedPatientMeta{flex-basis:100%;order:99;margin:2px 0 0;min-height:14px;}
 
+  /* ---------- Unsaved-changes guard (WP3.3, D4) ---------- */
+  .pm-dirty-dot{color:var(--crimson);font-size:10px;margin-left:4px;vertical-align:2px;}
+  .guard-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:50;}
+  .guard-modal.hide{display:none;}
+  .guard-modal-box{background:var(--card);border-radius:var(--radius);padding:18px 20px;max-width:360px;}
+
   /* ---------- Input panel ---------- */
   .card{
     background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
@@ -486,7 +492,7 @@
     <div class="pm-field"><label for="patientSelect">已存病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
     <div class="pm-field"><label for="patientVisitSelect">收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
     <button class="btn small" id="loadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button>
+    <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="vancoDirtyDot" hidden>●</span>
     <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
     <details class="pm-more">
       <summary title="評估時點、備份、刪除">更多</summary>
@@ -502,6 +508,16 @@
       </div>
     </details>
     <div class="hint" id="patientMeta"></div>
+  </div>
+  <div class="guard-modal hide" id="vancoGuardModal" role="alertdialog" aria-modal="true">
+    <div class="guard-modal-box">
+      <p id="vancoGuardMsg"></p>
+      <div class="btn-row">
+        <button class="btn small" id="vancoGuardCancel" type="button">取消</button>
+        <button class="btn small" id="vancoGuardDiscard" type="button">不儲存，繼續</button>
+        <button class="btn primary small" id="vancoGuardSave" type="button">先儲存再繼續</button>
+      </div>
+    </div>
   </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL ============ -->
@@ -810,7 +826,7 @@
     <div class="pm-field"><label for="amgPatientSelect">已存病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
     <div class="pm-field"><label for="amgPatientVisitSelect">收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
     <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="amgDirtyDot" hidden>●</span>
     <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
     <details class="pm-more">
       <summary title="評估時點、備份、刪除">更多</summary>
@@ -826,6 +842,16 @@
       </div>
     </details>
     <div class="hint" id="amgPatientMeta"></div>
+  </div>
+  <div class="guard-modal hide" id="amgGuardModal" role="alertdialog" aria-modal="true">
+    <div class="guard-modal-box">
+      <p id="amgGuardMsg"></p>
+      <div class="btn-row">
+        <button class="btn small" id="amgGuardCancel" type="button">取消</button>
+        <button class="btn small" id="amgGuardDiscard" type="button">不儲存，繼續</button>
+        <button class="btn primary small" id="amgGuardSave" type="button">先儲存再繼續</button>
+      </div>
+    </div>
   </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AMINOGLYCOSIDE) ============ -->
@@ -1119,7 +1145,7 @@
     <div class="pm-field"><label for="azlPatientSelect">已存病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
     <div class="pm-field"><label for="azlPatientVisitSelect">收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
     <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="azlDirtyDot" hidden>●</span>
     <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
     <details class="pm-more">
       <summary title="評估時點、備份、刪除">更多</summary>
@@ -1135,6 +1161,16 @@
       </div>
     </details>
     <div class="hint" id="azlPatientMeta"></div>
+  </div>
+  <div class="guard-modal hide" id="azlGuardModal" role="alertdialog" aria-modal="true">
+    <div class="guard-modal-box">
+      <p id="azlGuardMsg"></p>
+      <div class="btn-row">
+        <button class="btn small" id="azlGuardCancel" type="button">取消</button>
+        <button class="btn small" id="azlGuardDiscard" type="button">不儲存，繼續</button>
+        <button class="btn primary small" id="azlGuardSave" type="button">先儲存再繼續</button>
+      </div>
+    </div>
   </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AZOLE) ============ -->
@@ -1424,7 +1460,7 @@
     <div class="pm-field"><label for="aedPatientSelect">已存病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
     <div class="pm-field"><label for="aedPatientVisitSelect">收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
     <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button>
+    <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="aedDirtyDot" hidden>●</span>
     <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
     <details class="pm-more">
       <summary title="評估時點、備份、刪除">更多</summary>
@@ -1440,6 +1476,16 @@
       </div>
     </details>
     <div class="hint" id="aedPatientMeta"></div>
+  </div>
+  <div class="guard-modal hide" id="aedGuardModal" role="alertdialog" aria-modal="true">
+    <div class="guard-modal-box">
+      <p id="aedGuardMsg"></p>
+      <div class="btn-row">
+        <button class="btn small" id="aedGuardCancel" type="button">取消</button>
+        <button class="btn small" id="aedGuardDiscard" type="button">不儲存，繼續</button>
+        <button class="btn primary small" id="aedGuardSave" type="button">先儲存再繼續</button>
+      </div>
+    </div>
   </div>
   <main class="grid">
     <!-- ============ LEFT: INPUT PANEL (AED) ============ -->
@@ -2324,6 +2370,7 @@
   }
 
   function resetModuleVanco(){
+    clearDirty('vanco');
     // 病人存檔狀態(不影響已儲存的紀錄本身,只是離開目前這位病人)
     document.getElementById('patientLabel').value='';
     document.getElementById('patientSelect').value='';
@@ -2674,6 +2721,7 @@
       refreshPatientSelect(currentPatientId);
       $(cfg.metaId).textContent = `已存為新收案：${label}（第 ${p.visits.length} 筆・評估時點 ${fmtAsOf(visit.asOf)}）`;
       updateBtnState();
+      if(cfg.onPersisted) cfg.onPersisted('save');
     }
 
     function updateCurrentVisit(){
@@ -2697,6 +2745,7 @@
       if(!saveList(list)) return;
       refreshPatientSelect(currentPatientId);
       $(cfg.metaId).textContent = `已更新目前收案版本：${label}（評估時點 ${fmtAsOf(vst.asOf)}）`;
+      if(cfg.onPersisted) cfg.onPersisted('update');
     }
 
     function loadSelected(){
@@ -2718,6 +2767,7 @@
       if(vSel) vSel.value = vst.visitId;
       $(cfg.metaId).textContent = `已載入：${p.label}（評估時點 ${fmtAsOf(vst.asOf)}・共 ${(p.visits||[]).length} 筆收案）`;
       updateBtnState();
+      if(cfg.onPersisted) cfg.onPersisted('load');
     }
 
     function deleteSelectedPatient(){
@@ -2812,7 +2862,8 @@
     labelId:'patientLabel', patientSelectId:'patientSelect', visitSelectId:'patientVisitSelect',
     metaId:'patientMeta', asOfId:'patientAsOf', updateBtnId:'updateVisitBtn',
     collectState, applyState, getDerived:()=>lastVancoDerived, getAsOfDefault:vancoAsOfDefault,
-    onChanged: ()=>{ try{ renderVancoTrend(); }catch(e){ /* a chart failure must never block saving */ } }
+    onChanged: ()=>{ try{ renderVancoTrend(); }catch(e){ /* a chart failure must never block saving */ } },
+    onPersisted: ()=>clearDirty('vanco')
   });
 
   // ================= 歷程趨勢（跨收案）trend chart — loop C =================
@@ -5180,6 +5231,7 @@ ${flagText || '（無特別旗標）'}
   }
 
   function resetModuleAmg(){
+    clearDirty('amg');
     document.getElementById('amgPatientLabel').value='';
     document.getElementById('amgPatientSelect').value='';
     document.getElementById('amgPatientAsOf').value='';
@@ -5378,7 +5430,8 @@ ${flagText || '（無特別旗標）'}
     key:'amino_tdm_patients_v2', idPrefix:'amg', exportName:'aminoglycoside_tdm_patients',
     labelId:'amgPatientLabel', patientSelectId:'amgPatientSelect', visitSelectId:'amgPatientVisitSelect',
     metaId:'amgPatientMeta', asOfId:'amgPatientAsOf', updateBtnId:'amgUpdateVisitBtn',
-    collectState: collectStateAmg, applyState: applyStateAmg, getDerived:()=>lastAmgDerived, getAsOfDefault:amgAsOfDefault
+    collectState: collectStateAmg, applyState: applyStateAmg, getDerived:()=>lastAmgDerived, getAsOfDefault:amgAsOfDefault,
+    onPersisted: ()=>clearDirty('amg')
   });
 
   function updateCustomRowAmg(CL, ke, target, mic){
@@ -6673,10 +6726,12 @@ ${flagText||'（無）'}
     key:'azole_tdm_patients_v2', idPrefix:'azl', exportName:'azole_tdm_patients',
     labelId:'azlPatientLabel', patientSelectId:'azlPatientSelect', visitSelectId:'azlPatientVisitSelect',
     metaId:'azlPatientMeta', asOfId:'azlPatientAsOf', updateBtnId:'azlUpdateVisitBtn',
-    collectState: collectStateAzole, applyState: applyStateAzole, getDerived:()=>lastAzoleDerived, getAsOfDefault:azoleAsOfDefault
+    collectState: collectStateAzole, applyState: applyStateAzole, getDerived:()=>lastAzoleDerived, getAsOfDefault:azoleAsOfDefault,
+    onPersisted: ()=>clearDirty('azl')
   });
 
   function resetModuleAzole(){
+    clearDirty('azl');
     document.querySelectorAll('#azlInputPanel input[type=text], #azlInputPanel input[type=number], #azlInputPanel input[type=date], #azlInputPanel input[type=datetime-local], #azlInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#azlInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
     document.getElementById('azlDrug').value='voriconazole';
@@ -7126,9 +7181,11 @@ ${flagText||'（無）'}
     key:'aed_tdm_patients_v2', idPrefix:'aed', exportName:'aed_tdm_patients',
     labelId:'aedPatientLabel', patientSelectId:'aedPatientSelect', visitSelectId:'aedPatientVisitSelect',
     metaId:'aedPatientMeta', asOfId:'aedPatientAsOf', updateBtnId:'aedUpdateVisitBtn',
-    collectState: collectStateAed, applyState: applyStateAed, getDerived:()=>lastAedDerived, getAsOfDefault:aedAsOfDefault
+    collectState: collectStateAed, applyState: applyStateAed, getDerived:()=>lastAedDerived, getAsOfDefault:aedAsOfDefault,
+    onPersisted: ()=>clearDirty('aed')
   });
   function resetModuleAed(){
+    clearDirty('aed');
     document.querySelectorAll('#aedInputPanel input[type=text], #aedInputPanel input[type=number], #aedInputPanel input[type=date], #aedInputPanel input[type=datetime-local], #aedInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#aedInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
     document.getElementById('aedDrug').value='phenytoin'; document.getElementById('aedSex').value='M'; document.getElementById('aedPregnancy').value='no';
@@ -7600,6 +7657,70 @@ ${flagText||'（無）'}
     return n===0 || confirm(`這會清空並重建目前 ${n} 筆${what}（包含你手動修改過的內容），確定嗎？`);
   }
 
+  // ---------------- unsaved-changes guard (WP3.3, D4) ----------------
+  // 模組層級（不是逐欄位）的「有沒有還沒存的變更」旗標；四個模組各自獨立。
+  const uiDirty = { vanco:false, amg:false, azl:false, aed:false };
+  const DIRTY_DOT_IDS = { vanco:'vancoDirtyDot', amg:'amgDirtyDot', azl:'azlDirtyDot', aed:'aedDirtyDot' };
+  const GUARD_MODAL_IDS = {
+    vanco:{ modal:'vancoGuardModal', msg:'vancoGuardMsg', cancel:'vancoGuardCancel', discard:'vancoGuardDiscard', save:'vancoGuardSave' },
+    amg:  { modal:'amgGuardModal',   msg:'amgGuardMsg',   cancel:'amgGuardCancel',   discard:'amgGuardDiscard',   save:'amgGuardSave' },
+    azl:  { modal:'azlGuardModal',   msg:'azlGuardMsg',   cancel:'azlGuardCancel',   discard:'azlGuardDiscard',   save:'azlGuardSave' },
+    aed:  { modal:'aedGuardModal',   msg:'aedGuardMsg',   cancel:'aedGuardCancel',   discard:'aedGuardDiscard',   save:'aedGuardSave' }
+  };
+  // MODULE_STORE 用 thunk（延遲讀取）包裝，因為 vancoStore/amgStore/azoleStore/aedStore 這幾個
+  // const 的宣告位置在本函式之後，此處只是先定義查表用的函式，實際呼叫時（guardUnsaved 觸發時）
+  // 這些 store 早已初始化完畢。
+  const MODULE_STORE = { vanco:()=>vancoStore, amg:()=>amgStore, azl:()=>azoleStore, aed:()=>aedStore };
+  const DRUG_MODULE_LABEL = { vancomycin:'Vancomycin', aminoglycoside:'Aminoglycoside', azole:'Azole', aed:'抗癲癇藥物' };
+  const DRUG_NAME_TO_MODULE_KEY = { vancomycin:'vanco', aminoglycoside:'amg', azole:'azl', aed:'aed' };
+
+  function updateDirtyDot(module){
+    const dot = document.getElementById(DIRTY_DOT_IDS[module]);
+    if(!dot) return;
+    dot.hidden = !uiDirty[module];
+    dot.title = uiDirty[module] ? '有尚未儲存的變更' : '目前內容與已存檔一致';
+  }
+  function markDirty(module){ uiDirty[module] = true; updateDirtyDot(module); }
+  function clearDirty(module){ uiDirty[module] = false; updateDirtyDot(module); }
+
+  // guardUnsaved：uiDirty[module] 為 false 時直接 proceed；為 true 時開三選一小視窗。
+  // 「先儲存再繼續」呼叫該模組 store 的 saveAsNewVisit()——若病歷號為空，其既有的
+  // alert('請先輸入病歷號再儲存。') 會擋下並 return，不會觸發 onPersisted，此時
+  // uiDirty[module] 仍是 true，modal 保持開啟不關閉，不會誤放行。
+  function guardUnsaved(module, actionLabel, proceed){
+    if(!uiDirty[module]){ proceed(); return; }
+    const ids = GUARD_MODAL_IDS[module];
+    const modal = document.getElementById(ids.modal);
+    if(!modal){ proceed(); return; }
+    document.getElementById(ids.msg).textContent = `有尚未儲存的變更，要在「${actionLabel}」前先儲存嗎？`;
+    modal.classList.remove('hide');
+    const cancelBtn = document.getElementById(ids.cancel);
+    const discardBtn = document.getElementById(ids.discard);
+    const saveBtn = document.getElementById(ids.save);
+    function cleanup(){
+      modal.classList.add('hide');
+      cancelBtn.removeEventListener('click', onCancel);
+      discardBtn.removeEventListener('click', onDiscard);
+      saveBtn.removeEventListener('click', onSave);
+    }
+    function onCancel(){ cleanup(); }
+    function onDiscard(){ cleanup(); proceed(); }
+    function onSave(){
+      MODULE_STORE[module]().saveAsNewVisit();
+      if(!uiDirty[module]){ cleanup(); proceed(); }
+    }
+    cancelBtn.addEventListener('click', onCancel);
+    discardBtn.addEventListener('click', onDiscard);
+    saveBtn.addEventListener('click', onSave);
+  }
+
+  // 只在目前模組（切換前）的 uiDirty 為 true 時攔截，不影響目標模組。
+  function guardSwitchDrugModule(name){
+    const cur = DRUG_NAME_TO_MODULE_KEY[currentDrugModule];
+    if(cur && uiDirty[cur]) guardUnsaved(cur, `切換到${DRUG_MODULE_LABEL[name]}`, ()=>showDrugModule(name));
+    else showDrugModule(name);
+  }
+
   document.addEventListener('DOMContentLoaded', function(){
     // WP1.1：擷取四個輸入面板的 HTML 原始值，供「載入示範病例」按鈕還原用（必須在任何
     // init／示範資料寫入之前執行）。
@@ -7688,7 +7809,9 @@ ${flagText||'（無）'}
 
     document.getElementById('savePatientBtn').addEventListener('click', ()=>vancoStore.saveAsNewVisit());
     document.getElementById('updateVisitBtn').addEventListener('click', ()=>vancoStore.updateCurrentVisit());
-    document.getElementById('loadPatientBtn').addEventListener('click', ()=>{ vancoStore.loadSelected(); setDemoFlag('vancomycin', false); });
+    document.getElementById('loadPatientBtn').addEventListener('click', ()=>{
+      guardUnsaved('vanco', '載入其他病人', ()=>{ vancoStore.loadSelected(); setDemoFlag('vancomycin', false); });
+    });
     document.getElementById('deletePatientBtn').addEventListener('click', ()=>vancoStore.deleteSelectedPatient());
     document.getElementById('patientSelect').addEventListener('change', ()=>vancoStore.refreshVisitSelect());
     document.getElementById('exportPatientsBtn').addEventListener('click', ()=>vancoStore.exportAll());
@@ -7785,7 +7908,9 @@ ${flagText||'（無）'}
 
     document.getElementById('amgSavePatientBtn').addEventListener('click', ()=>amgStore.saveAsNewVisit());
     document.getElementById('amgUpdateVisitBtn').addEventListener('click', ()=>amgStore.updateCurrentVisit());
-    document.getElementById('amgLoadPatientBtn').addEventListener('click', ()=>{ amgStore.loadSelected(); setDemoFlag('aminoglycoside', false); });
+    document.getElementById('amgLoadPatientBtn').addEventListener('click', ()=>{
+      guardUnsaved('amg', '載入其他病人', ()=>{ amgStore.loadSelected(); setDemoFlag('aminoglycoside', false); });
+    });
     document.getElementById('amgDeletePatientBtn').addEventListener('click', ()=>amgStore.deleteSelectedPatient());
     document.getElementById('amgPatientSelect').addEventListener('change', ()=>amgStore.refreshVisitSelect());
     document.getElementById('amgExportPatientsBtn').addEventListener('click', ()=>amgStore.exportAll());
@@ -7839,7 +7964,9 @@ ${flagText||'（無）'}
 
     document.getElementById('azlSavePatientBtn').addEventListener('click', ()=>azoleStore.saveAsNewVisit());
     document.getElementById('azlUpdateVisitBtn').addEventListener('click', ()=>azoleStore.updateCurrentVisit());
-    document.getElementById('azlLoadPatientBtn').addEventListener('click', ()=>{ azoleStore.loadSelected(); setDemoFlag('azole', false); });
+    document.getElementById('azlLoadPatientBtn').addEventListener('click', ()=>{
+      guardUnsaved('azl', '載入其他病人', ()=>{ azoleStore.loadSelected(); setDemoFlag('azole', false); });
+    });
     document.getElementById('azlDeletePatientBtn').addEventListener('click', ()=>azoleStore.deleteSelectedPatient());
     document.getElementById('azlPatientSelect').addEventListener('change', ()=>azoleStore.refreshVisitSelect());
     document.getElementById('azlExportPatientsBtn').addEventListener('click', ()=>azoleStore.exportAll());
@@ -7892,7 +8019,9 @@ ${flagText||'（無）'}
 
     document.getElementById('aedSavePatientBtn').addEventListener('click', ()=>aedStore.saveAsNewVisit());
     document.getElementById('aedUpdateVisitBtn').addEventListener('click', ()=>aedStore.updateCurrentVisit());
-    document.getElementById('aedLoadPatientBtn').addEventListener('click', ()=>{ aedStore.loadSelected(); setDemoFlag('aed', false); });
+    document.getElementById('aedLoadPatientBtn').addEventListener('click', ()=>{
+      guardUnsaved('aed', '載入其他病人', ()=>{ aedStore.loadSelected(); setDemoFlag('aed', false); });
+    });
     document.getElementById('aedDeletePatientBtn').addEventListener('click', ()=>aedStore.deleteSelectedPatient());
     document.getElementById('aedPatientSelect').addEventListener('change', ()=>aedStore.refreshVisitSelect());
     document.getElementById('aedExportPatientsBtn').addEventListener('click', ()=>aedStore.exportAll());
@@ -7944,9 +8073,22 @@ ${flagText||'（無）'}
 
     initCollapsibleCards();
 
+    // ---------------- unsaved-changes guard wiring (WP3.3, D4) ----------------
+    // 對四個輸入面板掛委派監聽（不含 pm-bar：WP3.2 已把 pm-bar 搬到這些面板外面，
+    // 病人選單本身的操作天然不會冒泡進來，不需要額外排除）。
+    [['inputPanel','vanco'], ['amgInputPanel','amg'], ['azlInputPanel','azl'], ['aedInputPanel','aed']].forEach(([panelId, module])=>{
+      const panel = document.getElementById(panelId);
+      if(!panel) return;
+      panel.addEventListener('input', ()=>markDirty(module));
+      panel.addEventListener('change', ()=>markDirty(module));
+    });
+    window.addEventListener('beforeunload', e=>{
+      if(Object.values(uiDirty).some(Boolean)){ e.preventDefault(); e.returnValue=''; }
+    });
+
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{ if(!btn.disabled) showDrugModule(btn.dataset.drug); });
+      btn.addEventListener('click', ()=>{ if(!btn.disabled) guardSwitchDrugModule(btn.dataset.drug); });
     });
   });
 
