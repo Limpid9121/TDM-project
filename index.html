@@ -4672,6 +4672,17 @@ ${flagText || '（無特別旗標）'}
     wrap.appendChild(btn);
   }
 
+  // ---------------- label -> input 關聯 (WP4.5, W15 後半) ----------------
+  // 純顯示/純可及性修正：點 label 文字即可聚焦對應欄位。只處理 .field 直接子層級的
+  // label（pm-bar／checkline 等其他結構已各自有自己的 for，或不在這次範圍內）。
+  function autoAssociateFieldLabels(){
+    document.querySelectorAll('.field > label:not([for])').forEach(label=>{
+      const field = label.parentElement;
+      const input = field.querySelector('input, select, textarea');
+      if(input && input.id) label.htmlFor = input.id;
+    });
+  }
+
   // ---------------- steady-state assumption basis (WP1.5, S5) ----------------
   // 純顯示：勾選「已達穩態」時，說明虛擬劑次是依處方欄位（維持劑量／間隔／輸注）往前補，
   // 而非依給藥表第一劑；若給藥表第一劑本身跟處方欄位對不上，改用警示樣式提醒依據是哪一組數字。
@@ -8619,6 +8630,9 @@ ${flagText||'（無）'}
     // ---------------- "現在" quick-fill buttons (WP4.4, W14) ----------------
     ['expandTo', 'amgExpandTo', 'azlTroughDate', 'aedLevelDrawAt', 'aedLevelLastDoseAt', 'azlLabDate', 'aedLabDate']
       .forEach(attachNowButton);
+
+    // ---------------- label -> input 關聯 (WP4.5, W15 後半) ----------------
+    autoAssociateFieldLabels();
 
     initCollapsibleCards();
 
