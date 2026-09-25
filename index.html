@@ -627,7 +627,7 @@
             </div>
             <div class="field"></div>
           </div>
-          <p class="hint" style="margin-top:-6px;">HD 病人 Cockcroft-Gault／族群 AUC 模型不適用，本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis &amp; Nolin, <em>Kidney360</em> 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。通量僅供資訊參考（低通量移除約 0–5%、高通量約 24–50%，AJHP 2004;61:1812），不直接進入計算。給藥處方請至卡片 03 填寫透析時程與透析後劑量。</p>
+          <div class="hint" style="margin-top:-6px;">HD 病人 Cockcroft-Gault／族群 AUC 模型不適用，本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis &amp; Nolin, <em>Kidney360</em> 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。<details class="hint-more"><summary>ⓘ 詳細說明</summary>通量僅供資訊參考（低通量移除約 0–5%、高通量約 24–50%，AJHP 2004;61:1812），不直接進入計算。給藥處方請至卡片 03 填寫透析時程與透析後劑量。</details></div>
         </div>
 
         <div class="entry-head entry-head--scr" aria-hidden="true"><span>日期</span><span>SCr mg/dL</span><span></span></div>
@@ -728,7 +728,7 @@
               <div class="field"><label>開始時刻</label><input type="time" id="hdSlotStart" value="08:00"></div>
               <div class="field"><label>透析時長（小時）</label><input type="number" id="hdDurationHr" value="4" step="0.5" min="0.5"></div>
             </div>
-            <p class="hint" style="margin-top:-4px;">依上方星期規則，在「分析起點／展開至」範圍內批次產生透析時程（會清空並重建下方列表）。時長只影響畫面顯示與反彈警示的判斷基準時間，不影響清除率擬合本身（擬合只使用透析「結束」時間）；產生後如遇改期／跳過等例外，直接編輯或刪除該筆即可，不需重新整批產生。</p>
+            <div class="hint" style="margin-top:-4px;">依上方星期規則，在「分析起點／展開至」範圍內批次產生透析時程（會清空並重建下方列表）。<details class="hint-more"><summary>ⓘ 詳細說明</summary>時長只影響畫面顯示與反彈警示的判斷基準時間，不影響清除率擬合本身（擬合只使用透析「結束」時間）；產生後如遇改期／跳過等例外，直接編輯或刪除該筆即可，不需重新整批產生。</details></div>
             <div class="btn-row">
               <button class="btn primary small" id="hdGenerateSessionsBtn" type="button">依星期規則產生透析時程</button>
             </div>
@@ -1064,7 +1064,7 @@
           <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="amgMaintInterval" value="24" step="1"></div>
         </div>
         <div id="amgTiwRow" style="display:none;">
-          <p class="hint" style="margin-top:-2px;">NTM 等適應症常用 10–25 mg/kg TIW（如週一／三／五）；HD 病人給藥亦跟著透析排程走（TIWQN，非等距間隔）——請勾選實際給藥的星期與時刻，下方「自動展開」會依日曆逐日產生給藥紀錄；穩態相關數字改以你目前輸入的實際給藥史直接推算下一劑前的預測 trough，而非固定間隔公式。</p>
+          <div class="hint" style="margin-top:-2px;">NTM 等適應症常用 10–25 mg/kg TIW（如週一／三／五）；<details class="hint-more"><summary>ⓘ 詳細說明</summary>HD 病人給藥亦跟著透析排程走（TIWQN，非等距間隔）——請勾選實際給藥的星期與時刻，下方「自動展開」會依日曆逐日產生給藥紀錄；穩態相關數字改以你目前輸入的實際給藥史直接推算下一劑前的預測 trough，而非固定間隔公式。</details></div>
           <div class="field-row">
             <div class="field"><label>給藥星期</label>
               <div class="weekday-group">
@@ -1162,8 +1162,8 @@
               </div>
             </div>
           </div>
-          <p class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。ODD／HDEI 策略下，本工具會依估算 CrCl 帶出建議起始間隔（q24/q36/q48，邏輯與 Hartford nomogram 相同的 CrCl 分段依據，見下方「建議」標籤；q12h 因缺乏同等把握的分段依據，維持人工判斷），並在勾選卡片 02 的 ODD 排除因子時停用建議；有濃度資料時則已改用個體化 ke／Vd 直接反解達標劑量，比對單點落於 nomogram 哪一區更精確。</p>
-          <p class="hint">PAE（給藥後即使濃度低於 MIC，抑菌效果仍持續一段時間，約 2–8 小時，與峰濃度高度相關）是決定「能不能拉長間隔」的核心機制之一；嗜中性球低下病人 PAE 可能縮短（已反映在上方排除因子），Pseudomonas 則因重複頻繁給藥易生 adaptive resistance，拉長間隔的藥效學理由較強（如菌種欄含 Pseudomonas，下方會出現對應提示）。最終間隔選擇仍需你綜合臨床判斷，本工具不會自動鎖定單一間隔。</p>
+          <div class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。<details class="hint-more"><summary>ⓘ 詳細說明</summary>ODD／HDEI 策略下，本工具會依估算 CrCl 帶出建議起始間隔（q24/q36/q48，邏輯與 Hartford nomogram 相同的 CrCl 分段依據，見下方「建議」標籤；q12h 因缺乏同等把握的分段依據，維持人工判斷），並在勾選卡片 02 的 ODD 排除因子時停用建議；有濃度資料時則已改用個體化 ke／Vd 直接反解達標劑量，比對單點落於 nomogram 哪一區更精確。</details></div>
+          <div class="hint">PAE（給藥後即使濃度低於 MIC，抑菌效果仍持續一段時間，約 2–8 小時，與峰濃度高度相關）是決定「能不能拉長間隔」的核心機制之一；嗜中性球低下病人 PAE 可能縮短（已反映在上方排除因子），Pseudomonas 則因重複頻繁給藥易生 adaptive resistance，拉長間隔的藥效學理由較強（如菌種欄含 Pseudomonas，下方會出現對應提示）。<details class="hint-more"><summary>ⓘ 詳細說明</summary>最終間隔選擇仍需你綜合臨床判斷，本工具不會自動鎖定單一間隔。</details></div>
         </div>
         <p class="hint" id="amgCandTiwNote" style="display:none;">目前為「每週固定星期」排程，給藥非等距，候選間隔比較不適用。右側改直接顯示依你目前給藥史推算的「下次排定劑量前預測 trough」與「最近一劑後預測 peak」；如需測試不同劑量，可用結果區的「自訂」列。</p>
       </div>
@@ -1212,7 +1212,7 @@
 
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
-        <p class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
+        <div class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。<details class="hint-more"><summary>ⓘ 詳細說明</summary>勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</details></div>
         <div class="table-scroll"><table class="regimen-table" id="amgRegimenTable">
           <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak，輸注後30分)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
@@ -1317,7 +1317,7 @@
       <!-- 1. 目標藥物與適應症 -->
       <div class="card">
         <h2><span class="idx">01</span>目標藥物與適應症</h2>
-        <p class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。三顆藥目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）與院內 protocol，詳細來源見下方各處提示。</p>
+        <div class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。<details class="hint-more"><summary>ⓘ 詳細說明</summary>三顆藥目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）與院內 protocol，詳細來源見下方各處提示。</details></div>
         <div class="field-row">
           <div class="field"><label>目標藥物</label>
             <select id="azlDrug">
