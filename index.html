@@ -561,7 +561,7 @@
           <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <input type="file" id="importFileInput" accept="application/json" style="display:none;">
-        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本（未來將用於趨勢圖）。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
+        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本，右側會顯示跨收案趨勢圖。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
       </div>
     </details>
     <div class="hint" id="patientMeta"></div>
@@ -1357,7 +1357,7 @@
       <!-- 3. 器官功能與 lab（最新一筆） -->
       <div class="card">
         <h2><span class="idx">03</span>器官功能與相關 lab（最新一筆）</h2>
-        <p class="hint">三唑類受肝功能與發炎狀態（CRP）顯著影響；voriconazole 另受 CYP2C19 影響（見下方藥物專屬子表）。趨勢圖（多筆日期疊圖）排在核心邏輯之後實作，這裡先收最新一筆數值。</p>
+        <p class="hint">三唑類受肝功能與發炎狀態（CRP）顯著影響；voriconazole 另受 CYP2C19 影響（見下方藥物專屬子表）。此處填最新一筆數值。</p>
         <div class="field-row three">
           <div class="field"><label>AST／ALT（U/L）</label><input type="text" id="azlAstAlt" placeholder="如：45 / 60"></div>
           <div class="field"><label>Total bilirubin（mg/dL）</label><input type="number" id="azlBilirubin" step="0.1"></div>
@@ -1385,7 +1385,7 @@
           <div class="field"><label>嚴重度</label><select id="azlSeverity"><option>穩定</option><option>sepsis</option><option>septic shock</option></select></div>
           <div class="field"><label>感染源控制</label><div class="checkline" style="margin-top:8px;"><input type="checkbox" id="azlSourceControl"><label for="azlSourceControl">已控制（引流／移除導管等）</label></div></div>
         </div>
-        <p class="hint" style="margin-top:10px;margin-bottom:4px;"><strong>臨床病程客觀回報</strong>（選填，皆不強迫填滿——工具依 MSG/EORTC 治療反應框架自動推論感染控制趨勢，不要求你自己先下判斷；填得越完整，5.0 的交叉核對越準）：</p>
+        <p class="hint" style="margin-top:10px;margin-bottom:4px;"><strong>臨床病程客觀回報</strong>（選填，皆不強迫填滿——工具依 MSG/EORTC 治療反應框架自動推論感染控制趨勢，不要求你自己先下判斷；填得越完整，右側「健全性檢查」的交叉核對越準）：</p>
         <div class="field-row">
           <div class="field"><label>發燒趨勢（過去 24–48 小時）</label>
             <select id="azlFeverTrend"><option value="">未填</option><option value="improving">退燒中</option><option value="persistent">持續發燒</option><option value="worsening">新發燒或惡化</option><option value="na">不適用（本無發燒）</option></select>
@@ -1653,7 +1653,7 @@
       <!-- 01. 藥物與目的 -->
       <div class="card">
         <h2><span class="idx">01</span>目標藥物與目的</h2>
-        <p class="hint">本模組為「濃度校正判讀＋情境檢查」工具，不做時間-濃度曲線擬合（phenytoin 的 MM 劑量推估與趨勢圖為後續分期，本版尚未提供）。校正公式與目標值出自院內指引與本院醫令，可能與教科書通則不同，詳細出處見各處提示。</p>
+        <p class="hint">本模組為「濃度校正判讀＋情境檢查」工具，不做時間-濃度曲線擬合（phenytoin 另提供 Michaelis-Menten 劑量推估、VPA 提供比例劑量估算，見右側 B 區；趨勢圖尚未提供）。校正公式與目標值出自院內指引與本院醫令，可能與教科書通則不同，詳細出處見各處提示。</p>
         <div class="field-row">
           <div class="field"><label>目標藥物</label>
             <select id="aedDrug">
@@ -1896,7 +1896,7 @@
 
       <div class="section-block">
         <h3><span class="idx">E</span>AI 諮詢 Prompt</h3>
-        <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劇量-濃度曲線尚未提供（P3）。</p>
+        <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</p>
         <textarea id="aedAiPromptOut" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="aedCopyPromptBtn" type="button">複製 Prompt</button>
