@@ -814,7 +814,7 @@
     <section class="panel" id="resultsPanel">
 
       <div class="results-head">
-        <h2>擬合結果</h2>
+        <h2>結果</h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="mode-badge" id="fitModeBadge">尚無資料</span>
         </div>
@@ -887,7 +887,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）</h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="vancoCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="aiPromptOut" readonly></textarea>
         <div class="btn-row">
@@ -1186,7 +1186,7 @@
     <section class="panel" id="amgResultsPanel">
 
       <div class="results-head">
-        <h2>擬合結果</h2>
+        <h2>結果</h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="mode-badge" id="amgFitModeBadge">尚無資料</span>
         </div>
@@ -1240,7 +1240,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）</h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="amgCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="amgAiPromptOut" readonly></textarea>
         <div class="btn-row">
@@ -1551,7 +1551,7 @@
     <section class="panel" id="azlResultsPanel">
 
       <div class="results-head">
-        <h2>判讀結果</h2>
+        <h2>結果</h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="mode-badge" id="azlFitModeBadge">尚無資料</span>
         </div>
@@ -1576,7 +1576,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）</h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="azlCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="azlAiPromptOut" readonly></textarea>
         <div class="btn-row">
@@ -1860,7 +1860,7 @@
     <section class="panel" id="aedResultsPanel">
 
       <div class="results-head">
-        <h2>判讀結果</h2>
+        <h2>結果</h2>
         <div style="display:flex;gap:8px;align-items:center;">
           <span class="mode-badge" id="aedFitModeBadge">尚無資料</span>
         </div>
@@ -1895,7 +1895,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">E</span>AI 諮詢 Prompt</h3>
+        <h3><span class="idx">E</span>AI 諮詢 Prompt<button class="btn small" id="aedCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</p>
         <textarea id="aedAiPromptOut" readonly></textarea>
         <div class="btn-row">
@@ -6837,7 +6837,22 @@ ${flagText||'（無）'}
       </div>`;
   }
 
+  function updateAzoleTargetDisplay(){
+    const el = document.getElementById('azlTargetDisplay');
+    if(!el) return;
+    const drug = document.getElementById('azlDrug').value;
+    if(drug==='isavuconazole'){ el.textContent = '不依適應症分層，見右側說明'; return; }
+    const drugLabels = {voriconazole:'Voriconazole', posaconazole:'Posaconazole', isavuconazole:'Isavuconazole'};
+    const list = azoleIndicationList(drug);
+    const indicationId = document.getElementById('azlIndication').value;
+    const ind = list.find(i=>i.id===indicationId) || list[0];
+    if(!ind){ el.textContent=''; return; }
+    const rangeText = ind.hi==null ? `≥ ${ind.lo}` : `${ind.lo}–${ind.hi}`;
+    el.innerHTML = `目前目標：<strong>${drugLabels[drug]||drug} ${ind.label}</strong> → trough ${rangeText} µg/mL`;
+  }
+
   function renderAzole(){
+    updateAzoleTargetDisplay();
     const drugLabels = {voriconazole:'Voriconazole', posaconazole:'Posaconazole', isavuconazole:'Isavuconazole'};
     const drug = document.getElementById('azlDrug').value;
     const indicationId = document.getElementById('azlIndication').value;
@@ -8373,6 +8388,7 @@ ${flagText||'（無）'}
         document.getElementById('copyStatus').textContent = '已複製';
       });
     });
+    document.getElementById('vancoCopyPromptBtnTop').addEventListener('click', ()=>{ document.getElementById('copyPromptBtn').click(); });
 
     if(shouldAutoloadDemo()) loadDemo('vancomycin', true); else resetModuleVanco();
 
@@ -8491,6 +8507,7 @@ ${flagText||'（無）'}
         document.getElementById('amgCopyStatus').textContent = '已複製';
       });
     });
+    document.getElementById('amgCopyPromptBtnTop').addEventListener('click', ()=>{ document.getElementById('amgCopyPromptBtn').click(); });
 
     if(shouldAutoloadDemo()) loadDemo('aminoglycoside', true); else resetModuleAmg();
 
@@ -8547,6 +8564,7 @@ ${flagText||'（無）'}
         document.getElementById('azlCopyStatus').textContent = '已複製';
       });
     });
+    document.getElementById('azlCopyPromptBtnTop').addEventListener('click', ()=>{ document.getElementById('azlCopyPromptBtn').click(); });
 
     if(shouldAutoloadDemo()) loadDemo('azole', true); else resetModuleAzole();
 
@@ -8602,6 +8620,7 @@ ${flagText||'（無）'}
         document.getElementById('aedCopyStatus').textContent = '已複製';
       });
     });
+    document.getElementById('aedCopyPromptBtnTop').addEventListener('click', ()=>{ document.getElementById('aedCopyPromptBtn').click(); });
 
     // ---------------- aed P2 wiring: ss-pairs table (card 07) + candidate-dose radio pick ----------------
     document.getElementById('aedAddSsPairBtn').addEventListener('click', ()=>{ addAedSsPairRow('', '', '', '', false); renderAed(); });
