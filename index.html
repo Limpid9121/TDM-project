@@ -1786,14 +1786,14 @@
         <div class="checkline"><input type="checkbox" id="aedCarbapenem"><label for="aedCarbapenem">併用 carbapenem 類抗生素（原則避免併用，濃度可數日內大幅下降）</label></div>
       </div>
 
-      <!-- 07. 穩態劇量-濃度配對（phenytoin 兩點法用） -->
+      <!-- 07. 穩態劑量-濃度配對（phenytoin 兩點法用） -->
       <div class="card" id="aedSsPairsCard" style="display:none;">
-        <h2><span class="idx">07</span>穩態劇量-濃度配對表（選填，兩點法用）</h2>
-        <p class="hint">只有勾選「已確認達穩態」的列才會用於兩點法解出病人專屬 Vmax／Km；需要至少兩列、且每日劇量不同。不填這張表也能用下方結果面板的單點法估算，但單點法需假設族群 Km（見敏感度帶）。</p>
+        <h2><span class="idx">07</span>穩態劑量-濃度配對表（選填，兩點法用）</h2>
+        <p class="hint">只有勾選「已確認達穩態」的列才會用於兩點法解出病人專屬 Vmax／Km；需要至少兩列、且每日劑量不同。不填這張表也能用下方結果面板的單點法估算，但單點法需假設族群 Km（見敏感度帶）。</p>
         <div class="entry-list" id="aedSsPairsTable"></div>
         <div class="btn-row">
           <button class="btn small" id="aedAddSsPairBtn" type="button">新增一列</button>
-          <button class="btn small" id="aedPullCurrentSsPairBtn" type="button">帶入目前畫面上的劇量與濃度</button>
+          <button class="btn small" id="aedPullCurrentSsPairBtn" type="button">帶入目前畫面上的劑量與濃度</button>
         </div>
       </div>
 
@@ -1875,12 +1875,12 @@
       </div>
 
       <div class="section-block" id="aedPkBlock" style="display:none;">
-        <h3><span class="idx">B</span>Phenytoin 非線性藥動（Michaelis-Menten）與候選劇量</h3>
+        <h3><span class="idx">B</span>Phenytoin 非線性藥動（Michaelis-Menten）與候選劑量</h3>
         <div id="aedPkContent"></div>
       </div>
 
       <div class="section-block" id="aedVpaDoseBlock" style="display:none;">
-        <h3><span class="idx">B</span>比例劇量估算</h3>
+        <h3><span class="idx">B</span>比例劑量估算</h3>
         <div id="aedVpaDoseContent"></div>
       </div>
 
@@ -7358,16 +7358,16 @@ ${flagText||'（無）'}
   function phtMmTwoPoint({ R1, C1, R2, C2 } = {}){
     const reasons = [];
     if(![R1,C1,R2,C2].every(isFinite)){ reasons.push('缺少必要數值'); return { km:null, vmax:null, valid:false, reasons }; }
-    if(R1<=0 || R2<=0 || C1<=0 || C2<=0){ reasons.push('劇量或濃度必須為正值'); return { km:null, vmax:null, valid:false, reasons }; }
-    if(R1===R2) reasons.push('兩次劇量相同，無法解出兩個未知數（需要兩個不同劇量）');
-    if((R2-R1)*(C2-C1)<0) reasons.push('劇量與濃度變化方向不一致（劇量增加但濃度下降，或反之），資料可能有誤或病人未真正達穩態');
+    if(R1<=0 || R2<=0 || C1<=0 || C2<=0){ reasons.push('劑量或濃度必須為正值'); return { km:null, vmax:null, valid:false, reasons }; }
+    if(R1===R2) reasons.push('兩次劑量相同，無法解出兩個未知數（需要兩個不同劑量）');
+    if((R2-R1)*(C2-C1)<0) reasons.push('劑量與濃度變化方向不一致（劑量增加但濃度下降，或反之），資料可能有誤或病人未真正達穩態');
     if(reasons.length) return { km:null, vmax:null, valid:false, reasons };
     const denom = (R1/C1)-(R2/C2);
     if(denom===0){ reasons.push('兩點解出的分母為零，資料無法收斂'); return { km:null, vmax:null, valid:false, reasons }; }
     const km = (R2-R1)/denom;
     const vmax = R1 + km*(R1/C1);
     if(!(km>0) || !(vmax>Math.max(R1,R2))){
-      reasons.push('解出的 Km 或 Vmax 不符合生理合理範圍（Km 應為正值，Vmax 應大於兩次劇量）');
+      reasons.push('解出的 Km 或 Vmax 不符合生理合理範圍（Km 應為正值，Vmax 應大於兩次劑量）');
       return { km, vmax, valid:false, reasons };
     }
     return { km, vmax, valid:true, reasons:[] };
@@ -7404,7 +7404,7 @@ ${flagText||'（無）'}
   function phtLoadingDose({ vd, target, current, S, F=1 } = {}){
     if(![vd,target,current,S].every(isFinite) || S<=0 || F<=0) return { doseMg:null, reason:null };
     const diff = target-current;
-    if(diff<=0) return { doseMg:null, reason:'目前濃度已達或超過目標，不需要補充負荷劇量' };
+    if(diff<=0) return { doseMg:null, reason:'目前濃度已達或超過目標，不需要補充負荷劑量' };
     return { doseMg:(vd*diff)/(S*F), reason:null };
   }
   // VPA proportional dose estimate (Q3 已解決): only when no free-fraction risk flag is active
@@ -7412,7 +7412,7 @@ ${flagText||'（無）'}
     if(riskFlags && riskFlags.length>0){
       let direction = 'hold';
       if(isFinite(total) && isFinite(target)) direction = total<target ? 'up' : (total>target ? 'down' : 'hold');
-      return { doseMg:null, direction, reason:'存在 free fraction 風險因子，total 換算劇量的比例關係不可靠，建議先測 free 再決定劇量' };
+      return { doseMg:null, direction, reason:'存在 free fraction 風險因子，total 換算劑量的比例關係不可靠，建議先測 free 再決定劑量' };
     }
     if(![dose,total,target].every(isFinite) || total<=0 || dose<=0) return { doseMg:null, direction:null, reason:'資料不足，無法估算' };
     const raw = dose*(target/total);
@@ -7610,7 +7610,7 @@ ${flagText||'（無）'}
 
   function buildAiPromptAed(d){
     const flagText = d.flags.map(f=>`- [${f.level.toUpperCase()}] ${f.text}`).join('\n');
-    return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劇量估算，請你整合下列資訊給第二意見：
+    return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劑量估算，請你整合下列資訊給第二意見：
 
 【目標藥物】${d.drugLabel}／目的：${d.purposeLabel}
 【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
@@ -7618,7 +7618,7 @@ ${flagText||'（無）'}
 【給藥處方】${d.formLabel}，τ=${d.tauH||'未填'}h，劑量 ${d.dose||'未填'}mg，起始 ${d.regimenStart||'未填'}
 【濃度】${d.levelType}：${d.levelValue!=null?d.levelValue:'未輸入'}（抽血 ${d.drawAt||'未填'}）
 【濃度校正判讀】${d.corrText}
-【PK／劇量估算】${d.pkNote||'（無）'}
+【PK／劑量估算】${d.pkNote||'（無）'}
 【已觸發的情境提示】
 ${flagText||'（無）'}
 【治療目標】${d.goal||'未填'}
@@ -7709,7 +7709,7 @@ ${flagText||'（無）'}
       if(ss.status!=='steady'){
         pkHtml = `<p class="hint">尚未確認達穩態（見下方監測提醒 D），Michaelis-Menten 藥動估算需要穩態濃度才有意義，暫不計算。</p>`;
       } else if(!isFinite(cssForMm) || cssForMm<=0 || !isFinite(currentDailyDoseMg) || currentDailyDoseMg<=0 || !isFinite(S)){
-        pkHtml = `<p class="hint">尚無足夠的目前劇量與濃度資料可估算（需要濃度校正判讀後的數值＋目前每日總劇量）。</p>`;
+        pkHtml = `<p class="hint">尚無足夠的目前劑量與濃度資料可估算（需要濃度校正判讀後的數值＋目前每日總劑量）。</p>`;
       } else {
         const R = S*currentDailyDoseMg;
         const popKm = AED_RULES.phenytoin.pop.km;
@@ -7744,24 +7744,24 @@ ${flagText||'（無）'}
         if(usePatientSpecific){
           mmSummary += `<p>Km=${twoPoint.km.toFixed(2)} mg/L，Vmax=${twoPoint.vmax.toFixed(0)} mg/day（由 ${twoPointPair.a.dailyDoseMg}／${twoPointPair.b.dailyDoseMg} mg/day 兩點解出）</p>`;
         } else {
-          mmSummary += `<p>Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day（依目前劇量 ${R.toFixed(0)} mg/day 與校正後濃度 ${cssForMm.toFixed(2)} 反解，Km 假設族群值 ${popKm}）</p>`;
-          if(confirmedPairs.length===1) mmSummary += `<p class="hint">卡片07目前只有 1 列已確認達穩態，兩點法需要至少 2 列不同劇量才能計算病人專屬 Km/Vmax。</p>`;
+          mmSummary += `<p>Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day（依目前劑量 ${R.toFixed(0)} mg/day 與校正後濃度 ${cssForMm.toFixed(2)} 反解，Km 假設族群值 ${popKm}）</p>`;
+          if(confirmedPairs.length===1) mmSummary += `<p class="hint">卡片07目前只有 1 列已確認達穩態，兩點法需要至少 2 列不同劑量才能計算病人專屬 Km/Vmax。</p>`;
           else if(twoPoint && !twoPoint.valid) mmSummary += `<p class="hint">⚠️ 卡片07的資料無法解出有效兩點法結果：${(twoPoint.reasons||[]).join('；')}，暫用族群 Km 單點法。</p>`;
         }
         mmSummary += predCurrent.unattainable
-          ? `<p class="flag-item danger"><span class="dot"></span><span>以目前劇量（${R.toFixed(0)} mg/day）預估已達或超過 Vmax，理論上無法達到穩態——這是 phenytoin 非線性動力學最危險的情況，請勿再加量，考慮減量並密切追蹤。</span></p>`
-          : `<p>以目前劇量預估穩態濃度 ≈ ${isFinite(predCurrent.css)?predCurrent.css.toFixed(2):'—'} mcg/mL（與實測校正值 ${cssForMm.toFixed(2)} 互相印證，理論上應接近）</p>`;
-        mmSummary += `<p><strong>達目標（${mmTarget} mcg/mL 中點）估算每日總劇量 ≈ ${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg</strong>（僅估算，須依本院劇型格點調整，見下方候選劇量表）</p>`;
+          ? `<p class="flag-item danger"><span class="dot"></span><span>以目前劑量（${R.toFixed(0)} mg/day）預估已達或超過 Vmax，理論上無法達到穩態——這是 phenytoin 非線性動力學最危險的情況，請勿再加量，考慮減量並密切追蹤。</span></p>`
+          : `<p>以目前劑量預估穩態濃度 ≈ ${isFinite(predCurrent.css)?predCurrent.css.toFixed(2):'—'} mcg/mL（與實測校正值 ${cssForMm.toFixed(2)} 互相印證，理論上應接近）</p>`;
+        mmSummary += `<p><strong>達目標（${mmTarget} mcg/mL 中點）估算每日總劑量 ≈ ${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg</strong>（僅估算，須依本院劑型格點調整，見下方候選劑量表）</p>`;
         if(t90.days!=null){
-          mmSummary += `<p>調整到此劇量後，預估約 ${t90.days.toFixed(1)} 天達到新穩態的 90%（純臨床天數，不折算排班，見監測提醒 D）</p>`;
-          nextDrawNote = `若依此估算調整劇量，約 ${t90.days.toFixed(1)} 天後複測較能反映新穩態（純臨床天數，未折算實際送驗排班）；若未調整劇量，仍以院內建議 ${AED_RULES.phenytoin.ssDays.lo}–${AED_RULES.phenytoin.ssDays.hi}${AED_RULES.phenytoin.ssDays.open?'+':''} 天為準。`;
-        } else if(t90.unattainable) mmSummary += `<p class="hint">⚠️ 目標劇量下 Vmax 與新劇量太接近，t90 估算不穩定</p>`;
-        if(loading && isFinite(loading.doseMg)) mmSummary += `<p>若想更快接近目標，補充負荷劇量估算 ≈ ${loading.doseMg.toFixed(0)} mg（一次性給予；院內指引未規範，此為文獻族群常用法之估算，非 status epilepticus 從零負荷）</p>`;
+          mmSummary += `<p>調整到此劑量後，預估約 ${t90.days.toFixed(1)} 天達到新穩態的 90%（純臨床天數，不折算排班，見監測提醒 D）</p>`;
+          nextDrawNote = `若依此估算調整劑量，約 ${t90.days.toFixed(1)} 天後複測較能反映新穩態（純臨床天數，未折算實際送驗排班）；若未調整劑量，仍以院內建議 ${AED_RULES.phenytoin.ssDays.lo}–${AED_RULES.phenytoin.ssDays.hi}${AED_RULES.phenytoin.ssDays.open?'+':''} 天為準。`;
+        } else if(t90.unattainable) mmSummary += `<p class="hint">⚠️ 目標劑量下 Vmax 與新劑量太接近，t90 估算不穩定</p>`;
+        if(loading && isFinite(loading.doseMg)) mmSummary += `<p>若想更快接近目標，補充負荷劑量估算 ≈ ${loading.doseMg.toFixed(0)} mg（一次性給予；院內指引未規範，此為文獻族群常用法之估算，非 status epilepticus 從零負荷）</p>`;
 
         const kmRows = phtKmSensitivity({ R, Css:cssForMm, target:mmTarget, S, kms:AED_RULES.phenytoin.kmSensitivityCandidates });
         const kmRowsHtml = kmRows.map(r=>`<tr><td>${r.label}</td><td>${r.km}</td><td>${isFinite(r.vmax)?r.vmax.toFixed(0):'—'}</td><td>${isFinite(r.doseForTargetMg)?r.doseForTargetMg.toFixed(0):'—'}</td></tr>`).join('');
-        const kmTableHtml = `<table class="regimen-table"><thead><tr><th>Km 候選值來源</th><th>Km(mg/L)</th><th>反解 Vmax(mg/day)</th><th>達目標所需劇量(mg/day)</th></tr></thead><tbody>${kmRowsHtml}</tbody></table>
-          <p class="hint">Km 在各族群研究間差異可達 6 倍以上（見規格 §2.2.1），以上為敏感度分析，不代表其中一個「最準」——只用來讓你看到劇量建議對 Km 假設有多敏感。</p>`;
+        const kmTableHtml = `<table class="regimen-table"><thead><tr><th>Km 候選值來源</th><th>Km(mg/L)</th><th>反解 Vmax(mg/day)</th><th>達目標所需劑量(mg/day)</th></tr></thead><tbody>${kmRowsHtml}</tbody></table>
+          <p class="hint">Km 在各族群研究間差異可達 6 倍以上（見規格 §2.2.1），以上為敏感度分析，不代表其中一個「最準」——只用來讓你看到劑量建議對 Km 假設有多敏感。</p>`;
 
         const step = (formObjPht && formObjPht.doseStepMg) || 50;
         const recRounded = isFinite(doseTarget.dailyDoseMg) ? Math.round(doseTarget.dailyDoseMg/step)*step : NaN;
@@ -7776,13 +7776,13 @@ ${flagText||'（無）'}
             <td>${pred.unattainable?'<strong style="color:var(--crimson,#c0392b);">無法達穩態（R≥Vmax）</strong>':`${pred.css.toFixed(2)} mcg/mL`}</td>
           </tr>`;
         }).join('');
-        const candTableHtml = candDoses.length ? `<table class="regimen-table"><thead><tr class="pick-col"><th class="pick-col">選取</th><th>每日總劇量</th><th>預估穩態濃度</th></tr></thead><tbody>${candRowsHtml}</tbody></table>
-          <p class="hint">中性呈現，不排序、不標「建議」；勾選一列後 AI Prompt 會帶入你的選擇，最終處方判斷仍屬你的專業責任。格點依本院劇型（${formObjPht?formObjPht.name:'—'}，每步 ${step}mg）。</p>` : '';
+        const candTableHtml = candDoses.length ? `<table class="regimen-table"><thead><tr class="pick-col"><th class="pick-col">選取</th><th>每日總劑量</th><th>預估穩態濃度</th></tr></thead><tbody>${candRowsHtml}</tbody></table>
+          <p class="hint">中性呈現，不排序、不標「建議」；勾選一列後 AI Prompt 會帶入你的選擇，最終處方判斷仍屬你的專業責任。格點依本院劑型（${formObjPht?formObjPht.name:'—'}，每步 ${step}mg）。</p>` : '';
 
         pkHtml = mmSummary + kmTableHtml + candTableHtml;
 
         const pickedRow = aedPickedCandidate ? candDoses.find(d=>('cand-'+d)===aedPickedCandidate) : null;
-        pkPromptText = `${primaryMethod}；Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day，Km=${primaryKm}；達目標(${mmTarget})估算劇量≈${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg/day${t90.days!=null?`，t90≈${t90.days.toFixed(1)}天`:''}${loading&&isFinite(loading.doseMg)?`；補充負荷劇量≈${loading.doseMg.toFixed(0)}mg`:''}${pickedRow?`；藥師已勾選候選劇量 ${pickedRow.toFixed(0)} mg/day`:''}`;
+        pkPromptText = `${primaryMethod}；Vmax≈${isFinite(primaryVmax)?primaryVmax.toFixed(0):'—'} mg/day，Km=${primaryKm}；達目標(${mmTarget})估算劑量≈${isFinite(doseTarget.dailyDoseMg)?doseTarget.dailyDoseMg.toFixed(0):'—'} mg/day${t90.days!=null?`，t90≈${t90.days.toFixed(1)}天`:''}${loading&&isFinite(loading.doseMg)?`；補充負荷劑量≈${loading.doseMg.toFixed(0)}mg`:''}${pickedRow?`；藥師已勾選候選劑量 ${pickedRow.toFixed(0)} mg/day`:''}`;
       }
     } else {
       const total = levelType==='total' ? levelValue : NaN;
@@ -7813,18 +7813,18 @@ ${flagText||'（無）'}
       const vpaDailyDose = (isFinite(vpaDoseMgPerAdmin) && isFinite(vpaTauH) && vpaTauH>0) ? vpaDoseMgPerAdmin*(24/vpaTauH) : NaN;
       const vpaTarget = (AED_RULES.valproate.range.lo + AED_RULES.valproate.range.hi)/2; // 75 mcg/mL, therapeutic midpoint
       if(!isFinite(vpaDailyDose) || !isFinite(total)){
-        vpaDoseHtml = `<p class="hint">尚無足夠的目前劇量與濃度資料可估算（需要目前每日總劇量＋total 濃度）。</p>`;
+        vpaDoseHtml = `<p class="hint">尚無足夠的目前劑量與濃度資料可估算（需要目前每日總劑量＋total 濃度）。</p>`;
       } else {
         const propResult = vpaProportionalDose({ dose:vpaDailyDose, total, target:vpaTarget, riskFlags:assess.freeRiskFlags });
         if(propResult.doseMg!=null){
-          vpaDoseHtml = `<p>目前總劇量 ${vpaDailyDose.toFixed(0)} mg/day，濃度 ${total} mcg/mL → 比例估算達目標（${vpaTarget} mcg/mL 中點）約需 <strong>${propResult.doseMg} mg/day</strong>（格點 ${propResult.roundedTo}mg，依 Depakine Chrono 可剝半格點）</p>
+          vpaDoseHtml = `<p>目前總劑量 ${vpaDailyDose.toFixed(0)} mg/day，濃度 ${total} mcg/mL → 比例估算達目標（${vpaTarget} mcg/mL 中點）約需 <strong>${propResult.doseMg} mg/day</strong>（格點 ${propResult.roundedTo}mg，依 Depakine Chrono 可剝半格點）</p>
             <p class="hint">此為線性比例估算，僅適用於無飽和結合風險因子時；VPA 濃度依賴性蛋白結合，濃度越高換算越不準，請仍以複測 TDM 確認。</p>`;
-          pkPromptText = `比例劇量估算：目前 ${vpaDailyDose.toFixed(0)} mg/day → 估算達目標(${vpaTarget})約 ${propResult.doseMg} mg/day`;
+          pkPromptText = `比例劑量估算：目前 ${vpaDailyDose.toFixed(0)} mg/day → 估算達目標(${vpaTarget})約 ${propResult.doseMg} mg/day`;
         } else {
           const dirLabel = {up:'方向：建議增量', down:'方向：建議減量', hold:'方向：建議暫不調整'}[propResult.direction] || '方向：資料不足';
           vpaDoseHtml = `<p class="flag-item warn"><span class="dot"></span><span>${propResult.reason}</span></p>
-            <p><strong>${dirLabel}</strong>——不提供具體劇量數字，待 free 結果出來後再決定。</p>`;
-          pkPromptText = `比例劇量估算已因風險因子暫停：${propResult.reason}（${dirLabel}）`;
+            <p><strong>${dirLabel}</strong>——不提供具體劑量數字，待 free 結果出來後再決定。</p>`;
+          pkPromptText = `比例劑量估算已因風險因子暫停：${propResult.reason}（${dirLabel}）`;
         }
       }
     }
@@ -7903,7 +7903,7 @@ ${flagText||'（無）'}
     title:'TDM 工作台', eyebrow:'Trough／Free 判讀 · 非線性劑量提示',
     subtitle:'抗癲癇藥物 · 濃度校正判讀 ＋ 非線性／比例劑量推估 ＋ 情境檢查',
     docTitle:'抗癲癇藥物 TDM 判讀引擎',
-    footer:'<strong>定位聲明：</strong>本模組為濃度校正判讀＋情境交叉檢查工具，Phenytoin 非線性動力學相關劑量提示為輔助估算，不取代個別化貝氏擬合；VPA 目前僅做濃度區間判讀與情境檢查，不做劑量反解。校正公式（Winter-Tozer、腎衰竭校正、Haidukewych 併用 VPA 校正）與族群參數出自明列文獻（見文件末參考文獻），Km 敏感度帶反映多篇亞洲／台灣族群研究之異質性，絕不杜撰未由資料支持的數值；院內檢驗排班與 TAT 僅為文字提醒，不代入日期計算。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+    footer:'<strong>定位聲明：</strong>本模組為濃度校正判讀＋情境交叉檢查工具，Phenytoin 非線性動力學相關劑量提示為輔助估算，不取代個別化貝氏擬合；VPA 提供濃度區間判讀、情境檢查與比例劑量估算（僅為線性比例換算，不取代個別化藥動擬合）。校正公式（Winter-Tozer、腎衰竭校正、Haidukewych 併用 VPA 校正）與族群參數出自明列文獻（見文件末參考文獻），Km 敏感度帶反映多篇亞洲／台灣族群研究之異質性，絕不杜撰未由資料支持的數值；院內檢驗排班與 TAT 僅為文字提醒，不代入日期計算。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
   // Registry (§9 Q7, HANDOFF_v3 §15): showDrugModule/clearCurrentDrug dispatch through this
   // table instead of an if/else chain. Adding a new drug module (e.g. AED, later

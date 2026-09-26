@@ -47,7 +47,7 @@ async function main() {
   assert(/Km 候選值來源/.test(pkHtml), 'Km sensitivity table is rendered');
   // Vmax = R*(Km+Css)/Css = 300*(4+8)/8 = 450 (population Km=4)
   assert(/450/.test(pkHtml), 'single-point Vmax (~450 mg/day at population Km=4) appears in the panel');
-  assert(/候選劇量/.test(pkHtml) || doc.getElementById('aedPkContent').querySelectorAll('.aed-cand-radio').length > 0,
+  assert(/候選劑量/.test(pkHtml) || doc.getElementById('aedPkContent').querySelectorAll('.aed-cand-radio').length > 0,
     'candidate-dose table with radio picks is rendered');
 
   const radios = Array.from(doc.querySelectorAll('#aedPkContent .aed-cand-radio'));
@@ -60,8 +60,8 @@ async function main() {
   assert(doc.querySelector('#aedPkContent tr.picked') !== null, 'picking a candidate radio marks its row with the .picked class after re-render');
 
   let promptText = doc.getElementById('aedAiPromptOut').value;
-  assert(/藥師已勾選候選劇量/.test(promptText), 'AI prompt reflects the picked candidate dose');
-  assert(/PK／劇量估算/.test(promptText), 'AI prompt includes the new PK/dose-estimate section header');
+  assert(/藥師已勾選候選劑量/.test(promptText), 'AI prompt reflects the picked candidate dose');
+  assert(/PK／劑量估算/.test(promptText), 'AI prompt includes the new PK/dose-estimate section header');
   assert(!/尚未提供 phenytoin MM 劑量推估/.test(promptText), 'stale P1-era "not yet provided" disclaimer is gone now that P2 ships MM dosing');
 
   // ---- card 07: add two confirmed rows with different doses -> two-point method activates ----
@@ -125,15 +125,15 @@ async function main() {
   let vpaHtml = doc.getElementById('aedVpaDoseContent').innerHTML;
   assert(/比例估算/.test(vpaHtml) && /mg\/day/.test(vpaHtml), 'VPA proportional dose gives a concrete number when no risk flags are present');
   promptText = doc.getElementById('aedAiPromptOut').value;
-  assert(/比例劇量估算：/.test(promptText), 'AI prompt reflects the VPA proportional dose estimate');
+  assert(/比例劑量估算：/.test(promptText), 'AI prompt reflects the VPA proportional dose estimate');
 
   // ---- trigger a free-fraction risk flag (propofol) -> number withheld, direction-only ----
   setAndFire(win, doc, 'aedPropofol', true);
   vpaHtml = doc.getElementById('aedVpaDoseContent').innerHTML;
-  assert(/不提供具體劇量數字/.test(vpaHtml), 'VPA proportional dose is withheld once a free-fraction risk flag is active');
+  assert(/不提供具體劑量數字/.test(vpaHtml), 'VPA proportional dose is withheld once a free-fraction risk flag is active');
   assert(/方向：/.test(vpaHtml), 'a direction-only recommendation is still shown when withheld');
   promptText = doc.getElementById('aedAiPromptOut').value;
-  assert(/比例劇量估算已因風險因子暫停/.test(promptText), 'AI prompt reflects that the proportional estimate was withheld, with the reason');
+  assert(/比例劑量估算已因風險因子暫停/.test(promptText), 'AI prompt reflects that the proportional estimate was withheld, with the reason');
   setAndFire(win, doc, 'aedPropofol', false);
 
   // ---- save/load round-trip: ssPairs and pickedCandidate must survive ----
