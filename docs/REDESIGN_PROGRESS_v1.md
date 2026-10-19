@@ -17,7 +17,7 @@
 |---|---|---|---|---|
 | L-A | 完成（待 Brandon 看過） | 見 git log | 無需更新（golden 124/124 0 差異，情境本來就有選性別與 SCr） | 見下方備註 |
 | L-B | 完成（待 Brandon 看過） | 見 git log | 無需更新基準（golden 124/124 0 差異；只改了情境設定，補點 radio） | 見下方備註 |
-| L-C | 未開始 | | | |
+| L-C | 程式完成；golden 5 項差異等 Brandon 核可後才更新基準 | 見 git log | 待核可：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt | 見下方備註 |
 | L-D | 未開始 | | | |
 | L-E | 未開始 | | | |
 | L-F | 未開始 | | | |
@@ -53,3 +53,10 @@
 - 測試設定更新（斷言沒動）：`test_ui_golden.js` 加 `h.radio`，並在 V1／A1／A2 展開給藥後選第一劑、V2 改點「已達穩態」radio（效果等同原本勾 checkbox）。
 - 新測試：`tests/test_first_dose_kind.js`（30 項）。
 - 沒做：雲端版面檢查與設計偵測；畫面目視由 Brandon 看（見下）。
+
+### L-C
+- 改了：`regimenTag`（依序判斷 AUC>600 或 Cmin>20 → 風險；AUC<400 → 低於目標；Cmin>15 → 留意；其餘符合）、兩處 `flagClassFor` 的 AUC 規則（>600 紅、<400 黃）、`regimenTagAmino`（拿掉 0.85／1.25 容許帶；trough 超過上限 1.5 倍才 danger，文字註明這是工具自訂分級）。
+- 規格沒寫但順手動了字面：AMG trough danger 文字拿掉「明顯」，保留「腎／耳毒性風險高」再加規格要求的自訂分級註記；peak 低於下限的文字拿掉「，可能療效不足」（照規格寫法）。
+- `tests/load_harness.js` 的匯出清單加 `regimenTag`（ANCHOR 沒動）。
+- 新測試：`tests/test_regimen_tags.js`（24 項）。既有測試沒有斷言舊文字，沒改。
+- golden 5 項差異（都在計畫預期內）：V1 候選方案表 q8h「略接近邊界」→「符合目標（AUC 400–600）」（AUC 408 現在算達標）；V2 q8h「略接近邊界」→「Cmin 15–20，腎毒性風險略升」、q12h／q24h「符合目標」→「符合目標（AUC 400–600）」；V3 q8h 同 V2 的 Cmin 文字；A1 旗標「Peak 6.8 低於目標下限 8，可能療效不足」→「…低於目標下限 8」，AI prompt 同一句。基準尚未更新。

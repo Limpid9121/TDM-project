@@ -2242,9 +2242,10 @@
   function roundDoseTo250(mg){ return Math.max(250, Math.round(mg/250)*250); }
   function inferInfusionMinutes(mg){ if(mg<=1000) return 60; if(mg<=1500) return 90; return 120; }
   function regimenTag(cminC, auc24C){
-    if(cminC>20 || auc24C>600) return {tag:'danger', tagText:'腎毒性疑慮升高'};
-    if(cminC>15 || auc24C>580 || auc24C<420) return {tag:'warn', tagText:'略接近邊界'};
-    return {tag:'ok', tagText:'符合目標'};
+    if(auc24C>600 || cminC>20) return {tag:'danger', tagText:'腎毒性疑慮升高'};
+    if(auc24C<400) return {tag:'warn', tagText:'低於目標 AUC 400'};
+    if(cminC>15) return {tag:'warn', tagText:'Cmin 15–20，腎毒性風險略升'};
+    return {tag:'ok', tagText:'符合目標（AUC 400–600）'};
   }
   function renderRegimenTableVanco(regimenRows, currentLabel){
     document.querySelector('#regimenTable tbody').innerHTML = regimenRows.map(r=>{
@@ -3853,7 +3854,7 @@
     ];
     const flagClassFor = (label, val)=>{
       if(label.startsWith('預測 Cmin')){ if(val>20) return 'flag-danger'; if(val>15) return 'flag-warn'; return 'flag-ok'; }
-      if(label.startsWith('預測 AUC₂₄')){ if(val>600||val<350) return 'flag-danger'; if(val>580||val<400) return 'flag-warn'; return 'flag-ok'; }
+      if(label.startsWith('預測 AUC₂₄')){ if(val>600) return 'flag-danger'; if(val<400) return 'flag-warn'; return 'flag-ok'; }
       return '';
     };
     document.getElementById('paramGrid').innerHTML = cells.map(([label,val,unit,sub])=>{
@@ -5039,7 +5040,7 @@ ${flagText || '（無特別旗標）'}
     ];
     const flagClassFor = (label, val)=>{
       if(label.startsWith('Cmin')){ if(val>20) return 'flag-danger'; if(val>15) return 'flag-warn'; return 'flag-ok'; }
-      if(label.startsWith('AUC₂₄,ss')){ if(val>600||val<350) return 'flag-danger'; if(val>580||val<400) return 'flag-warn'; return 'flag-ok'; }
+      if(label.startsWith('AUC₂₄,ss')){ if(val>600) return 'flag-danger'; if(val<400) return 'flag-warn'; return 'flag-ok'; }
       return '';
     };
     paramGrid.innerHTML = cellsHtml.map(([label,val,unit,sub])=>{
@@ -5465,12 +5466,12 @@ ${flagText || '（無特別旗標）'}
     let tag='ok';
     const reasons = [];
     if(troughHi!=null && isFinite(trough)){
-      if(trough > troughHi*1.5){ tag='danger'; reasons.push(`Trough ${trough.toFixed(1)} 明顯超過目標上限 ${troughHi}，腎／耳毒性風險高`); }
+      if(trough > troughHi*1.5){ tag='danger'; reasons.push(`Trough ${trough.toFixed(1)} 超過目標上限 ${troughHi}，腎／耳毒性風險高（超過上限 50% 為本工具自訂的危險分級）`); }
       else if(trough > troughHi){ if(tag!=='danger') tag='warn'; reasons.push(`Trough ${trough.toFixed(1)} 超過目標上限 ${troughHi}`); }
     }
     if(peakLo!=null && peakHi!=null && isFinite(peak)){
-      if(peak < peakLo*0.85){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 低於目標下限 ${peakLo}，可能療效不足`); }
-      else if(peak > peakHi*1.25){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 高於目標上限 ${peakHi}`); }
+      if(peak < peakLo){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 低於目標下限 ${peakLo}`); }
+      else if(peak > peakHi){ if(tag!=='danger') tag='warn'; reasons.push(`Peak ${peak.toFixed(1)} 高於目標上限 ${peakHi}`); }
     }
     const micWarn = checkCmaxMicEfficacy(peak, mic, target);
     if(micWarn){ if(tag!=='danger') tag='warn'; reasons.push(micWarn); }
