@@ -1,5 +1,7 @@
 # TDM 工作台：邏輯修正＋介面改版 施工計畫 v1（待核可，尚未動工）
 
+> **已由 `docs/REDESIGN_PLAN_v2.md` 取代**（2026-10-19 Brandon 逐項核可後改寫）。本檔保留當稽核紀錄，施工請照 v2。
+
 建立：2026-10-19。狀態：**提案**。依專案慣例，Brandon 逐項核可（Go／No-Go）前不動 `index.html`。
 前置文件：`docs/UIUX_AUDIT_v1.md`、`docs/UIUX_IMPL_SPEC_v1.md`、`claude/UIUX_PROGRESS_v1.md`（Phase 0 到 5 已完成，Phase 6、7 未開始）、`docs/HANDOFF_v3.md`、`tdm-calculator` skill。
 
