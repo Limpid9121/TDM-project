@@ -593,7 +593,7 @@
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="age" value="55" min="0" max="120"></div>
           <div class="field"><label>生理性別</label>
-            <select id="sex"><option value="M">男</option><option value="F">女</option></select>
+            <select id="sex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select>
           </div>
           <div class="field"><label>身高（cm）</label><input type="number" id="height" value="168" min="100" max="230"></div>
         </div>
@@ -967,7 +967,7 @@
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="amgAge" value="60" min="0" max="120"></div>
           <div class="field"><label>生理性別</label>
-            <select id="amgSex"><option value="M">男</option><option value="F">女</option></select>
+            <select id="amgSex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select>
           </div>
           <div class="field"><label>身高（cm）</label><input type="number" id="amgHeight" value="165" min="100" max="230"></div>
         </div>
@@ -1339,7 +1339,7 @@
         <h2><span class="idx">02</span>人口學與身體計測</h2>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="azlAge" value="55" min="0" max="120"></div>
-          <div class="field"><label>生理性別</label><select id="azlSex"><option value="M">男</option><option value="F">女</option></select></div>
+          <div class="field"><label>生理性別</label><select id="azlSex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select></div>
           <div class="field"><label>身高（cm）</label><input type="number" id="azlHeight" value="165" min="100" max="230"></div>
         </div>
         <div class="field-row">
@@ -1679,7 +1679,7 @@
         <h2><span class="idx">02</span>人口學與身體計測</h2>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="aedAge" value="45" min="0" max="120"></div>
-          <div class="field"><label>生理性別</label><select id="aedSex"><option value="M">男</option><option value="F">女</option></select></div>
+          <div class="field"><label>生理性別</label><select id="aedSex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select></div>
           <div class="field"><label>身高（cm）</label><input type="number" id="aedHeight" value="165" min="100" max="230"></div>
         </div>
         <div class="field-row">
@@ -2557,7 +2557,7 @@
 
     // 01 病人與腎功能
     document.getElementById('age').value='';
-    document.getElementById('sex').value='M';
+    document.getElementById('sex').value='';
     document.getElementById('height').value='';
     document.getElementById('tbw').value='';
     document.getElementById('dryWeight').value='';
@@ -2673,7 +2673,7 @@
     const setVal=(id,val)=>{ document.getElementById(id).value = (val!==undefined&&val!==null)?val:''; };
     const setChecked=(id,val)=>{ document.getElementById(id).checked = !!val; };
 
-    setVal('age', s.age); setVal('sex', s.sex||'M'); setVal('height', s.height); setVal('tbw', s.tbw); setVal('dryWeight', s.dryWeight);
+    setVal('age', s.age); setVal('sex', s.sex||''); setVal('height', s.height); setVal('tbw', s.tbw); setVal('dryWeight', s.dryWeight);
     setVal('dialysis', s.dialysis||'none'); setChecked('arcSuspect', s.arcSuspect); setVal('hdFlux', s.hdFlux||'unknown');
     clearTbody('#scrTable');
     (s.scrRows||[]).forEach(r=>addScrRow(r.date, r.val));
@@ -4410,14 +4410,16 @@ ${flagText || '（無特別旗標）'}
   // 選過，舊行為會悄悄落在清單第一個選項而非有意義的預設值——2026-09-21 與 Brandon
   // 確認後，比照 WP1.1 示範資料調查的發現擴大納入必要欄位（原 spec D2 僅列人口學三項）。
   const REQUIRED_INPUTS = {
-    vanco:    [{id:'age',label:'年齡'},{id:'height',label:'身高'},{id:'tbw',label:'實際體重 TBW'}],
+    vanco:    [{id:'age',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'sex',label:'性別',kind:'select'},{id:'height',label:'身高'},{id:'tbw',label:'實際體重 TBW'},{id:'scrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRows()}],
     vancoHD:  [{id:'tbw',label:'實際體重 TBW（或填乾體重）', altId:'dryWeight'}],
-    amg:      [{id:'amgAge',label:'年齡'},{id:'amgHeight',label:'身高'},{id:'amgTbw',label:'實際體重 TBW'},{id:'amgIndication',label:'嚴重度／適應症', kind:'select'}]
+    amg:      [{id:'amgAge',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'amgSex',label:'性別',kind:'select'},{id:'amgHeight',label:'身高'},{id:'amgTbw',label:'實際體重 TBW'},{id:'amgIndication',label:'嚴重度／適應症', kind:'select'},{id:'amgScrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRowsAmg()}]
   };
   function requiredFieldFilled(field){
     const el = document.getElementById(field.id);
     if(!el) return false;
-    const ok = field.kind==='select' ? el.value!=='' : (parseFloat(el.value)>0);
+    if(field.kind==='rows') return field.rows().length>0;
+    let ok = field.kind==='select' ? el.value!=='' : (parseFloat(el.value)>0);
+    if(ok && field.adult && parseFloat(el.value)<18) ok = false; // 本工具的目標值與公式以成人為準
     if(ok) return true;
     if(field.altId){
       const altEl = document.getElementById(field.altId);
@@ -4800,8 +4802,8 @@ ${flagText || '（無特別旗標）'}
     const scrRows = readScrRows();
 
     const flags = [];
+    // 沒有 SCr 時 guardRequired 已擋下（L-A），1.0 只是讓後續程式不出錯的預設值，不會用在結果上
     let scr = scrRows.length ? scrRows[scrRows.length-1].v : 1.0;
-    if(!scrRows.length) flags.push({level:'warn', text:'未提供 SCr，暫以 1.0 mg/dL 估算 — 這不是病人實際數據，請務必輸入實際值。'});
     if(scrRows.length>=2){
       const first=scrRows[0].v, lastV=scrRows[scrRows.length-1].v;
       if(lastV > first*1.3) flags.push({level:'warn', text:`SCr 呈上升趨勢（${first.toFixed(2)} → ${lastV.toFixed(2)} mg/dL），腎功能可能正在惡化，目前清除率估算可能高估。`});
@@ -5607,7 +5609,7 @@ ${flagText || '（無特別旗標）'}
     amgStore.refreshPatientSelect('');
 
     document.getElementById('amgAge').value='';
-    document.getElementById('amgSex').value='M';
+    document.getElementById('amgSex').value='';
     document.getElementById('amgHeight').value='';
     document.getElementById('amgTbw').value='';
     document.getElementById('amgDryWeight').value='';
@@ -5715,7 +5717,7 @@ ${flagText || '（無特別旗標）'}
     const setVal=(id,val)=>{ document.getElementById(id).value = (val!==undefined&&val!==null)?val:''; };
     const setChecked=(id,val)=>{ document.getElementById(id).checked = !!val; };
 
-    setVal('amgAge', s.age); setVal('amgSex', s.sex||'M'); setVal('amgHeight', s.height); setVal('amgTbw', s.tbw); setVal('amgDryWeight', s.dryWeight);
+    setVal('amgAge', s.age); setVal('amgSex', s.sex||''); setVal('amgHeight', s.height); setVal('amgTbw', s.tbw); setVal('amgDryWeight', s.dryWeight);
     setVal('amgDialysis', s.dialysis||'none'); setChecked('amgArcSuspect', s.arcSuspect); setChecked('amgVdHigh', s.vdHigh);
     clearTbody('#amgScrTable');
     (s.scrRows||[]).forEach(r=>addScrRowAmg(r.date, r.val));
@@ -6069,8 +6071,8 @@ ${flagText || '（無特別旗標）'}
     const mic = parseFloat(document.getElementById('amgMic').value);
 
     const flags = [];
+    // 沒有 SCr 時 guardRequired 已擋下（L-A），1.0 只是讓後續程式不出錯的預設值，不會用在結果上
     let scr = scrRows.length ? scrRows[scrRows.length-1].v : 1.0;
-    if(!scrRows.length) flags.push({level:'warn', text:'未提供 SCr，暫以 1.0 mg/dL 估算 — 這不是病人實際數據，請務必輸入實際值。'});
     if(scrRows.length>=2){
       const first=scrRows[0].v, lastV=scrRows[scrRows.length-1].v;
       if(lastV > first*1.3) flags.push({level:'warn', text:`SCr 呈上升趨勢（${first.toFixed(2)} → ${lastV.toFixed(2)} mg/dL），腎功能可能正在惡化，目前清除率估算可能高估，aminoglycoside 累積毒性風險上升。`});
@@ -6440,6 +6442,7 @@ ${flagText || '（無特別旗標）'}
   }
 
   function initDefaultsAmg(){
+    document.getElementById('amgSex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
     const now = new Date();
     const start = new Date(now.getTime() - 2*24*3600000);
     document.getElementById('amgTherapyStart').value = toLocalInputValue(start);
@@ -6913,6 +6916,8 @@ ${flagText||'（無）'}
     toxicity.benign.forEach(b=>flags.push({level:'ok', text:`（記錄）${b}`}));
     toxicity.longTerm.forEach(l=>flags.push({level:'ok', text:`（長期追蹤）${l}——依療程長度累積提醒，非當次判讀依據`}));
     interactionHits.forEach(h=>flags.push({level:'warn', text:h}));
+    { const ageN = parseFloat(document.getElementById('azlAge').value);
+      if(isFinite(ageN) && ageN<18) flags.push({level:'warn', text:'年齡 <18 歲：本工具的目標值與公式以成人為準，請另行評估。'}); }
     if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
 
     const targetText = indObj ? (indObj.lo!=null ? `${indObj.lo}${indObj.hi!=null?'–'+indObj.hi:''}` : '無明訂範圍，見說明') : '';
@@ -7062,7 +7067,7 @@ ${flagText||'（無）'}
   function applyStateAzole(s){
     const setVal=(id,val)=>{ const el=document.getElementById(id); if(el) el.value = (val!==undefined&&val!==null)?val:''; };
     const setChecked=(id,val)=>{ const el=document.getElementById(id); if(el) el.checked = !!val; };
-    setVal('azlAge', s.age); setVal('azlSex', s.sex||'M'); setVal('azlHeight', s.height); setVal('azlTbw', s.tbw);
+    setVal('azlAge', s.age); setVal('azlSex', s.sex||''); setVal('azlHeight', s.height); setVal('azlTbw', s.tbw);
     setVal('azlPregnancy', s.pregnancy||'no'); setVal('azlWeightChange', s.weightChange);
     setVal('azlAstAlt', s.astAlt); setVal('azlBilirubin', s.bilirubin); setVal('azlAlbumin', s.albumin);
     setVal('azlCrp', s.crp); setVal('azlScr', s.scr); setVal('azlLabDate', s.labDate);
@@ -7119,7 +7124,7 @@ ${flagText||'（無）'}
     document.querySelectorAll('#azlInputPanel input[type=text], #azlInputPanel input[type=number], #azlInputPanel input[type=date], #azlInputPanel input[type=datetime-local], #azlInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#azlInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
     document.getElementById('azlDrug').value='voriconazole';
-    document.getElementById('azlSex').value='M'; document.getElementById('azlPregnancy').value='no'; document.getElementById('azlSeverity').value='穩定';
+    document.getElementById('azlSex').value=''; document.getElementById('azlPregnancy').value='no'; document.getElementById('azlSeverity').value='穩定';
     document.getElementById('azlFreq').dataset.userTouched='';
     toggleAzoleDrugUI();
     document.getElementById('azlPatientLabel').value='';
@@ -7138,6 +7143,7 @@ ${flagText||'（無）'}
   }
 
   function initDefaultsAzole(){
+    document.getElementById('azlSex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
     const now = new Date();
     const start = new Date(now.getTime() - 6*24*3600000);
     toggleAzoleDrugUI();
@@ -7524,7 +7530,7 @@ ${flagText||'（無）'}
     const setChecked=(id,val)=>{ const el=document.getElementById(id); if(el) el.checked = !!val; };
     setVal('aedDrug', s.drug||'phenytoin'); toggleAedDrugUI();
     setVal('aedPurpose', s.purpose||'routine');
-    setVal('aedAge', s.age); setVal('aedSex', s.sex||'M'); setVal('aedHeight', s.height); setVal('aedTbw', s.tbw); setVal('aedPregnancy', s.pregnancy||'no');
+    setVal('aedAge', s.age); setVal('aedSex', s.sex||''); setVal('aedHeight', s.height); setVal('aedTbw', s.tbw); setVal('aedPregnancy', s.pregnancy||'no');
     const labs = s.labs||{};
     setVal('aedAlbumin', labs.albumin); setVal('aedAstAlt', labs.astAlt); setVal('aedTbil', labs.tbil); setVal('aedScr', labs.scr); setVal('aedBun', labs.bun);
     setVal('aedPlatelet', labs.platelet); setVal('aedNh3', labs.nh3); setVal('aedLabDate', labs.labDate); setChecked('aedDialysis', labs.dialysis);
@@ -7572,7 +7578,7 @@ ${flagText||'（無）'}
     clearDirty('aed');
     document.querySelectorAll('#aedInputPanel input[type=text], #aedInputPanel input[type=number], #aedInputPanel input[type=date], #aedInputPanel input[type=datetime-local], #aedInputPanel textarea').forEach(el=>el.value='');
     document.querySelectorAll('#aedInputPanel input[type=checkbox]').forEach(el=>el.checked=false);
-    document.getElementById('aedDrug').value='phenytoin'; document.getElementById('aedSex').value='M'; document.getElementById('aedPregnancy').value='no';
+    document.getElementById('aedDrug').value='phenytoin'; document.getElementById('aedSex').value=''; document.getElementById('aedPregnancy').value='no';
     document.getElementById('aedLevelType').value='total'; document.getElementById('aedLevelRoute').value='po'; document.getElementById('aedPurpose').value='routine';
     toggleAedDrugUI();
     document.getElementById('aedPatientLabel').value=''; document.getElementById('aedPatientAsOf').value='';
@@ -7589,6 +7595,7 @@ ${flagText||'（無）'}
     resetModuleAed();
   }
   function initDefaultsAed(){
+    document.getElementById('aedSex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
     const now = new Date();
     const start = new Date(now.getTime() - 10*24*3600000);
     toggleAedDrugUI();
@@ -7658,7 +7665,8 @@ ${flagText||'（無）'}
     // Renal failure trigger for the 0.1 correction coefficient (Q1 已解決): CrCl<10 OR
     // on dialysis, with the dialysis checkbox acting as a manual override path.
     let crcl = NaN;
-    if(isFinite(age) && isFinite(tbw) && isFinite(scr) && scr>0){
+    // 性別空白時 CrCl 無法計算，不得當成男性（L-A）
+    if(isFinite(age) && isFinite(tbw) && isFinite(scr) && scr>0 && (sex==='M' || sex==='F')){
       const ibw = ibwDevine(parseFloat(document.getElementById('aedHeight').value)||0, sex);
       const { weight } = weightForCG(tbw, ibw);
       crcl = cockcroftGault(age, weight, scr, sex);
@@ -7858,6 +7866,7 @@ ${flagText||'（無）'}
     // ---- interaction scan ----
     const concomitant = document.getElementById('aedConcomitant').value;
     aedInteractionScan(concomitant, drug).forEach(text=>flags.push({level:'warn', text}));
+    if(isFinite(age) && age<18) flags.push({level:'warn', text:'年齡 <18 歲：本工具的目標值與公式以成人為準，請另行評估。'});
 
     if(flags.length===0) flags.push({level:'ok', text:'未偵測到明顯的健全性疑慮。'});
     document.getElementById('aedFlagList').innerHTML = flags.map(f=>`<div class="flag-item ${f.level==='ok'?'':f.level}"><span class="dot"></span><span>${f.text}</span></div>`).join('');
@@ -7959,6 +7968,7 @@ ${flagText||'（無）'}
 
   // ---------------- wiring ----------------
   function initDefaults(){
+    document.getElementById('sex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
     const now = new Date();
     const start = new Date(now.getTime() - 3*24*3600000);
     document.getElementById('therapyStart').value = toLocalInputValue(start);

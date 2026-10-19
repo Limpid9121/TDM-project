@@ -53,6 +53,7 @@ async function main() {
   setAndFire(win, doc, 'amgAge', '60');
   setAndFire(win, doc, 'amgHeight', '170');
   setAndFire(win, doc, 'amgTbw', '70');
+  setAndFire(win, doc, 'amgSex', 'M'); // REDESIGN L-A：性別改為必填，原本靠預設值「男」，現在要明確選
 
   doc.getElementById('amgAddScrRow').click();
   const scrRow = doc.querySelector('#amgScrTable .entry-row');
