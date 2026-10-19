@@ -71,6 +71,7 @@ function mk(win) {
   const set = (id, v) => { const el = $(id); el.value = v; fire(el); };
   const chk = (id, v) => { const el = $(id); el.checked = v; fire(el); };
   const click = id => $(id).click();
+  const radio = id => { const el = $(id); el.checked = true; fire(el); }; // REDESIGN L-B：第一筆給藥是不是療程第一劑
   const tab = name => doc.querySelector(`.drug-switch-btn[data-drug="${name}"]`).click();
   const reset = () => click('clearAllBtn');
   // fill the LAST row of an entry table; rowSel values keyed by the row's own input class
@@ -80,7 +81,7 @@ function mk(win) {
     Object.entries(vals).forEach(([cls, v]) => { const el = row.querySelector('.' + cls); el.value = v; fire(el); });
   };
   const addRow = (btnId, tableId, vals) => { click(btnId); fillLastRow(tableId, vals); };
-  return { doc, $, set, chk, click, tab, reset, addRow };
+  return { doc, $, set, chk, radio, click, tab, reset, addRow };
 }
 
 const norm = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
@@ -127,6 +128,7 @@ const SCENARIOS = {
     h.set('therapyStart', '2026-09-16T09:00'); h.set('expandTo', '2026-09-19T09:00');
     h.set('maintDose', '1000'); h.set('maintInterval', '12'); h.set('maintInf', '60');
     h.click('expandDoses');
+    h.radio('vancoFirstDoseFirst'); // L-B：原本 checkbox 未勾
     h.addRow('addLevelRow', 'levelTable', { 'level-date': '2026-09-18T20:45', 'level-val': '14.2' });
     h.addRow('addLevelRow', 'levelTable', { 'level-date': '2026-09-19T00:30', 'level-val': '27.5' });
     const s = snap(h, VANCO_OUT);
@@ -142,7 +144,7 @@ const SCENARIOS = {
     h.set('firstMaintDoseTime', '2026-09-17T21:00');
     h.set('maintDose', '1250'); h.set('maintInterval', '12'); h.set('maintInf', '90');
     h.click('expandDoses');
-    h.chk('assumeSteadyState', true);
+    h.radio('vancoFirstDoseSteady'); // L-B：原本直接勾 checkbox，radio 會同步勾選它
     h.addRow('addLevelRow', 'levelTable', { 'level-date': '2026-09-19T08:40', 'level-val': '16.1' });
     h.chk('deepInfection', true);
     return snap(h, VANCO_OUT);
@@ -172,6 +174,7 @@ const SCENARIOS = {
     h.set('amgTherapyStart', '2026-09-17T09:00'); h.set('amgExpandTo', '2026-09-19T09:00');
     h.set('amgMaintDose', '120'); h.set('amgMaintInf', '30'); h.set('amgMaintInterval', '8');
     h.click('amgExpandDoses');
+    h.radio('amgFirstDoseFirst'); // L-B：原本 checkbox 未勾
     h.addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T02:00', 'level-val': '6.8' });
     h.addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T08:45', 'level-val': '1.4' });
     h.set('amgMic', '1'); h.set('amgOrganism', 'Pseudomonas aeruginosa');
@@ -187,6 +190,7 @@ const SCENARIOS = {
     h.set('amgTherapyStart', '2026-09-17T10:00'); h.set('amgExpandTo', '2026-09-19T11:00');
     h.set('amgMaintDose', '825'); h.set('amgMaintInf', '30'); h.set('amgMaintInterval', '24');
     h.click('amgExpandDoses');
+    h.radio('amgFirstDoseFirst'); // L-B：原本 checkbox 未勾
     h.addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T12:30', 'level-val': '38' });
     h.addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T16:30', 'level-val': '16' });
     return snap(h, AMG_OUT);

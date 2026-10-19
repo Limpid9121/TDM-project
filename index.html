@@ -684,7 +684,7 @@
             <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
             <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
           </div>
-          <div class="checkline"><input type="checkbox" id="assumeSteadyState"><label for="assumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+          <div class="field" style="padding:0 12px;"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑"><label>第一筆給藥是不是本療程第一劑？（有給藥紀錄時必選）</label><div class="checkline"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseFirst" value="first"><label for="vancoFirstDoseFirst">第一筆紀錄就是本療程第一劑</label></div><div class="checkline"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseSteady" value="steady"><label for="vancoFirstDoseSteady">之前已規則給藥（已達穩態），第一筆只是我登錄的起點（往前補入虛擬劑次讓濃度不從零開始累積）</label></div><input type="checkbox" id="assumeSteadyState" hidden></div></div>
           <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
           <div class="hint" id="vancoSsBasis"></div>
         </details>
@@ -1113,7 +1113,7 @@
 
         <details class="adv" id="amgAdv">
           <summary>進階：已達穩態假設</summary>
-          <div class="checkline" id="amgSteadyStateRow"><input type="checkbox" id="amgAssumeSteadyState"><label for="amgAssumeSteadyState">分析起點的第一劑其實是「長期已達穩態」的維持劑量（往前補入虛擬劑次讓濃度不從零開始累積）</label></div>
+          <div class="field" id="amgSteadyStateRow" style="padding:0 12px;"><div id="amgFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑"><label>第一筆給藥是不是本療程第一劑？（有給藥紀錄時必選）</label><div class="checkline"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseFirst" value="first"><label for="amgFirstDoseFirst">第一筆紀錄就是本療程第一劑</label></div><div class="checkline"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseSteady" value="steady"><label for="amgFirstDoseSteady">之前已規則給藥（已達穩態），第一筆只是我登錄的起點（往前補入虛擬劑次讓濃度不從零開始累積）</label></div><input type="checkbox" id="amgAssumeSteadyState" hidden></div></div>
           <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
           <div class="hint" id="amgSsBasis"></div>
         </details>
@@ -2584,6 +2584,7 @@
     document.getElementById('loadingInf').value='120';
     document.getElementById('firstMaintDoseTime').value='';
     document.getElementById('assumeSteadyState').checked=false;
+    clearFirstDoseRadio('vanco');
     document.getElementById('steadyStateHint').style.display='none';
     vancoPickedKey = null;
     document.getElementById('vancoPickStart').value='';
@@ -2687,6 +2688,7 @@
     document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
     { const lbl = document.getElementById('therapyStartLabel'); if(lbl) lbl.textContent = s.useLoading ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）'; }
     setChecked('assumeSteadyState', s.assumeSteadyState);
+    syncFirstDoseRadio('vanco', 'assumeSteadyState');
     document.getElementById('steadyStateHint').style.display = s.assumeSteadyState ? 'block' : 'none';
     // what-if pick is ephemeral per-session state, not part of a saved patient record
     vancoPickedKey = null;
@@ -4409,15 +4411,30 @@ ${flagText || '（無特別旗標）'}
   // getAminoTarget／computeCandidateAmino／regimenTagAmino）。清空後若使用者未主動
   // 選過，舊行為會悄悄落在清單第一個選項而非有意義的預設值——2026-09-21 與 Brandon
   // 確認後，比照 WP1.1 示範資料調查的發現擴大納入必要欄位（原 spec D2 僅列人口學三項）。
+  // L-B：隱藏的 checkbox（assumeSteadyState／amgAssumeSteadyState）仍是引擎唯一讀取的來源，
+  // 二選一 radio 只是把它變成必答；radio 改變時寫回 checkbox，讀存檔時由 checkbox 帶出 radio。
+  function syncFirstDoseRadio(prefix, checkboxId){
+    const steady = document.getElementById(checkboxId).checked;
+    document.getElementById(prefix+'FirstDoseSteady').checked = steady;
+    document.getElementById(prefix+'FirstDoseFirst').checked = !steady;
+  }
+  function clearFirstDoseRadio(prefix){
+    document.getElementById(prefix+'FirstDoseFirst').checked = false;
+    document.getElementById(prefix+'FirstDoseSteady').checked = false;
+  }
   const REQUIRED_INPUTS = {
-    vanco:    [{id:'age',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'sex',label:'性別',kind:'select'},{id:'height',label:'身高'},{id:'tbw',label:'實際體重 TBW'},{id:'scrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRows()}],
+    vanco:    [{id:'age',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'sex',label:'性別',kind:'select'},{id:'height',label:'身高'},{id:'tbw',label:'實際體重 TBW'},{id:'scrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRows()},
+               {id:'vancoFirstDoseKindGroup',label:'第一筆給藥是不是本療程第一劑',kind:'radio',name:'vancoFirstDoseKind',when:()=>readDoseRows().length>0}],
     vancoHD:  [{id:'tbw',label:'實際體重 TBW（或填乾體重）', altId:'dryWeight'}],
-    amg:      [{id:'amgAge',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'amgSex',label:'性別',kind:'select'},{id:'amgHeight',label:'身高'},{id:'amgTbw',label:'實際體重 TBW'},{id:'amgIndication',label:'嚴重度／適應症', kind:'select'},{id:'amgScrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRowsAmg()}]
+    amg:      [{id:'amgAge',label:'年齡（本工具適用 18 歲以上）',adult:true},{id:'amgSex',label:'性別',kind:'select'},{id:'amgHeight',label:'身高'},{id:'amgTbw',label:'實際體重 TBW'},{id:'amgIndication',label:'嚴重度／適應症', kind:'select'},{id:'amgScrTable',label:'SCr（至少一筆）',kind:'rows',rows:()=>readScrRowsAmg()},
+               {id:'amgFirstDoseKindGroup',label:'第一筆給藥是不是本療程第一劑',kind:'radio',name:'amgFirstDoseKind',when:()=>readDoseRowsAmg().length>0 && document.getElementById('amgSteadyStateRow').style.display!=='none'}]
   };
   function requiredFieldFilled(field){
     const el = document.getElementById(field.id);
     if(!el) return false;
+    if(field.when && !field.when()) return true;
     if(field.kind==='rows') return field.rows().length>0;
+    if(field.kind==='radio') return !!document.querySelector('input[name="'+field.name+'"]:checked');
     let ok = field.kind==='select' ? el.value!=='' : (parseFloat(el.value)>0);
     if(ok && field.adult && parseFloat(el.value)<18) ok = false; // 本工具的目標值與公式以成人為準
     if(ok) return true;
@@ -4445,8 +4462,11 @@ ${flagText || '（無特別旗標）'}
         if(!el) return;
         const card = el.closest('.card');
         if(card && card.classList.contains('collapsed')) card.classList.remove('collapsed');
+        const adv = el.closest('details');
+        if(adv) adv.open = true; // 必填項在「進階」摺疊區裡時要先展開
         el.scrollIntoView({block:'center'});
-        el.focus();
+        const target = el.matches('input,select,textarea,button') ? el : el.querySelector('input,select,textarea,button');
+        if(target) target.focus();
       });
     });
     const demoBtn = container.querySelector('[data-req-demo]');
@@ -5327,7 +5347,7 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgTiwRow').style.display = tiw ? 'block' : 'none';
     document.getElementById('amgCandFixedBlock').style.display = tiw ? 'none' : '';
     document.getElementById('amgCandTiwNote').style.display = tiw ? 'block' : 'none';
-    document.getElementById('amgSteadyStateRow').style.display = tiw ? 'none' : 'flex';
+    document.getElementById('amgSteadyStateRow').style.display = tiw ? 'none' : 'block';
     document.getElementById('amgSteadyStateHint').style.display = (tiw || !document.getElementById('amgAssumeSteadyState').checked) ? 'none' : 'block';
     if(tiw) document.getElementById('amgPickBar').classList.remove('active');
     // the HD dialysis-session generator is nested inside the weekly-weekday block and
@@ -5638,6 +5658,7 @@ ${flagText || '（無特別旗標）'}
     document.getElementById('amgMaintInf').value='';
     document.getElementById('amgPruneBeforeInput').value='';
     document.getElementById('amgAssumeSteadyState').checked=false;
+    clearFirstDoseRadio('amg');
     document.getElementById('amgSteadyStateHint').style.display='none';
     amgPickedKey = null;
     document.getElementById('amgPickStart').value='';
@@ -5734,6 +5755,7 @@ ${flagText || '（無特別旗標）'}
     setVal('amgTherapyStart', s.therapyStart); setVal('amgExpandTo', s.expandTo);
     setVal('amgMaintDose', s.maintDose); setVal('amgMaintInterval', s.maintInterval); setVal('amgMaintInf', s.maintInf);
     setChecked('amgAssumeSteadyState', s.assumeSteadyState);
+    syncFirstDoseRadio('amg', 'amgAssumeSteadyState');
     // what-if pick is ephemeral per-session state, not part of a saved patient record
     amgPickedKey = null;
     document.getElementById('amgPickStart').value='';
@@ -6443,6 +6465,7 @@ ${flagText || '（無特別旗標）'}
 
   function initDefaultsAmg(){
     document.getElementById('amgSex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
+    document.getElementById('amgFirstDoseFirst').checked = true; // L-B：示範病例的第一筆就是療程第一劑
     const now = new Date();
     const start = new Date(now.getTime() - 2*24*3600000);
     document.getElementById('amgTherapyStart').value = toLocalInputValue(start);
@@ -7969,6 +7992,7 @@ ${flagText||'（無）'}
   // ---------------- wiring ----------------
   function initDefaults(){
     document.getElementById('sex').value = 'M'; // 性別預設空白（L-A），示範病例明確設為男
+    document.getElementById('vancoFirstDoseFirst').checked = true; // L-B：示範病例的第一筆就是療程第一劑
     const now = new Date();
     const start = new Date(now.getTime() - 3*24*3600000);
     document.getElementById('therapyStart').value = toLocalInputValue(start);
@@ -8307,6 +8331,11 @@ ${flagText||'（無）'}
       const lbl = document.getElementById('therapyStartLabel');
       if(lbl) lbl.textContent = this.checked ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）';
     });
+    document.querySelectorAll('input[name="vancoFirstDoseKind"]').forEach(r=>r.addEventListener('change', function(){
+      const cb = document.getElementById('assumeSteadyState');
+      cb.checked = (this.value==='steady');
+      cb.dispatchEvent(new Event('change', {bubbles:true}));
+    }));
     document.getElementById('assumeSteadyState').addEventListener('change', function(){
       document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
     });
@@ -8415,6 +8444,11 @@ ${flagText||'（無）'}
       if(el) el.addEventListener('input', renderAmino), el.addEventListener('change', renderAmino);
     });
 
+    document.querySelectorAll('input[name="amgFirstDoseKind"]').forEach(r=>r.addEventListener('change', function(){
+      const cb = document.getElementById('amgAssumeSteadyState');
+      cb.checked = (this.value==='steady');
+      cb.dispatchEvent(new Event('change', {bubbles:true}));
+    }));
     document.getElementById('amgAssumeSteadyState').addEventListener('change', function(){
       document.getElementById('amgSteadyStateHint').style.display = this.checked ? 'block' : 'none';
     });
