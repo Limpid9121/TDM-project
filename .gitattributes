@@ -1,0 +1,8 @@
+# 統一用 LF 換行。Windows 端 index.html 曾被轉成 CRLF，導致 load_harness.js 的 ANCHOR
+# 比對失敗、15 支測試裡有 10 支無法載入（2026-10-19 發現）。
+* text=auto eol=lf
+*.png  binary
+*.jpg  binary
+*.pdf  binary
+*.docx binary
+*.tgz  binary

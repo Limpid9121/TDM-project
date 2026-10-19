@@ -36,7 +36,9 @@ const EXPORT_NAMES = [
   'AED_RULES', 'phtSaltFactor', 'phtNormalize', 'aedSamplingCheck', 'aedLabScheduleNote',
   'phtToxicityStatPrompt', 'vpaAssess', 'vpaHermidaCorrect', 'aedSteadyStateCheck', 'aedInteractionScan',
   'phtMmSinglePoint', 'phtMmTwoPoint', 'phtPredictCss', 'phtDoseForTarget', 'phtKmSensitivity',
-  'phtT90', 'phtLoadingDose', 'vpaProportionalDose'
+  'phtT90', 'phtLoadingDose', 'vpaProportionalDose',
+  // 2026-10-19 新增：獨立 PK 驗算（test_pk_reference.js）需要
+  'fitCLV', 'primePriorDoses', 'cockcroftGault', 'weightForCG', 'ibwDevine'
 ];
 
 // tests/ 內若有 index.html（舊用法：手動複製進來）就用它；否則用 repo 根目錄的 index.html

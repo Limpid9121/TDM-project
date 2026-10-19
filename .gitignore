@@ -1,1 +1,7 @@
 node_modules/
+
+# 本機工具與暫存（可用 tools/setup_env.sh 重建）
+.claude/skills/
+.impeccable/config.local.json
+tests/shots/
+Claude outputs/
