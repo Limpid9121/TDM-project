@@ -46,10 +46,10 @@
 
 ### L-B
 - radio 與隱藏 checkbox 放在原本進階區（vancoAdv／amgAdv）的同一位置。必答題藏在摺疊的「進階」裡不太好找：缺資料清單點下去會自動展開進階區並聚焦 radio；D 系列重排時建議把這題移出進階區。
-- AMG 的  改成包住整組 radio 的容器，TIW 顯示切換從  改 （只是版面）。
+- AMG 的 `amgSteadyStateRow` 改成包住整組 radio 的容器，TIW 顯示切換從 `flex` 改 `block`（只是版面）。
 - 守門條件：vanco 非 HD、且給藥表至少一筆有效列；AMG 另加「該列沒被 TIW 隱藏」。HD 與計畫處方預測模式不要求。
-- 示範病例：／ 開頭明確選「第一筆是第一劑」（等於原本 checkbox 未勾）。
-- 讀存檔： 依 checkbox 帶出 radio；清空時 。存檔結構沒動。
-- 測試設定更新（斷言沒動）： 加  並在 V1／A1／A2 展開給藥後選第一劑、V2 改點「已達穩態」radio（效果等同原本勾 checkbox）。
-- 新測試：（30 項）。
-- 沒做：版面目視（內建瀏覽器打不開本機檔案）、雲端版面檢查與設計偵測。
+- 示範病例：`initDefaults`／`initDefaultsAmg` 開頭明確選「第一筆是第一劑」（等於原本 checkbox 未勾）。
+- 讀存檔：`syncFirstDoseRadio` 依 checkbox 帶出 radio；清空時 `clearFirstDoseRadio`。存檔結構沒動。
+- 測試設定更新（斷言沒動）：`test_ui_golden.js` 加 `h.radio`，並在 V1／A1／A2 展開給藥後選第一劑、V2 改點「已達穩態」radio（效果等同原本勾 checkbox）。
+- 新測試：`tests/test_first_dose_kind.js`（30 項）。
+- 沒做：雲端版面檢查與設計偵測；畫面目視由 Brandon 看（見下）。
