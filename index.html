@@ -146,7 +146,8 @@
   .hint-inline{font-size:11px;color:var(--ink-faint);font-weight:400;}
   #aedPkContent > p, #aedVpaDoseContent > p{font-size:12.5px;}
 
-  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;align-items:end;}
+  /* 靠上對齊：標題有最小高度，輸入框自然對齊；靠下對齊會讓「下方多一行說明」的欄位把隔壁擠歪（驗收後修正） */
+  .field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;align-items:start;}
   .field-row.three{grid-template-columns:1fr 1fr 1fr;}
   .field-row.stacked{grid-template-columns:1fr;gap:10px;}
   .field{display:flex;flex-direction:column;gap:4px;min-width:0;}
@@ -155,6 +156,9 @@
   .with-now{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;}
   .with-now .now-btn{white-space:nowrap;}
   .field label{font-size:11.5px;color:var(--ink-soft);font-weight:500;display:block;min-height:2.6em;line-height:1.3;}
+  /* 標題預留兩行高度只為了和隔壁欄位對齊；整列只有一個欄位時不需要，否則標題會離自己的控制項太遠 */
+  .field-row > .field:only-child > label{min-height:0;}
+  .checkline + .field-row{margin-top:12px;}
   .field input, .field select, .field textarea{
     font-family:var(--mono);font-size:13.5px;color:var(--ink);
     background:#FBFBF9;border:1px solid var(--line-strong);border-radius:6px;
@@ -166,8 +170,18 @@
   .field input:focus, .field select:focus, .field textarea:focus{
     outline:2px solid var(--trace-dim);outline-offset:0;border-color:var(--trace);
   }
-  .checkline{display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--ink-soft);margin:6px 0;}
-  .checkline input{width:14px;height:14px;}
+  .checkline{display:flex;align-items:flex-start;gap:7px;font-size:12.5px;line-height:1.4;color:var(--ink-soft);margin:6px 0;}
+  /* 勾選框對齊第一行文字的中線；拿掉瀏覽器預設外距 */
+  .checkline input{width:14px;height:14px;margin:calc((1.4em - 14px) / 2) 0 0;flex:none;font-size:inherit;}
+  /* checkline 放在 .field 裡時（例如候選給藥間隔），不要吃到欄位標題的樣式 */
+  .checkline label, .field .checkline label{display:inline;min-height:0;font-size:inherit;font-weight:inherit;color:inherit;line-height:inherit;}
+  /* 二選一必答題（REDESIGN L-B，驗收後移出進階區） */
+  .ui-radio-group [role="radiogroup"]{margin:8px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);padding:8px 12px;}
+  .ui-radio-title{font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:4px;}
+  .ui-radio-title span{font-weight:400;color:var(--ink-soft);margin-left:6px;}
+  .ui-radio{display:flex;align-items:flex-start;gap:8px;font-size:12.5px;line-height:1.45;color:var(--ink);padding:3px 0;cursor:pointer;}
+  .ui-radio input{width:14px;height:14px;margin:calc((1.45em - 14px) / 2) 0 0;flex:none;font-size:inherit;}
+  .ui-radio small{display:block;font-size:12px;color:var(--ink-soft);}
 
   /* ---- WP4.1 (W3): card-03 internal reorg helpers ---- */
   .card h3{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;margin:10px 0 5px;}
@@ -678,17 +692,23 @@
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
         </div>
 
-        <details class="adv" id="vancoAdv">
-          <summary>進階：首劑 loading／已達穩態假設</summary>
-          <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
-          <div class="field-row" id="loadingFields" style="display:none;">
-            <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
-            <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
-            <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
-          </div>
-          <div class="field" style="padding:0 12px;"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑"><label>第一筆給藥是不是本療程第一劑？（有給藥紀錄時必選）</label><div class="checkline"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseFirst" value="first"><label for="vancoFirstDoseFirst">第一筆紀錄就是本療程第一劑</label></div><div class="checkline"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseSteady" value="steady"><label for="vancoFirstDoseSteady">之前已規則給藥（已達穩態），第一筆只是我登錄的起點（往前補入虛擬劑次讓濃度不從零開始累積）</label></div><input type="checkbox" id="assumeSteadyState" hidden></div></div>
-          <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請勿勾選。</p>
+        <div class="ui-radio-group"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
+          <div class="ui-radio-title">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
+          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseFirst" value="first"><span>第一筆紀錄就是本療程第一劑</span></label>
+          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseSteady" value="steady"><span>之前已規則給藥（已達穩態），第一筆只是我登錄的起點<small>工具會往前補入虛擬劑次，讓濃度不從零開始累積</small></span></label>
+          <input type="checkbox" id="assumeSteadyState" hidden>
+        </div></div>
+          <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請選「第一筆紀錄就是本療程第一劑」。</p>
           <div class="hint" id="vancoSsBasis"></div>
+        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
+        <div class="field-row" id="loadingFields" style="display:none;">
+          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
+          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
+          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
+        </div>
+        <!-- 驗收後修正：首劑 loading 已移出，vancoAdv 沒有內容；保留元素與 id（R3）但隱藏 -->
+        <details class="adv" id="vancoAdv" hidden>
+          <summary>進階：首劑 loading</summary>
         </details>
 
         <div id="fixedRegimenButtonBlock">
@@ -1115,11 +1135,17 @@
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
         </div>
 
-        <details class="adv" id="amgAdv">
-          <summary>進階：已達穩態假設</summary>
-          <div class="field" id="amgSteadyStateRow" style="padding:0 12px;"><div id="amgFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑"><label>第一筆給藥是不是本療程第一劑？（有給藥紀錄時必選）</label><div class="checkline"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseFirst" value="first"><label for="amgFirstDoseFirst">第一筆紀錄就是本療程第一劑</label></div><div class="checkline"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseSteady" value="steady"><label for="amgFirstDoseSteady">之前已規則給藥（已達穩態），第一筆只是我登錄的起點（往前補入虛擬劑次讓濃度不從零開始累積）</label></div><input type="checkbox" id="amgAssumeSteadyState" hidden></div></div>
+        <div class="ui-radio-group" id="amgSteadyStateRow"><div id="amgFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
+          <div class="ui-radio-title">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
+          <label class="ui-radio"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseFirst" value="first"><span>第一筆紀錄就是本療程第一劑</span></label>
+          <label class="ui-radio"><input type="radio" name="amgFirstDoseKind" id="amgFirstDoseSteady" value="steady"><span>之前已規則給藥（已達穩態），第一筆只是我登錄的起點<small>工具會往前補入虛擬劑次，讓濃度不從零開始累積</small></span></label>
+          <input type="checkbox" id="amgAssumeSteadyState" hidden>
+        </div></div>
           <p class="hint" id="amgSteadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑起始濃度反映長期累積後的穩態，而非從 0 開始。此設定只影響濃度基線，不改變你實際輸入的資料。（僅適用固定間隔排程；每週固定星期排程 aminoglycoside trough 通常已趨近 0，暖機影響有限，暫不套用。）</p>
           <div class="hint" id="amgSsBasis"></div>
+        <!-- 驗收後修正：必答題已移出，amgAdv 沒有內容；保留元素與 id（R3）但隱藏 -->
+        <details class="adv" id="amgAdv" hidden>
+          <summary>進階：已達穩態假設</summary>
         </details>
 
         <div class="btn-row">
@@ -4413,7 +4439,7 @@ ${decidedTextP}
 【此工具做不到的事】模擬透析當下的濃度變化（無反彈/雙室機轉）、橫跨多次透析的長期趨勢建模、殘餘腎功能的量化貢獻。請你把重點放在這些工具算不到的部分。
 
 ## 一、病人
-- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg
+- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':(d.sex==='F'?'女':'未填')}，身高 ${d.height} cm，TBW ${d.tbw} kg
 ${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg\n`:''}- 膜通量：${d.flux}
 - SCr 數列（僅供臨床脈絡，未用於清除率估算）：${scrText}
 
@@ -4800,10 +4826,10 @@ ${flagText || '（無特別旗標）'}
   // details 自動展開（open=true），但使用者手動打開、兩個核取方塊都沒勾時，這裡不會
   // 把它自動關掉（只設 true，不設 false）。純顯示，不影響任何欄位值或計算（R2）。
   const ADV_SUMMARY_CFG = {
-    vanco: {detailsId:'vancoAdv', loadingCheckboxId:'useLoading', loadingDoseId:'loadingDose', loadingInfId:'loadingInf',
-      ssCheckboxId:'assumeSteadyState', baseLabel:'進階：首劑 loading／已達穩態假設'},
+    vanco: {detailsId:'vancoAdv', loadingCheckboxId:null, loadingDoseId:null, loadingInfId:null, // loading 已移出進階區，不再同步摘要
+      ssCheckboxId:null, baseLabel:'進階：首劑 loading'},
     amg: {detailsId:'amgAdv', loadingCheckboxId:null, loadingDoseId:null, loadingInfId:null,
-      ssCheckboxId:'amgAssumeSteadyState', baseLabel:'進階：已達穩態假設'}
+      ssCheckboxId:null, baseLabel:'進階：已達穩態假設'}
   };
   function syncAdvSummary(moduleKey){
     const cfg = ADV_SUMMARY_CFG[moduleKey];
@@ -4821,7 +4847,7 @@ ${flagText || '（無特別旗標）'}
         parts.push(`✓ loading ${d} mg／${i} 分`);
       }
     }
-    const ssEl = document.getElementById(cfg.ssCheckboxId);
+    const ssEl = cfg.ssCheckboxId ? document.getElementById(cfg.ssCheckboxId) : null;
     if(ssEl && ssEl.checked) parts.push('✓ 已達穩態假設');
 
     summaryEl.textContent = parts.length ? ('進階：' + parts.join('\u3000')) : cfg.baseLabel;
@@ -5241,7 +5267,7 @@ ${flagText || '（無特別旗標）'}
 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、辨識少見或複雜交互作用、納入本工具未建模的個別狀況。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。
 
 ## 一、病人與腎功能
-- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg（IBW ${d.ibw.toFixed(1)} kg，CrCl 計算採 ${d.cgMethod}）
+- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':(d.sex==='F'?'女':'未填')}，身高 ${d.height} cm，TBW ${d.tbw} kg（IBW ${d.ibw.toFixed(1)} kg，CrCl 計算採 ${d.cgMethod}）
 ${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg（與 TBW 不同，Vd 族群先驗採此體重估算，懷疑水腫／第三腔隙影響）\n`:''}- SCr 數列：${scrText}
 - Cockcroft-Gault CrCl：約 ${d.crcl.toFixed(0)} mL/min
 - 透析狀態：${d.dialysis==='none'?'否':d.dialysis}
@@ -6210,9 +6236,12 @@ ${flagText || '（無特別旗標）'}
     const {weight:weightForVd, method:vdWeightMethod} = weightForCG(useDryWeight ? dryWeight : tbw, ibw);
     const vdCoef = vdHigh ? 0.35 : 0.26;
     const Vpop = vdCoef*weightForVd;
-    flags.push({level:'ok', text:`族群 Vd 先驗以體重選擇後的體重計算：${vdWeightMethod}，${weightForVd.toFixed(1)} kg × ${vdCoef} L/kg = ${Vpop.toFixed(1)} L。`});
+    // 一則說明交代 Vd 用的是哪個體重：有乾體重時以乾體重為起點，再套同一套體重選擇規則（驗收後修正：原本兩則互相矛盾）
     if(useDryWeight && Math.abs(dryWeight-tbw) > tbw*0.05){
-      flags.push({level:'ok', text:`Vd 之族群先驗改用你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg），以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。`});
+      const dryMethod = /^TBW/.test(vdWeightMethod) ? '乾／平常體重（低於 IBW，直接使用）' : vdWeightMethod;
+      flags.push({level:'ok', text:`族群 Vd 先驗以你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg）為起點，再依體重選擇規則採 ${dryMethod}：${weightForVd.toFixed(1)} kg × ${vdCoef} L/kg = ${Vpop.toFixed(1)} L，以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。`});
+    } else {
+      flags.push({level:'ok', text:`族群 Vd 先驗以體重選擇後的體重計算：${vdWeightMethod}，${weightForVd.toFixed(1)} kg × ${vdCoef} L/kg = ${Vpop.toFixed(1)} L。`});
     }
     if(vdHigh) flags.push({level:'ok', text:'已勾選「臨床懷疑 Vd 偏高」，族群 Vd 先驗上修至 0.35 L/kg（水腫／重症／敗血症常見），初期 peak 可能因此偏低，若濃度資料足夠仍會依實測資料擬合校正。'});
     const omegaCL = dialysis==='none' ? 0.30 : 0.9;
@@ -6471,7 +6500,7 @@ ${flagText || '（無特別旗標）'}
 【此工具做不到的事】判讀 lab 趨勢的臨床意義、評估病程走向與感染控制進度、Hartford nomogram 之圖形化判讀（本工具改用個體化 ke/Vd 直接反解，理論上更精確，但未對照原始 nomogram 圖形）、辨識少見或複雜交互作用。請你把重點放在補足這些部分，且在必要時對本工具的數值假設提出質疑。
 
 ## 一、病人與腎功能
-- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':'女'}，身高 ${d.height} cm，TBW ${d.tbw} kg（CrCl 計算採 ${d.cgMethod}）
+- 年齡 ${d.age} 歲，性別 ${d.sex==='M'?'男':(d.sex==='F'?'女':'未填')}，身高 ${d.height} cm，TBW ${d.tbw} kg（CrCl 計算採 ${d.cgMethod}）
 ${d.dryWeight?`- 乾／平常體重：${d.dryWeight} kg（與 TBW 不同，Vd 族群先驗採此體重估算）\n`:''}- SCr 數列：${scrText}
 - Cockcroft-Gault CrCl：約 ${d.crcl.toFixed(0)} mL/min
 - 透析狀態：${d.dialysis==='none'?'否':d.dialysis}
@@ -6886,7 +6915,7 @@ ${flagText || '（無特別旗標）'}
     return `你是感染科／臨床藥學顧問。以下是一名接受 azole 抗黴菌藥 TDM 病人的資料，本工具僅做 trough 對目標值判讀與情境交叉檢查（非 PK 擬合），請你整合下列資訊給第二意見：
 
 【目標藥物】${d.drugLabel}／適應症：${d.indicationLabel}
-【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
+【人口學】${d.age}歲／${d.sex==='M'?'男':(d.sex==='F'?'女':'未填')}／${d.height}cm／${d.tbw}kg
 【器官功能】AST/ALT ${d.astAlt||'未填'}／Bilirubin ${d.bilirubin||'未填'}／Albumin ${d.albumin||'未填'}／CRP ${d.crp||'未填'}／SCr ${d.scr||'未填'}
 【感染脈絡】部位：${d.site||'未填'}／菌種：${d.organism||'未填'}／嚴重度：${d.severity}
 【給藥處方】${d.formulationLabel}，${d.freqLabel}，${d.doseText}，療程起始：${d.therapyStart||'未填'}
@@ -7722,7 +7751,7 @@ ${flagText||'（無）'}
     return `你是神經科／臨床藥學顧問。以下是一名接受 ${d.drugLabel} TDM 病人的資料，本工具本版做濃度校正判讀、情境交叉檢查，以及必要時的劑量估算，請你整合下列資訊給第二意見：
 
 【目標藥物】${d.drugLabel}／目的：${d.purposeLabel}
-【人口學】${d.age}歲／${d.sex==='M'?'男':'女'}／${d.height}cm／${d.tbw}kg
+【人口學】${d.age}歲／${d.sex==='M'?'男':(d.sex==='F'?'女':'未填')}／${d.height}cm／${d.tbw}kg
 【實驗室】Albumin ${d.albumin||'未填'}／AST/ALT ${d.astAlt||'未填'}／T-bil ${d.tbil||'未填'}／SCr ${d.scr||'未填'}／BUN ${d.bun||'未填'}
 【給藥處方】${d.formLabel}，τ=${d.tauH||'未填'}h，劑量 ${d.dose||'未填'}mg，起始 ${d.regimenStart||'未填'}
 【濃度】${d.levelType}：${d.levelValue!=null?d.levelValue:'未輸入'}（抽血 ${d.drawAt||'未填'}）

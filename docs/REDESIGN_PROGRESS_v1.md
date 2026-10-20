@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L 系列全部完成，等 Brandon 說「繼續」做 D0）
+最後更新：2026-10-20（L 系列驗收與驗收後修正完成，等 Brandon 說「繼續」做 D0）
 
 ## 現況
 
@@ -37,9 +37,25 @@
 - 測試：21 支全過；golden 124/124；每次基準更新都有 Brandon 核可紀錄（見上表）。
 - 紅線（用程式比對 `e903dcd` 與目前版本）：R1 只有計畫核可的函式與常數被改（`checkAzoleTrough` `inferInfusionMinutes` `regimenTag` `regimenTagAmino` `roundDoseTo250` `roundDoseAmino`、`AZOLE_TARGETS`、`AZOLE_HEADER` 的說明文字），`buildAiPrompt*` 沒動；R3 沒有刪除或改型別的 id；R4 新元素沒用 `entry-row`；R10 沒有新增 localStorage key。
 - 版面（本機沒有 playwright，改在內建瀏覽器照 `ui_layout_check.py` 的 L1–L4 手動跑）：4 模組 × 1440／1024／390 寬，示範病例與空白頁、所有摺疊區展開，都沒有水平捲軸、左右欄對齊、控制項不超出卡片、沒有 console 錯誤。
-- 設計偵測：70 項（施工前 69）。多出的 1 項是下面第 3 點。
+- 設計偵測：驗收當下 70 項（施工前 69）。
 
-**發現的問題（尚未修）**
+**驗收後修正（Brandon 2026-10-20 核可：第 1–5 點照建議修，第 6 點留到之後；另加對齊與首劑 loading）**
+- 第 1 點：`buildAiPrompt*` 五處性別改成「男／女／未填」（R1 例外，Brandon 核可）。
+- 第 2 點：AMG 的 Vd 說明合成一則；有乾體重時寫「以乾體重 X 為起點，再依規則採 Y」，乾體重低於 IBW 時不再把它叫做 TBW。
+- 第 3、5 點：必答題移出進階區，改用 `ui-radio-group`／`ui-radio` 樣式（不再吃 `.field label`），放在「產生範圍」下面、永遠看得到。
+- 第 4 點：`steadyStateHint` 改成「請選『第一筆紀錄就是本療程第一劑』」。
+- Brandon 追加：「首劑 loading」也移出進階區變成直接的勾選項。`vancoAdv`、`amgAdv` 因此沒有內容，保留元素與 id（R3）但加 `hidden`；`ADV_SUMMARY_CFG` 兩個模組都不再同步摘要。
+- Brandon 追加（截圖 05 區塊沒對齊）：
+  - `.field-row` 改成靠上對齊（`align-items:start`）。用瀏覽器量過四個模組在 1440／1024／390 寬，每一列輸入框上緣差都是 0；原本靠下對齊在「下方多一行說明」的列差 36–37 px，其他列也有 1–4 px 的小錯位。
+  - 勾選框拿掉瀏覽器預設外距、對齊第一行文字中線；放在 `.field` 裡的勾選文字（q8h 等）不再吃欄位標題樣式。四個模組所有勾選框與 radio 量過都和文字差 ≤1.5 px。
+  - 整列只有一個欄位時，標題不預留兩行高度；勾選列後面接欄位列時多 12 px 間距（「候選給藥間隔」才會貼近自己的勾選框）。
+- 新測試：`tests/test_l_followup.js`（23 項）。全部測試過、golden 124/124 0 差異（沒有計算輸出改變）、三種寬度版面檢查過。
+- 設計偵測：72 項。和施工前 69 相比多 3 項，都是既有樣式被「看見」，不是新的樣式：
+  - 2 項灰色說明字對比不足：兩個穩態說明行原本在收合區（偵測器略過），移出來後被算進去；與其他 60 項是同一個 `.hint` 顏色問題。
+  - 1 項 11 px 小字：L-E3 把 AMG 表頭加長成「Cmax(peak，輸注結束後 30 分)」，表頭本來就是 11 px。
+  - 三項都留給 D2 統一換色、換字級（D2 驗收要求這兩類歸零）。
+
+**驗收當下發現的問題（第 1–5 點已在上面修正）**
 1. 性別空白時 AI prompt 寫成「女」：vancomycin HD、azole、AED 三處性別不是必填，`buildAiPrompt*` 用 `sex==='M'?'男':'女'`，空白就變成女。L-A 之前預設是男所以沒發生。要修得動 `buildAiPrompt*`（R1），需 Brandon 決定。
 2. AMG 填了乾體重時，Vd 說明前後矛盾：舊旗標說「改用乾／平常體重 72 kg」，新旗標說「IBW 67.7 kg」，實際用的是 67.7。L-E2 規格是「改寫」說明旗標，我是另外新增一則、沒改舊的。
 3. 新的二選一 radio 包在 `.field` 裡，吃到 `.field label` 樣式（11.5 px、block、min-height），字偏小、圓點與文字略錯位；設計偵測因此 +1。
