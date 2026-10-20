@@ -23,7 +23,8 @@ async function main() {
   // ---------------------------------------------------------------
   // 1. checkAzoleTrough — thresholds (spec section 3)
   // ---------------------------------------------------------------
-  // Voriconazole: prophylaxis 0.5-5.5, treatment 1.0-5.5 (prefer 2-5.5), toxicity >5.5
+  // REDESIGN L-E1（2026-10-20 Brandon 核可）：以院內 protocol 判定，UpToDate 數值只顯示。
+  // Voriconazole: 院內 1.0-6.0（治療偏好 >=2），5 以上 note，>6 warn；UpToDate 5.5 只在 note 加註
   let r = checkAzoleTrough('voriconazole', 'treatment', 0.9);
   assert(r.tag === 'warn' && r.lowFlag, 'voriconazole treatment: 0.9 below 1.0 floor -> warn/low');
 
@@ -31,44 +32,47 @@ async function main() {
   assert(r.tag === 'ok', 'voriconazole treatment: exactly 1.0 is NOT below floor -> ok');
 
   r = checkAzoleTrough('voriconazole', 'prophylaxis', 0.6);
-  assert(r.tag === 'ok', 'voriconazole prophylaxis: 0.6 is within 0.5-5.5 -> ok (prophylaxis floor is 0.5, not 1.0)');
+  assert(r.tag === 'warn' && r.lowFlag, 'voriconazole prophylaxis: 0.6 is below the 院內 floor 1.0 -> warn/low (UpToDate floor 0.5 is display-only)');
 
   r = checkAzoleTrough('voriconazole', 'treatment', 5.5);
   assert(r.tag === 'ok' && !r.highFlag, 'voriconazole: exactly 5.5 is NOT above the ceiling -> ok');
 
   r = checkAzoleTrough('voriconazole', 'treatment', 5.6);
-  assert(r.tag === 'warn' && r.highFlag, 'voriconazole: 5.6 exceeds 5.5 -> warn/high (neurotoxicity line)');
+  assert(r.tag === 'ok' && !r.highFlag && r.notes.some(n => n.includes('接近上限') && n.includes('UpToDate 上限為 5.5')), 'voriconazole: 5.6 is above UpToDate 5.5 but within the 院內 ceiling 6 -> note only (not warn), with the UpToDate 5.5 remark');
 
-  r = checkAzoleTrough('voriconazole', 'treatment', 6.0);
-  assert(r.tagText.includes('5.5'), 'voriconazole high tagText cites 5.5 (not the old incorrect 6)');
+  r = checkAzoleTrough('voriconazole', 'treatment', 6.2);
+  assert(r.tag === 'warn' && r.highFlag && r.tagText.includes('超過院內上限 6'), 'voriconazole: 6.2 exceeds the 院內 ceiling 6 -> warn/high, tagText cites 6');
 
-  // Posaconazole: prophylaxis >=0.7, treatment >=1.0 (prefer 2-3), hepato-watch 1.83 (soft), hard ceiling 4
+  // Posaconazole: 院內 prophylaxis >=0.7, treatment >=1.25, >1.83 肝毒性警戒（warn）, >4 毒性上限
   r = checkAzoleTrough('posaconazole', 'prophylaxis', 0.65);
   assert(r.tag === 'warn' && r.lowFlag, 'posaconazole prophylaxis: 0.65 below 0.7 -> warn');
 
   r = checkAzoleTrough('posaconazole', 'treatment', 0.9);
-  assert(r.tag === 'warn' && r.lowFlag, 'posaconazole treatment: 0.9 below 1.0 -> warn');
+  assert(r.tag === 'warn' && r.lowFlag, 'posaconazole treatment: 0.9 below 1.25 -> warn');
 
   r = checkAzoleTrough('posaconazole', 'treatment', 2.0);
-  assert(r.tag === 'ok', 'posaconazole treatment: 2.0 (within preferred 2-3) -> ok, no hard threshold crossed');
+  assert(r.tag === 'warn' && r.highFlag && r.tagText.includes('1.83'), 'posaconazole treatment: 2.0 (>1.83 院內肝毒性警戒值) -> warn, must check LFT');
 
   r = checkAzoleTrough('posaconazole', 'treatment', 2.5);
-  assert(r.tag === 'ok' && r.notes.some(n => n.includes('1.83')), 'posaconazole: 2.5 (>1.83, <=4) -> tag stays ok, soft note about 1.83 present');
+  assert(r.tag === 'warn' && r.tagText.includes('1.83') && r.tagText.includes('LFT'), 'posaconazole: 2.5 (>1.83, <=4) -> warn (was a soft note), tagText cites 1.83 and LFT');
 
   r = checkAzoleTrough('posaconazole', 'treatment', 4.5);
   assert(r.tag === 'warn' && r.highFlag, 'posaconazole: 4.5 exceeds hard ceiling 4 -> warn');
   assert(r.tagText.includes('4'), 'posaconazole high tagText cites the 4 mg/L ceiling');
 
-  // Isavuconazole: no efficacy floor (>1 descriptive only), toxicity 4.6-5.1
+  // Isavuconazole: 院內 2-5；UpToDate 4.6-5.1 毒性關切區間只是 note
   r = checkAzoleTrough('isavuconazole', 'general', 0.5);
-  assert(r.tag === 'ok', 'isavuconazole: 0.5 (below the descriptive "most patients reach >1") is still tag=ok, NOT a warn (not an efficacy floor)');
-  assert(r.notes.length > 0, 'isavuconazole low value still produces an informational note, just not a warn');
+  assert(r.tag === 'warn' && r.lowFlag, 'isavuconazole: 0.5 is below the 院內 target 2 -> warn/low');
+  assert(r.tagText.includes('感染科'), 'isavuconazole low warn tells the user it is not routinely titrated and to discuss with ID before adjusting');
 
   r = checkAzoleTrough('isavuconazole', 'general', 3.0);
   assert(r.tag === 'ok', 'isavuconazole: 3.0 is comfortably below the 4.6-5.1 toxicity zone -> ok');
 
   r = checkAzoleTrough('isavuconazole', 'general', 5.0);
-  assert(r.tag === 'warn' && r.highFlag, 'isavuconazole: 5.0 is within/above 4.6-5.1 toxicity zone -> warn');
+  assert(r.tag === 'ok' && !r.highFlag && r.notes.some(n => n.includes('毒性關切區間')), 'isavuconazole: 5.0 is inside the UpToDate 4.6-5.1 zone but not above the 院內 ceiling 5 -> note only');
+
+  r = checkAzoleTrough('isavuconazole', 'general', 5.2);
+  assert(r.tag === 'warn' && r.highFlag && r.tagText.includes('超過院內上限 5'), 'isavuconazole: 5.2 exceeds the 院內 ceiling 5 -> warn/high');
 
   // guard: no trough entered
   r = checkAzoleTrough('voriconazole', 'treatment', NaN);

@@ -93,7 +93,7 @@ async function main() {
   setAndFire(win, doc, 'azlTroughVal', '6.0'); // above the 4.6-5.1 toxicity zone
   assert(/本工具不提供 isavuconazole 的劑量調整幅度建議/.test(doc.getElementById('azlDoseSuggestList').textContent) && !/mg/.test(doc.getElementById('azlDoseSuggestList').textContent), 'isavuconazole never shows a dose-adjustment-magnitude suggestion, even with an out-of-range trough (block stays visible but explains why; no mg magnitude)');
   flagsHtml = doc.getElementById('azlFlagList').innerHTML;
-  assert(/毒性關切區間/.test(flagsHtml), 'isavuconazole high trough still flags the toxicity concern zone');
+  assert(/超過院內上限 5/.test(flagsHtml), 'isavuconazole high trough (6.0) flags the 院內 ceiling 5 (REDESIGN L-E1)');
 
   // CYP interaction detection through the actual concomitant-meds textarea
   setAndFire(win, doc, 'azlDrug', 'voriconazole');
