@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-19（L-B 完成，等 Brandon 說「繼續」做 L-C）
+最後更新：2026-10-20（L-C 完成，等 Brandon 說「繼續」做 L-D）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**L-C**（達標標籤照實分類）。
+- 下一包：**L-D**（Vancomycin 輸注時間：每 500 mg 至少 1 小時）。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -17,7 +17,7 @@
 |---|---|---|---|---|
 | L-A | 完成（待 Brandon 看過） | 見 git log | 無需更新（golden 124/124 0 差異，情境本來就有選性別與 SCr） | 見下方備註 |
 | L-B | 完成（待 Brandon 看過） | 見 git log | 無需更新基準（golden 124/124 0 差異；只改了情境設定，補點 radio） | 見下方備註 |
-| L-C | 程式完成；golden 5 項差異等 Brandon 核可後才更新基準 | 見 git log | 待核可：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt | 見下方備註 |
+| L-C | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-D | 未開始 | | | |
 | L-E | 未開始 | | | |
 | L-F | 未開始 | | | |
@@ -59,4 +59,4 @@
 - 規格沒寫但順手動了字面：AMG trough danger 文字拿掉「明顯」，保留「腎／耳毒性風險高」再加規格要求的自訂分級註記；peak 低於下限的文字拿掉「，可能療效不足」（照規格寫法）。
 - `tests/load_harness.js` 的匯出清單加 `regimenTag`（ANCHOR 沒動）。
 - 新測試：`tests/test_regimen_tags.js`（24 項）。既有測試沒有斷言舊文字，沒改。
-- golden 5 項差異（都在計畫預期內）：V1 候選方案表 q8h「略接近邊界」→「符合目標（AUC 400–600）」（AUC 408 現在算達標）；V2 q8h「略接近邊界」→「Cmin 15–20，腎毒性風險略升」、q12h／q24h「符合目標」→「符合目標（AUC 400–600）」；V3 q8h 同 V2 的 Cmin 文字；A1 旗標「Peak 6.8 低於目標下限 8，可能療效不足」→「…低於目標下限 8」，AI prompt 同一句。基準尚未更新。
+- golden 5 項差異（都在計畫預期內）：V1 候選方案表 q8h「略接近邊界」→「符合目標（AUC 400–600）」（AUC 408 現在算達標）；V2 q8h「略接近邊界」→「Cmin 15–20，腎毒性風險略升」、q12h／q24h「符合目標」→「符合目標（AUC 400–600）」；V3 q8h 同 V2 的 Cmin 文字；A1 旗標「Peak 6.8 低於目標下限 8，可能療效不足」→「…低於目標下限 8」，AI prompt 同一句。2026-10-20 Brandon 核可，基準已更新。
