@@ -1214,7 +1214,7 @@
         <h3><span class="idx">B</span>劑量調整建議</h3>
         <div class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。<details class="hint-more"><summary>ⓘ 詳細說明</summary>勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</details></div>
         <div class="table-scroll"><table class="regimen-table" id="amgRegimenTable">
-          <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak，輸注後30分)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
+          <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak，輸注結束後 30 分)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
           <tfoot>
             <tr class="custom-row">
@@ -1317,7 +1317,7 @@
       <!-- 1. 目標藥物與適應症 -->
       <div class="card">
         <h2><span class="idx">01</span>目標藥物與適應症</h2>
-        <div class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。<details class="hint-more"><summary>ⓘ 詳細說明</summary>三顆藥目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）與院內 protocol，詳細來源見下方各處提示。</details></div>
+        <div class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。<details class="hint-more"><summary>ⓘ 詳細說明</summary>三顆藥的目標值以院內 TDM protocol 為主、UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）為輔（UpToDate 數值顯示在目標旁供參考），詳細來源見下方各處提示。</details></div>
         <div class="field-row">
           <div class="field"><label>目標藥物</label>
             <select id="azlDrug">
@@ -4870,7 +4870,10 @@ ${flagText || '（無特別旗標）'}
     const dryWeight = parseFloat(document.getElementById('dryWeight').value);
     const useDryWeight = isFinite(dryWeight) && dryWeight>0;
     const weightForVd = useDryWeight ? dryWeight : tbw;
-    const Vpop = 0.7*weightForVd;
+    // 極度肥胖（BMI ≥40 且體重 ≥120 kg）：族群 Vd 採 0.52 L/kg TBW（Adane ED et al., Pharmacotherapy 2015），其餘維持 0.7。HD 路徑（0.85 L/kg）不受影響。
+    const extremeObeseVd = weightForVd>=120 && (weightForVd/Math.pow(height/100,2))>=40;
+    const Vpop = (extremeObeseVd ? 0.52 : 0.7)*weightForVd;
+    if(extremeObeseVd) flags.push({level:'ok', text:'極度肥胖，族群 Vd 採 0.52 L/kg TBW（Adane 2015）'});
     if(useDryWeight && Math.abs(dryWeight-tbw) > tbw*0.05){
       flags.push({level:'ok', text:`Vd 之族群先驗改用你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg），以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。若濃度資料足夠（≥2 點），Vd 仍會依實測資料擬合校正，此設定主要影響單點或無濃度時的族群估算。`});
     }
@@ -5358,7 +5361,9 @@ ${flagText || '（無特別旗標）'}
     const el = document.getElementById('amgTargetDisplay');
     if(!t){ el.textContent = '請選擇藥物／策略／適應症以帶出目標範圍。'; return; }
     const peakText = t.peak ? `Peak ${t.peak[0]}–${t.peak[1]} µg/mL` : 'Peak 無明訂目標（僅監測 trough）';
-    el.innerHTML = `目前目標：<strong>${drug} ${strategy}，${t.label}</strong> → ${peakText}／Trough &lt;${t.troughHi} µg/mL`;
+    const oddNote = document.getElementById('amgStrategy').value==='odd'
+      ? '<br><span class="hint">ODD 目標 peak 以輸注結束後 30 分鐘比較；文獻定義不一，院內指引未明定（2026-10-19 查證）</span>' : '';
+    el.innerHTML = `目前目標：<strong>${drug} ${strategy}，${t.label}</strong> → ${peakText}／Trough &lt;${t.troughHi} µg/mL${oddNote}`;
   }
 
   function isAminoTiwSchedule(){
@@ -6173,9 +6178,11 @@ ${flagText || '（無特別旗標）'}
     const CLpop = dialysis==='none' ? crcl*0.06 : Math.max(0.3, crcl*0.06);
     const dryWeight = parseFloat(document.getElementById('amgDryWeight').value);
     const useDryWeight = isFinite(dryWeight) && dryWeight>0;
-    const weightForVd = useDryWeight ? dryWeight : tbw;
+    // Vd 族群先驗用「體重選擇後的體重」（TBW／IBW／AdjBW），與 CrCl 同一套規則（tdm-calculator aminoglycoside reference：Vd ≈ 0.25–0.30 L/kg）
+    const {weight:weightForVd, method:vdWeightMethod} = weightForCG(useDryWeight ? dryWeight : tbw, ibw);
     const vdCoef = vdHigh ? 0.35 : 0.26;
     const Vpop = vdCoef*weightForVd;
+    flags.push({level:'ok', text:`族群 Vd 先驗以體重選擇後的體重計算：${vdWeightMethod}，${weightForVd.toFixed(1)} kg × ${vdCoef} L/kg = ${Vpop.toFixed(1)} L。`});
     if(useDryWeight && Math.abs(dryWeight-tbw) > tbw*0.05){
       flags.push({level:'ok', text:`Vd 之族群先驗改用你輸入的乾／平常體重 ${dryWeight} kg（目前 TBW 為 ${tbw} kg），以避免水腫／第三腔隙使 Vd 估算偏高；CrCl 仍照 TBW／IBW／AdjBW 慣例計算，未受影響。`});
     }
@@ -6522,37 +6529,38 @@ ${flagText || '（無特別旗標）'}
   // AZOLE module — trough-vs-target + contextual cross-check engine.
   // Deliberately NOT a PK-fitting engine (no Cpeak/Vd/CL/AUC/ke/t1/2 —
   // routine azole TDM doesn't model these; see AZOLE_MODULE_SPEC_v6.md).
-  // Thresholds sourced from UpToDate "Pharmacology of azoles" and
-  // "Prevention of invasive fungal infections..." (both accessed 2026-07-11),
-  // Segal et al. MSG/EORTC response consensus criteria, IDSA 2016
-  // Aspergillosis guideline, and this hospital's actual formulary.
+  // 判定以院內 TDM protocol 為準（2026-10-19 Brandon 決定）；UpToDate "Pharmacology of azoles" 與
+  // "Prevention of invasive fungal infections..." (both accessed 2026-07-11) 的數值存在各適應症的
+  // ref 欄位，只用來顯示、加註，不參與判定。另參考 Segal et al. MSG/EORTC response consensus
+  // criteria、IDSA 2016 Aspergillosis guideline 與本院實際藥局品項。
   // ==================================================================
 
   const AZOLE_TARGETS = {
     voriconazole: {
       indications: [
-        {id:'prophylaxis', label:'預防', lo:0.5, hi:5.5},
-        {id:'treatment', label:'治療', lo:1.0, hi:5.5, preferLo:2, preferHi:5.5},
-        {id:'cns', label:'CNS 感染', lo:1.0, hi:5.5, preferLo:2, preferHi:5.5}
+        {id:'prophylaxis', label:'預防', lo:1.0, hi:6.0, ref:'0.5–5.5'},
+        {id:'treatment', label:'治療', lo:1.0, hi:6.0, preferLo:2, ref:'1.0–5.5，偏好 ≥2'},
+        {id:'cns', label:'CNS 感染', lo:1.0, hi:6.0, preferLo:2, ref:'1.0–5.5，偏好 ≥2'}
       ],
-      toxicityLine: 5.5,
+      toxicityLine: 6, // 院內上限
+      cautionLine: 5, // 院內：5 以上毒性風險開始升高，主動評估
+      refToxicityLine: 5.5, // UpToDate 上限，只用來加註
       steadyDays: 5 // day 5-7 whether or not loading given; 5 used as earliest reasonable check
     },
     posaconazole: {
       indications: [
-        {id:'prophylaxis', label:'預防', lo:0.7, hi:null},
-        {id:'treatment', label:'治療', lo:1.0, hi:null, preferLo:2, preferHi:3}
+        {id:'prophylaxis', label:'預防', lo:0.7, hi:null, ref:'≥0.7'},
+        {id:'treatment', label:'治療', lo:1.25, hi:null, ref:'≥1.0，最適 2–3'}
       ],
-      hepatoWatchLine: 1.83, // evidence-mixed early-warning value (Tverdek 2017), not adopted by UpToDate itself
+      hepatoWatchLine: 1.83, // 院內肝毒性警戒值（原為文獻證據不一的早期警示 Tverdek 2017，UpToDate 本身未採用）
       toxicityLine: 4, // UpToDate — pseudohyperaldosteronism risk
       steadyDays: 7
     },
     isavuconazole: {
       indications: [
-        {id:'general', label:'（未依適應症分層——見說明）', lo:null, hi:null}
+        {id:'general', label:'（未依適應症分層——見說明）', lo:2, hi:5, ref:'不依濃度滴定；4.6–5.1 為毒性關切'}
       ],
-      typicalFloor: 1, // descriptive: most patients reach this on standard dosing; NOT an efficacy floor
-      toxicityLine: [4.6, 5.1],
+      toxicityLine: [4.6, 5.1], // UpToDate 毒性關切區間，只在 note 提示
       steadyDays: null // TDM not routine; no steady-state gate applied
     }
   };
@@ -6596,17 +6604,18 @@ ${flagText || '（無特別旗標）'}
     let tag='ok'; const reasons=[]; const notes=[]; let lowFlag=false, highFlag=false;
     if(drug==='voriconazole'){
       if(ind.lo!=null && trough < ind.lo){ tag='warn'; lowFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 低於目標下限 ${ind.lo}`); }
-      if(trough > cfg.toxicityLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過 ${cfg.toxicityLine}，神經／肝毒性風險升高，應主動評估`); }
+      if(trough > cfg.toxicityLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過院內上限 ${cfg.toxicityLine}，神經／肝毒性風險升高，應主動評估`); }
+      else if(trough >= cfg.cautionLine){ notes.push(`Trough ${trough.toFixed(1)} 接近上限（${cfg.cautionLine} 以上毒性風險開始升高），主動評估${trough>cfg.refToxicityLine?`；UpToDate 上限為 ${cfg.refToxicityLine}`:''}`); }
       if(tag==='ok' && ind.preferLo!=null && trough < ind.preferLo){ notes.push(`落在目標區間內，但低於最適區間下限 ${ind.preferLo}`); }
     } else if(drug==='posaconazole'){
       if(ind.lo!=null && trough < ind.lo){ tag='warn'; lowFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 低於目標下限 ${ind.lo}`); }
       if(trough > cfg.toxicityLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過整體毒性上限 ${cfg.toxicityLine}，建議評估假性醛固酮增多症相關徵象（血壓／血鉀／鹼中毒）`); }
-      else if(trough > cfg.hepatoWatchLine){ highFlag=true; notes.push(`Trough ${trough.toFixed(1)} 超過 ${cfg.hepatoWatchLine}（文獻證據不一致的肝毒性提早留意值，非絕對閾值），建議對照 LFT`); }
-      if(tag==='ok' && ind.preferLo!=null && trough>=ind.lo && trough < ind.preferLo){ notes.push(`落在目標內，但低於最適區間 ${ind.preferLo}–${ind.preferHi}`); }
+      else if(trough > cfg.hepatoWatchLine){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過院內肝毒性警戒值 ${cfg.hepatoWatchLine}，須評估 LFT`); }
     } else if(drug==='isavuconazole'){
       const [toxLo, toxHi] = cfg.toxicityLine;
-      if(trough > toxLo){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 達文獻毒性關切區間（${toxLo}–${toxHi}），建議評估肝功能與其他毒性徵象`); }
-      else if(trough <= cfg.typicalFloor){ notes.push(`低於多數病人標準劑量下可達到的 ${cfg.typicalFloor}（描述性，非療效門檻，不建議僅因此調整劑量）`); }
+      if(ind.lo!=null && trough < ind.lo){ tag='warn'; lowFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 低於院內目標 ${ind.lo}；isavuconazole 一般不以濃度滴定，調整前請與感染科討論`); }
+      if(ind.hi!=null && trough > ind.hi){ tag='warn'; highFlag=true; reasons.push(`Trough ${trough.toFixed(1)} 超過院內上限 ${ind.hi}，評估肝毒性`); }
+      if(trough >= toxLo && trough <= toxHi){ notes.push(`Trough ${trough.toFixed(1)} 落在 UpToDate 毒性關切區間（${toxLo}–${toxHi}），建議評估肝功能與其他毒性徵象`); }
     }
     if(reasons.length===0) reasons.push('落在目標區間內，無明確異常');
     return {tag, tagText:reasons.join('；'), notes, target:ind, lowFlag, highFlag};
@@ -6893,14 +6902,14 @@ ${flagText||'（無）'}
     const el = document.getElementById('azlTargetDisplay');
     if(!el) return;
     const drug = document.getElementById('azlDrug').value;
-    if(drug==='isavuconazole'){ el.textContent = '不依適應症分層，見右側說明'; return; }
     const drugLabels = {voriconazole:'Voriconazole', posaconazole:'Posaconazole', isavuconazole:'Isavuconazole'};
     const list = azoleIndicationList(drug);
     const indicationId = document.getElementById('azlIndication').value;
     const ind = list.find(i=>i.id===indicationId) || list[0];
     if(!ind){ el.textContent=''; return; }
     const rangeText = ind.hi==null ? `≥ ${ind.lo}` : `${ind.lo}–${ind.hi}`;
-    el.innerHTML = `目前目標：<strong>${drugLabels[drug]||drug} ${ind.label}</strong> → trough ${rangeText} µg/mL`;
+    const indLabel = drug==='isavuconazole' ? '' : ' '+ind.label; // isavuconazole 不依適應症分層
+    el.innerHTML = `目前目標（院內）：<strong>${drugLabels[drug]||drug}${indLabel}</strong> → trough ${rangeText} µg/mL${ind.ref?`｜UpToDate 參考：${ind.ref}`:''}`;
   }
 
   function renderAzole(){
@@ -7970,7 +7979,7 @@ ${flagText||'（無）'}
     title:'TDM 工作台', eyebrow:'Trough-Only · 非 PK 擬合',
     subtitle:'Azole · Trough 對目標值判讀 · 臨床病程交叉核對 · 情境檢查清單',
     docTitle:'Azole TDM 判讀引擎',
-    footer:'<strong>定位聲明：</strong>本模組為 trough 對目標值判讀＋情境交叉檢查工具，不做 PK 擬合（不計算 Cpeak／Vd／CL／AUC／ke／t½，例行 azole TDM 不建模）。目標值與檢查邏輯出自 UpToDate（Pharmacology of azoles；Prevention of invasive fungal infections in adults with hematologic malignancies and HCT recipients）、Segal 等人 MSG/EORTC 治療反應共識標準、IDSA 2016 Aspergillosis Guideline 與本院實際藥局品項，可能與特定院內 protocol 有出入，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
+    footer:'<strong>定位聲明：</strong>本模組為 trough 對目標值判讀＋情境交叉檢查工具，不做 PK 擬合（不計算 Cpeak／Vd／CL／AUC／ke／t½，例行 azole TDM 不建模）。目標值以院內 TDM protocol 為主、UpToDate（Pharmacology of azoles；Prevention of invasive fungal infections in adults with hematologic malignancies and HCT recipients）為輔，UpToDate 數值顯示在目標旁供參考；檢查邏輯另參考 Segal 等人 MSG/EORTC 治療反應共識標準、IDSA 2016 Aspergillosis Guideline 與本院實際藥局品項，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。'
   };
   const AED_HEADER = {
     title:'TDM 工作台', eyebrow:'Trough／Free 判讀 · 非線性劑量提示',
