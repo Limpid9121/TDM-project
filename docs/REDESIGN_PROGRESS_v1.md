@@ -31,6 +31,22 @@
 | D7 | 未開始 | | | |
 | D8 | 未開始 | | | |
 
+## L 系列驗收（Opus 5.5，2026-10-20）
+
+**通過**
+- 測試：21 支全過；golden 124/124；每次基準更新都有 Brandon 核可紀錄（見上表）。
+- 紅線（用程式比對 `e903dcd` 與目前版本）：R1 只有計畫核可的函式與常數被改（`checkAzoleTrough` `inferInfusionMinutes` `regimenTag` `regimenTagAmino` `roundDoseTo250` `roundDoseAmino`、`AZOLE_TARGETS`、`AZOLE_HEADER` 的說明文字），`buildAiPrompt*` 沒動；R3 沒有刪除或改型別的 id；R4 新元素沒用 `entry-row`；R10 沒有新增 localStorage key。
+- 版面（本機沒有 playwright，改在內建瀏覽器照 `ui_layout_check.py` 的 L1–L4 手動跑）：4 模組 × 1440／1024／390 寬，示範病例與空白頁、所有摺疊區展開，都沒有水平捲軸、左右欄對齊、控制項不超出卡片、沒有 console 錯誤。
+- 設計偵測：70 項（施工前 69）。多出的 1 項是下面第 3 點。
+
+**發現的問題（尚未修）**
+1. 性別空白時 AI prompt 寫成「女」：vancomycin HD、azole、AED 三處性別不是必填，`buildAiPrompt*` 用 `sex==='M'?'男':'女'`，空白就變成女。L-A 之前預設是男所以沒發生。要修得動 `buildAiPrompt*`（R1），需 Brandon 決定。
+2. AMG 填了乾體重時，Vd 說明前後矛盾：舊旗標說「改用乾／平常體重 72 kg」，新旗標說「IBW 67.7 kg」，實際用的是 67.7。L-E2 規格是「改寫」說明旗標，我是另外新增一則、沒改舊的。
+3. 新的二選一 radio 包在 `.field` 裡，吃到 `.field label` 樣式（11.5 px、block、min-height），字偏小、圓點與文字略錯位；設計偵測因此 +1。
+4. vancomycin 的穩態說明（`steadyStateHint`）結尾還寫「請勿勾選」，現在是選項不是勾選。
+5. 使用性：必答 radio 放在預設收合的「進階」區；缺資料清單點下去會展開，但平常看不到。建議 D 系列移出進階區。
+6. 範圍外：HD 路徑的「建議下次透析後劑量」沒有附輸注時間。
+
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
