@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L 系列驗收與驗收後修正完成，等 Brandon 說「繼續」做 D0）
+最後更新：2026-10-20（D0 文件完成，等 Brandon 核可 PRODUCT.md 與 DESIGN.md）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**D0**（PRODUCT.md 與 DESIGN.md，寫完停下來等 Brandon 核可）。L 系列（邏輯修正）全部完成。
+- 下一包：**D1**（方向板，給 Brandon 挑）；要先等 Brandon 核可 D0 的 PRODUCT.md 與 DESIGN.md。L 系列（邏輯修正）全部完成。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -21,7 +21,7 @@
 | L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
 | L-F | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字；基準已更新，124/124 | 見下方備註 |
-| D0 | 未開始 | | | 停：Brandon 核可 PRODUCT.md、DESIGN.md |
+| D0 | 文件完成，等 Brandon 核可 PRODUCT.md、DESIGN.md | 見 git log | 不適用（沒改 index.html） | 停：核可後才做 D1；重點看 DESIGN.md 頂端說明的三處「我提出的」 |
 | D1 | 未開始 | | | 停：Brandon 選方向 |
 | D2 | 未開始 | | | |
 | D3 | 未開始 | | | |
@@ -66,6 +66,15 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### D0
+- 寫了 repo 根目錄的 `PRODUCT.md`（impeccable 的產品模板；內容取自計畫 D0 與 Brandon 的核可決定，沒有另外訪談，推論處標「（推論）」）與 `DESIGN.md`（YAML token＋八個標準段落＋最後一節「從現況到目標」對照表）。`impeccable context` 讀得到兩份、平台判為 web、沒有過期或格式警告。
+- DESIGN.md 的色彩對比都用程式算過：`ink-soft` 在紙／白／欄位／所有狀態底色上最低 4.88:1；白字在主色 5.92:1、在頂列 11.19:1；輸入框邊界對白 3.54:1、對紙 3.23:1；各狀態文字色在自己的底色上 ≥6.3:1。
+- 三處是我提出、計畫沒明說的，請 Brandon 核可時看：
+  1. 數字另用 `Segoe UI, system-ui, Microsoft JhengHei…` 堆疊（`tabular-nums`），因為我無法確認微軟正黑體的拉丁數字等寬；D2 要在 Windows 實機確認，不行就退回計畫的單一堆疊。
+  2. 字重只用 400 與 700（微軟正黑體只有兩檔，500／600 在 Windows 與 Mac 長得不同）。
+  3. 輸入框邊界改成 `#7F8B84`（符合介面元件 3:1），是肉眼看得到的變化：輸入框邊界會比現在深。
+- 時間軸圖例：給藥＝短直條、抽血＝實心圓、SCr＝菱形（不靠顏色）。創意主軸取名「會診工作底稿」，也是我提的。
 
 ### L-A
 - 規格寫的路徑 `claude/REDESIGN_*.md` 實際在 `docs/`；本機是 Claude Code 直接在 repo 內施工，沒有用 device bridge。
