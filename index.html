@@ -666,7 +666,7 @@
           <div class="field-row three">
             <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
             <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
-            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="60" step="5"></div>
+            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="120" step="5"></div>
           </div>
         </div>
 
@@ -2240,7 +2240,30 @@
   }
 
   function roundDoseTo250(mg){ return Math.max(250, Math.round(mg/250)*250); }
-  function inferInfusionMinutes(mg){ if(mg<=1000) return 60; if(mg<=1500) return 90; return 120; }
+  // 院內規則（Brandon 2026-10-19）：vancomycin 每 500 mg 至少輸注 1 小時，即每 250 mg 30 分鐘、
+  // 向上取整、最少 60 分。用整數除法避免 1250 這類劑量的浮點誤差把 150 分算成 180 分。
+  // 參考：仿單寫「不超過 10 mg/min 或至少 60 分鐘，取較長者」，院內規則比仿單保守（約 8.3 mg/min）。
+  function inferInfusionMinutes(mg){ return Math.max(60, Math.ceil(mg/250 - 1e-9)*30); }
+  // 純顯示：實際給藥紀錄裡輸注比院內規則快的劑次，相同劑量與輸注分鐘的合併成一則；計算不受影響。
+  function infusionRuleFlags(){
+    const groups = new Map();
+    readDoseRows().forEach((d,i)=>{
+      if(d.infMin < inferInfusionMinutes(d.doseMg)){
+        const key = d.doseMg+'|'+d.infMin;
+        if(!groups.has(key)) groups.set(key, {doseMg:d.doseMg, infMin:d.infMin, nums:[]});
+        groups.get(key).nums.push(i+1);
+      }
+    });
+    return Array.from(groups.values()).map(g=>{
+      const runs = [];
+      g.nums.forEach(n=>{
+        const last = runs[runs.length-1];
+        if(last && last[1]===n-1) last[1] = n; else runs.push([n,n]);
+      });
+      const label = runs.map(r=>r[0]===r[1] ? String(r[0]) : r[0]+'–'+r[1]).join('、');
+      return {level:'warn', text:`第 ${label} 劑 ${g.doseMg} mg 輸注 ${g.infMin} 分鐘，快於院內規則（每 500 mg 至少 1 小時）`};
+    });
+  }
   function regimenTag(cminC, auc24C){
     if(auc24C>600 || cminC>20) return {tag:'danger', tagText:'腎毒性疑慮升高'};
     if(auc24C<400) return {tag:'warn', tagText:'低於目標 AUC 400'};
@@ -4057,6 +4080,7 @@ ${decidedTextP}
 
     const flags = [];
     flags.push({level:'ok', text:'HD 病人：Cockcroft-Gault／族群 CrCl 不適用（SCr 受透析主導），本工具改採 pre-HD trough 15–20 µg/mL 為主要目標（Lewis & Nolin, Kidney360 2021），並只在單一透析間期內擬合清除率（該期間清除率相對穩定，不橫跨透析事件）。'});
+    infusionRuleFlags().forEach(f=>flags.push(f));
     if(!hdSessions.length) flags.push({level:'warn', text:'尚未記錄透析時程——目前僅能提供文獻族群起始劑量建議，無法擬合透析間期清除率或標記透析後反彈風險。建議至卡片 03 補上透析時程以取得個體化建議。'});
 
     // hide/relabel the normal-path what-if & candidate-table UI, which doesn't apply here
@@ -4913,6 +4937,7 @@ ${flagText || '（無特別旗標）'}
     const ke = CL/V, tHalf = 0.693/ke;
     const fitIssues = checkFitPlausibility({CL, V, tHalf, weightKg:weightForVd, CLpop, Vpop, fitMode:fit.mode});
     fitIssues.forEach(f=>flags.push(f));
+    infusionRuleFlags().forEach(f=>flags.push(f));
     // only meaningful while t-half itself is trustworthy — once the fit has been flagged
     // as implausible, comparing the sampling span against its half-life says nothing
     if(!fitIssues.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
