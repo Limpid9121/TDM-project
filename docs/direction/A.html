@@ -1,0 +1,408 @@
+<!doctype html><html lang="zh-Hant"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>方向板 A</title><style>
+:root{
+  --paper:#F4F5F1; --surface:#FFFFFF; --field:#FBFBF9; --ink:#1B2422; --ink-soft:#52605A;
+  --line:#DADFD8; --line-strong:#C2C9C0; --border-input:#7F8B84;
+  --bar:#12423F; --bar-text:#FFFFFF; --bar-soft:#CFE5E1;
+  --trace:#1F6F6B; --trace-strong:#154E4B; --trace-soft:#D3E9E5;
+  --ok-text:#17603A; --ok-soft:#DDEFE2; --ok-mark:#2E7D4F;
+  --caution-text:#6F4609; --caution-soft:#F2E3C7; --caution-mark:#A9701F;
+  --danger-text:#8A2B2B; --danger-soft:#F1D8D5; --danger-mark:#A23B3B;
+  --font:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+  --font-num:"Segoe UI",system-ui,"Microsoft JhengHei","PingFang TC",sans-serif;
+  --r-sm:4px; --r-md:6px; --r-lg:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+.app>*,.dash>*,.panel,.tile{min-width:0}
+.tblwrap{overflow-x:auto}
+body{font-family:var(--font);font-size:14px;line-height:1.55;color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+.num{font-family:var(--font-num);font-variant-numeric:tabular-nums}
+h1,h2,h3,h4,p{margin:0}
+:focus-visible{outline:2px solid var(--trace);outline-offset:2px}
+
+/* ---- 頂列 ---- */
+.top-bar{background:var(--bar);color:var(--bar-text);display:flex;align-items:center;gap:24px;padding:0 24px;min-height:48px}
+.top-bar h1{font-size:18px;font-weight:700;white-space:nowrap}
+.tabs{display:flex;gap:2px;align-self:stretch}
+.tabs a{display:flex;align-items:center;padding:0 14px;color:var(--bar-soft);text-decoration:none;font-size:13px;border-bottom:3px solid transparent}
+.tabs a.on{color:#fff;font-weight:700;border-bottom-color:#fff}
+.id-strip{margin-left:auto;display:flex;align-items:center;gap:14px;font-size:13px;color:var(--bar-soft);white-space:nowrap}
+.id-strip b{color:#fff;font-weight:700}
+.id-strip .sep{opacity:.5}
+.btn{font:inherit;font-size:12px;font-weight:700;border-radius:var(--r-md);padding:6px 12px;min-height:32px;border:1px solid var(--border-input);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn.primary{background:var(--trace);border-color:var(--trace);color:#fff}
+.top-bar .btn{background:transparent;border-color:rgba(255,255,255,.55);color:#fff}
+
+/* ---- 狀態標籤 ---- */
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;padding:2px 8px;border-radius:var(--r-sm);white-space:nowrap}
+.chip.ok{background:var(--ok-soft);color:var(--ok-text)}
+.chip.caution{background:var(--caution-soft);color:var(--caution-text)}
+.chip.danger{background:var(--danger-soft);color:var(--danger-text)}
+.chip.info{background:var(--trace-soft);color:var(--trace-strong)}
+
+/* ---- 左：工作底稿 ---- */
+.ws-sec{padding:14px 0 12px;border-top:1px solid var(--line)}
+.ws-sec:first-child{border-top:0;padding-top:0}
+.ws-sec h2{font-size:16px;font-weight:700;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.idx{font-family:var(--font-num);font-size:12px;font-weight:700;background:var(--trace-soft);color:var(--trace-strong);border-radius:var(--r-sm);padding:1px 6px}
+.ws-sec .sum{margin-left:auto;font-size:12px;font-weight:400;color:var(--ink-soft)}
+.ws-sec.collapsed h2{margin-bottom:0}
+.hint{font-size:12px;color:var(--ink-soft);margin:2px 0 8px}
+.grid{display:grid;gap:10px;margin-bottom:10px;align-items:start}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+.fld label{display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:3px;min-height:1.3em}
+.inp{height:32px;display:flex;align-items:center;padding:6px 8px;background:var(--field);border:1px solid var(--border-input);border-radius:var(--r-md);font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:14px}
+.inp.sel::after{content:"▾";margin-left:auto;color:var(--ink-soft);font-size:11px}
+.inp .u{margin-left:auto;font-size:12px;color:var(--ink-soft);font-family:var(--font)}
+.row{display:grid;grid-template-columns:22px 1fr 84px 70px 18px;gap:6px;align-items:center;padding:3px 0}
+.row.scr{grid-template-columns:22px 1fr 100px 18px}
+.row.lvl{grid-template-columns:22px 1fr 100px 18px}
+.row .n{font-family:var(--font-num);font-size:12px;color:var(--ink-soft);text-align:right}
+.row .x{color:var(--ink-soft);text-align:center}
+.row.hl .inp{border-color:var(--trace);box-shadow:0 0 0 2px var(--trace-soft)}
+.row-note{grid-column:2/-1;font-size:12px;color:var(--ink-soft);margin:-1px 0 2px}
+.thead{display:grid;grid-template-columns:22px 1fr 84px 70px 18px;gap:6px;font-size:12px;font-weight:700;color:var(--ink-soft);padding:0 0 2px}
+.thead.scr,.thead.lvl{grid-template-columns:22px 1fr 100px 18px}
+.radio-grp{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--paper);padding:8px 12px;margin:8px 0}
+.radio-grp .t{font-size:13px;font-weight:700;color:var(--ink-soft);margin-bottom:4px}
+.radio-grp .t span{font-weight:400;margin-left:6px}
+.radio-grp label{display:flex;gap:8px;align-items:flex-start;font-size:13px;padding:2px 0}
+.radio-grp i{width:14px;height:14px;border-radius:50%;border:1.5px solid var(--border-input);background:#fff;flex:none;margin-top:3px}
+.radio-grp i.on{border-color:var(--trace);box-shadow:inset 0 0 0 3px #fff;background:var(--trace)}
+.btn-row{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0}
+.chk{display:flex;align-items:center;gap:8px;font-size:13px}
+.chk i{width:14px;height:14px;border:1.5px solid var(--border-input);border-radius:3px;background:#fff;flex:none}
+.chk i.on{background:var(--trace);border-color:var(--trace)}
+
+/* ---- 右：判讀 ---- */
+.rp-head{display:flex;align-items:baseline;gap:10px;margin:0 0 8px}
+.rp-head h3{font-size:16px;font-weight:700}
+.rp-head .meta{font-size:12px;color:var(--ink-soft);margin-left:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:13px}
+.tbl th{font-size:12px;font-weight:700;color:var(--ink-soft);text-align:right;padding:5px 8px;border-bottom:1px solid var(--line-strong)}
+.tbl th:first-child,.tbl td:first-child,.tbl th:nth-child(2){text-align:left}
+.tbl td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:right;font-family:var(--font-num);font-variant-numeric:tabular-nums}
+.tbl td.txt{text-align:left;font-family:var(--font)}
+.tbl tr.cur td{background:var(--trace-soft)}
+.tbl tr.cur td:first-child{box-shadow:inset 3px 0 0 var(--trace)}
+.defl{display:grid;grid-template-columns:1fr auto auto;gap:0 12px;font-size:13px}
+.defl>div{display:contents}
+.defl dt,.defl dd{padding:6px 0;border-bottom:1px solid var(--line);margin:0}
+.defl dt{color:var(--ink-soft)}
+.defl dd.v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+.defl dd.u{font-size:12px;color:var(--ink-soft);min-width:110px}
+.defl .hi dd.v{color:var(--ok-text)}
+.flag{display:flex;gap:10px;align-items:flex-start;padding:7px 10px;border-left:3px solid var(--ok-mark);font-size:13px}
+.flag.caution{border-left-color:var(--caution-mark);background:var(--caution-soft)}
+.flag.danger{border-left-color:var(--danger-mark);background:var(--danger-soft)}
+.flag b{font-weight:700}
+.acc{border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);padding:9px 12px;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--ink)}
+.acc span{color:var(--ink-soft);font-size:12px}
+
+/* ---- AUC 目標帶尺（v2） ---- */
+.gauge2{position:relative;height:88px;margin:0 8px}
+.gauge2 .g-track{position:absolute;left:0;right:0;top:34px;height:22px;background:#E9ECE6;border-radius:6px}
+.gauge2 .g-band{position:absolute;top:34px;height:22px;background:var(--ok-soft);border:1.5px solid var(--ok-mark);border-radius:4px;box-sizing:border-box}
+.gauge2 .g-band span{position:absolute;left:8px;top:1px;font-size:12px;font-weight:700;color:var(--ok-text);white-space:nowrap}
+.gauge2 .g-mk{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+.gauge2 .g-mk b{font-family:var(--font-num);font-size:12px;font-weight:400;color:var(--ink-soft);line-height:16px;height:16px}
+.gauge2 .g-mk i{width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:9px solid var(--ink-soft)}
+.gauge2 .g-mk.cur b{font-size:15px;font-weight:700;color:var(--trace-strong)}
+.gauge2 .g-mk.cur i{border-left-width:9px;border-right-width:9px;border-top:13px solid var(--trace-strong)}
+.gauge2 .g-tgt{position:absolute;top:30px;width:2px;height:30px;background:var(--ink);transform:translateX(-1px)}
+.gauge2 .g-tl{position:absolute;top:62px;transform:translateX(-50%);font-style:normal;font-size:12px;font-weight:700;color:var(--ink);white-space:nowrap}
+.gauge2 .g-tk{position:absolute;top:62px;transform:translateX(-50%);font-style:normal;font-size:12px;color:var(--ink-soft);font-family:var(--font-num)}
+.gauge2 .g-tk:first-of-type{transform:none}
+/* ---- AUC 目標帶尺（舊） ---- */
+.gauge{position:relative;height:58px;margin:4px 6px 0}
+.gauge .g-track{position:absolute;left:0;right:0;top:20px;height:12px;background:#E9ECE6;border-radius:6px}
+.gauge .g-band{position:absolute;top:20px;height:12px;background:var(--ok-soft);border:1.5px solid var(--ok-mark);border-radius:4px}
+.gauge .g-band span{position:absolute;left:50%;top:-18px;transform:translateX(-50%);font-size:12px;font-weight:700;color:var(--ok-text);white-space:nowrap}
+.gauge .g-tick{position:absolute;top:38px;transform:translateX(-50%);font-style:normal;font-size:12px;color:var(--ink-soft);font-family:var(--font-num)}
+.gauge .g-mark{position:absolute;top:12px;transform:translateX(-50%);text-align:center}
+.gauge .g-mark i{display:block;width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:9px solid var(--ink);margin:0 auto}
+.gauge .g-mark b{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:12px;font-weight:700;white-space:nowrap;font-family:var(--font-num)}
+.gauge .g-mark.cur i{border-top-color:var(--trace-strong);border-left-width:9px;border-right-width:9px;border-top-width:12px}
+.gauge .g-mark.cur b{font-size:14px;top:-22px;color:var(--trace-strong)}
+.gauge .g-mark.alt i{border-top-color:var(--ink-soft);border-left-width:5px;border-right-width:5px;border-top-width:7px}
+.gauge .g-mark.alt b{color:var(--ink-soft);font-weight:400}
+.gauge .g-mark.tgt{top:15px}
+.gauge .g-mark.tgt i{border-top:0;border-left:0;border-right:0;border-bottom:0;width:2px;height:18px;background:var(--ink);margin:0 auto}
+.gauge .g-mark.tgt b{top:23px;font-weight:400;color:var(--ink-soft)}
+.chart{display:block;background:var(--surface)}
+.legend{display:flex;gap:16px;font-size:12px;color:var(--ink-soft);flex-wrap:wrap;margin:6px 0 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.lg-bar{width:12px;height:8px;background:var(--trace-strong);border-radius:2px;display:inline-block}
+.lg-dot{width:10px;height:10px;background:var(--ink);border-radius:50%;display:inline-block}
+.lg-dia{width:9px;height:9px;background:var(--caution-mark);transform:rotate(45deg);display:inline-block}
+.lg-dash{width:16px;border-top:2px dashed var(--trace-strong);display:inline-block}
+
+.cap{background:#fff;border-bottom:1px solid var(--line);font-size:12px;color:var(--ink-soft);padding:5px 24px;display:flex;gap:16px}
+.cap b{color:var(--ink)}
+.seg{display:none}
+.m-bar{display:none}
+.only-m{display:none}
+@media (max-width:980px){
+  .top-bar{flex-wrap:wrap;gap:8px 16px;padding:8px 16px}
+  .id-strip{margin-left:0;flex-wrap:wrap;gap:6px 12px;width:100%}
+  .app{grid-template-columns:minmax(0,1fr)!important}
+}
+@media (max-width:640px){
+  .cap{padding:5px 16px;flex-wrap:wrap;gap:2px 12px}
+  .cap span{display:none}
+  .top-bar{padding:8px 16px}
+  .top-bar h1{font-size:16px}
+  .tabs{overflow-x:auto;width:100%;order:3;margin:0 -16px;padding:0 16px;scrollbar-width:none}
+  .tabs a{white-space:nowrap;min-height:44px}
+  .id-strip{font-size:12px}
+  .id-strip .btn{display:none}
+  .seg{display:flex;gap:0;margin:12px 16px 0;border:1px solid var(--border-input);border-radius:var(--r-md);overflow:hidden;background:#fff}
+  .seg button{flex:1;font:inherit;font-weight:700;font-size:14px;min-height:44px;border:0;background:#fff;color:var(--ink)}
+  .seg button[aria-pressed="true"]{background:var(--trace);color:#fff}
+  .only-d{display:none!important}
+  .only-m{display:block}
+  .m-bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--bar);color:#fff;padding:10px 16px;align-items:center;gap:10px;box-shadow:0 -4px 14px rgba(0,0,0,.12)}
+  .m-bar .num{font-size:20px;font-weight:700}
+  .m-bar small{font-size:12px;color:var(--bar-soft)}
+  .m-bar .btn{margin-left:auto;background:#fff;color:var(--bar);border-color:#fff;min-height:44px}
+  body{padding-bottom:72px}
+  .full .m-bar{position:static;box-shadow:none;margin-top:12px}
+  .full body{padding-bottom:0}
+  .inp{height:44px;font-size:16px}
+  .btn{min-height:44px}
+  /* 窄螢幕的目標帶尺：只留 0／400／800 刻度，隱藏候選三角的數字，避免和現行數字擠在一起 */
+  .gauge2 .g-tk:nth-of-type(3),.gauge2 .g-tk:nth-of-type(5){display:none}
+  .gauge2 .g-mk:not(.cur) b{display:none}
+  .gauge2 .g-tl{top:62px}
+  .gauge2 .g-tk{top:62px}
+  .gauge2 .g-tk:nth-of-type(3){transform:translateX(-120%)}
+  .tile h3 .meta,.rp-head .meta{display:none}
+}
+
+.app{max-width:1440px;margin:0 auto;padding:20px 24px 40px;display:grid;grid-template-columns:480px 1fr;gap:24px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:0}
+.rp-sec{padding:16px 20px;border-top:1px solid var(--line)}
+.rp-sec:first-child{border-top:0}
+.verdict{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;align-items:center;background:linear-gradient(0deg,var(--ok-soft) 0,var(--ok-soft) 100%);border-bottom:1px solid var(--ok-mark);border-radius:var(--r-lg) var(--r-lg) 0 0;padding:16px 20px}
+.verdict .big{font-size:22px;font-weight:700;color:var(--ok-text);display:flex;align-items:center;gap:8px;white-space:nowrap}
+.verdict .big .mk{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ok-mark);color:#fff;font-size:18px}
+.verdict p{font-size:14px}
+.verdict .fit{grid-column:1/-1;font-size:12px;color:var(--ink-soft)}
+.kpis{display:flex;flex-wrap:wrap;gap:8px 28px;margin:12px 0 0}
+.kpi .l{font-size:12px;color:var(--ink-soft)}
+.kpi .v{font-family:var(--font-num);font-variant-numeric:tabular-nums;font-size:28px;font-weight:700;line-height:1.1}
+.kpi .v small{font-size:12px;font-weight:400;color:var(--ink-soft);margin-left:3px}
+.kpi.ok .v{color:var(--ok-text)}
+.scalebox{padding:14px 20px 4px;border-bottom:1px solid var(--line)}
+.scalebox .cap2{font-size:12px;color:var(--ink-soft);margin-top:2px;padding-bottom:12px}
+.mini{position:relative;height:12px;background:#E9ECE6;border-radius:6px;min-width:120px}
+.mini .band{position:absolute;top:0;height:12px;background:var(--ok-soft);border:1.5px solid var(--ok-mark);border-radius:4px;box-sizing:border-box}
+.mini .pt{position:absolute;top:-3px;width:4px;height:18px;border-radius:2px;background:var(--ink);transform:translateX(-50%)}
+.tbl td.bar{width:150px}
+.chart-wrap{padding:4px 0 0}
+.d-chart{display:block}.m-chart{display:none}
+@media (max-width:980px){.app{grid-template-columns:1fr;padding:16px}}
+@media (max-width:640px){
+  .app{padding:12px 16px 24px;gap:12px}
+  .left{display:none}
+  body.show-input .left{display:block}
+  body.show-input .right{display:none}
+  .verdict{grid-template-columns:1fr;padding:14px 16px}
+  .verdict .big{font-size:20px}
+  .kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px 18px}.kpi .v{font-size:24px}
+  .rp-sec{padding:14px 16px}
+  .scalebox{padding:14px 16px 4px}
+  .d-chart{display:none}.m-chart{display:block}
+  .tbl{font-size:12px}.tbl th,.tbl td{padding:6px 4px}
+  .tbl .hide-m{display:none}
+  .defl{grid-template-columns:1fr auto}
+  .defl dd.u{display:none}
+}
+</style></head><body><div class="cap"><b>D1 方向板 A・報告式＋目標帶尺</b><span>右區像一份判讀報告：先結論與目標帶尺，再方案、曲線、參數</span><span>示範病例真實數字・靜態畫面</span></div>
+<header class="top-bar">
+  <h1>TDM 工作台</h1>
+  <nav class="tabs" aria-label="藥物模組"><a class="on" href="#">Vancomycin</a><a href="#">Aminoglycoside</a><a href="#">Azole</a><a href="#">抗癲癇藥物</a></nav>
+  <div class="id-strip"><span>病歷號 <b class="num">示範-001</b></span><span class="sep">｜</span><span class="num"><b>55</b> 歲・男・168 cm・65 kg</span><span class="sep">｜</span><span>CrCl <b class="num">80</b> mL/min</span><span class="sep">｜</span><span>非透析</span>
+    <button class="btn">存為新收案</button><button class="btn">清空此頁</button></div>
+</header><div class="seg" role="group" aria-label="輸入或結果"><button data-v="in" aria-pressed="false">輸入</button><button data-v="out" aria-pressed="true">結果</button></div><main class="app"><div class="left">
+<section class="ws-sec">
+  <h2><span class="idx">01</span>病人與腎功能</h2>
+  <div class="grid g3">
+    <div class="fld"><label>年齡（歲）</label><div class="inp">55</div></div>
+    <div class="fld"><label>生理性別</label><div class="inp sel">男</div></div>
+    <div class="fld"><label>身高（cm）</label><div class="inp">168</div></div>
+  </div>
+  <div class="grid g2">
+    <div class="fld"><label>實際體重 TBW（kg）</label><div class="inp">65</div></div>
+    <div class="fld"><label>是否透析</label><div class="inp sel">否</div></div>
+  </div>
+  <div class="thead scr"><span></span><span>SCr 日期</span><span>SCr（mg/dL）</span><span></span></div>
+  <div class="row scr"><span class="n">1</span><div class="inp">2026/10/16</div><div class="inp">1.1</div><span class="x">×</span></div>
+  <div class="row scr"><span class="n">2</span><div class="inp">2026/10/20</div><div class="inp">0.95</div><span class="x">×</span></div>
+  <div class="btn-row"><button class="btn">＋ 新增一筆 SCr</button></div>
+</section>
+<section class="ws-sec collapsed"><h2><span class="idx">02</span>感染／臨床脈絡<span class="sum">治療（經驗性）・穩定</span></h2></section>
+<section class="ws-sec">
+  <h2><span class="idx">03</span>給藥處方與紀錄</h2>
+  <div class="grid g3">
+    <div class="fld"><label>維持劑量（mg）</label><div class="inp">1000</div></div>
+    <div class="fld"><label>給藥間隔 τ（小時）</label><div class="inp">12</div></div>
+    <div class="fld"><label>輸注時間（分鐘）</label><div class="inp">120</div></div>
+  </div>
+  <div class="radio-grp"><div class="t">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
+    <label><i class="on"></i>第一筆紀錄就是本療程第一劑</label>
+    <label><i></i>之前已規則給藥（已達穩態），第一筆只是我登錄的起點</label></div>
+  <div class="chk" style="margin:6px 0"><i></i>首劑為獨立 loading 劑量（劑量與維持劑量不同）</div>
+  <div class="btn-row"><button class="btn primary">依上述處方自動展開給藥紀錄</button></div>
+  <div class="thead"><span>#</span><span>給藥開始時間</span><span>劑量</span><span>輸注</span><span></span></div>
+  <div class="row"><span class="n">1</span><div class="inp">2026/10/17 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">2</span><div class="inp">2026/10/18 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">3</span><div class="inp">2026/10/18 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">4</span><div class="inp">2026/10/19 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">5</span><div class="inp">2026/10/19 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">6</span><div class="inp">2026/10/20 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row hl"><span class="n">7</span><div class="inp">2026/10/20 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div>
+</section>
+<section class="ws-sec">
+  <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
+  <div class="thead lvl"><span>#</span><span>抽血時間</span><span>濃度</span><span></span></div>
+  <div class="row lvl hl"><span class="n">1</span><div class="inp">2026/10/20 12:36</div><div class="inp">24.6<span class="u">µg/mL</span></div><span class="x">×</span></div>
+  <div class="row-note" style="padding-left:28px">第 6 劑輸注結束後 1.5 小時（peak 附近）</div>
+  <div class="row lvl"><span class="n">2</span><div class="inp">2026/10/20 21:01</div><div class="inp">11.8<span class="u">µg/mL</span></div><span class="x">×</span></div>
+  <div class="row-note" style="padding-left:28px">第 7 劑給藥前 5 分鐘（trough）</div>
+</section>
+<section class="ws-sec">
+  <h2><span class="idx">05</span>目標與情境設定</h2>
+  <div class="grid g2">
+    <div class="fld"><label>MIC 假設（µg/mL）</label><div class="inp">1</div></div>
+    <div class="fld"><label>目標 AUC₂₄（mg·h/L）</label><div class="inp">500</div><div class="hint" style="margin:3px 0 0">對應 AUC/MIC ≈ 500</div></div>
+  </div>
+  <div class="fld"><label>候選給藥間隔</label>
+    <div class="btn-row" style="margin:2px 0 0"><span class="chk"><i class="on"></i>q8h</span><span class="chk"><i class="on"></i>q12h</span><span class="chk"><i class="on"></i>q24h</span></div></div>
+</section>
+<section class="ws-sec collapsed"><h2><span class="idx">06</span>併用藥物與其他備註<span class="sum">未填</span></h2></section>
+</div><div class="right"><div class="panel">
+<div class="verdict">
+  <div class="big"><span class="mk" aria-hidden="true">✓</span>達標</div>
+  <p>目前處方 <b>1000 mg q12h</b>（輸注 120 分鐘）預測 AUC₂₄ <b class="num">457</b> mg·h/L，落在目標 400–600 內；Cmin <b class="num">11.7</b> µg/mL，低於 15 的關切線。</p>
+  <div class="kpis" style="grid-column:1/-1"><div class="kpi ok"><div class="l">預測 AUC₂₄,ss</div><div class="v">457<small>mg·h/L</small></div></div><div class="kpi"><div class="l">Cmin,ss</div><div class="v">11.7<small>µg/mL</small></div></div><div class="kpi"><div class="l">Cmax,ss</div><div class="v">28.2<small>µg/mL</small></div></div><div class="kpi"><div class="l">近 24h 實際 AUC</div><div class="v">455<small>mg·h/L</small></div></div></div>
+  <div class="fit">聯合擬合（2 點，相距 8.4 小時）・CL 4.38 L/hr・Vd 49.8 L・t½ 7.9 hr</div>
+</div>
+<div class="scalebox">
+  <div class="gauge2" role="img" aria-label="AUC₂₄ 與目標帶 400 到 600"><div class="g-track"></div><div class="g-band" style="left:50.00%;width:25.00%"><span>目標 400–600</span></div><div class="g-mk cur" style="left:57.12%"><b>457</b><i></i></div><div class="g-tgt" style="left:62.50%"></div><em class="g-tl" style="left:62.50%">目標 500</em><div class="g-mk alt" style="left:64.25%"><b>514</b><i></i></div><em class="g-tk" style="left:0.00%">0</em><em class="g-tk" style="left:25.00%">200</em><em class="g-tk" style="left:50.00%">400</em><em class="g-tk" style="left:75.00%">600</em><em class="g-tk" style="left:100.00%">800</em></div>
+  <div class="cap2">▼ 現行處方 457　▼ 灰：q8h、q24h 候選（514）　｜ 細線＝目標 500</div>
+</div><div class="rp-sec"><div class="rp-head"><h3>候選方案</h3><span class="meta">勾選一列＝在曲線上疊加預測</span></div><div class="tblwrap"><table class="tbl"><tr><th>方案</th><th>劑量／輸注</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="hide-m">在目標帶的位置</th><th style="text-align:left">評語</th></tr><tr class=""><td class="txt"><b>q8h</b></td><td class="txt">750 mg ／ 90 分</td><td>27.9</td><td>15.8</td><td>514</td><td class="bar hide-m"><div class="mini"><i class="band" style="left:50.0%;width:25.0%"></i><i class="pt caution" style="left:64.2%"></i></div></td><td class="txt"><span class="chip caution">留意</span> <span style="color:var(--ink-soft);font-size:12px">Cmin 15–20，腎毒性風險略升</span></td></tr><tr class="cur"><td class="txt"><b>q12h</b> <span class="chip info">現行</span></td><td class="txt">1000 mg ／ 120 分</td><td>28.2</td><td>11.7</td><td>457</td><td class="bar hide-m"><div class="mini"><i class="band" style="left:50.0%;width:25.0%"></i><i class="pt ok" style="left:57.1%"></i></div></td><td class="txt"><span class="chip ok">OK</span> <span style="color:var(--ink-soft);font-size:12px">符合目標（AUC 400–600）</span></td></tr><tr class=""><td class="txt"><b>q24h</b></td><td class="txt">2250 mg ／ 270 分</td><td>42.4</td><td>7.6</td><td>514</td><td class="bar hide-m"><div class="mini"><i class="band" style="left:50.0%;width:25.0%"></i><i class="pt ok" style="left:64.2%"></i></div></td><td class="txt"><span class="chip ok">OK</span> <span style="color:var(--ink-soft);font-size:12px">符合目標（AUC 400–600）</span></td></tr></table></div></div><div class="rp-sec"><div class="rp-head"><h3>濃度曲線與時間軸</h3><span class="meta">給藥、抽血、SCr 在同一條時間軸上</span></div><div class="chart-wrap"><div class="d-chart"><svg class="chart" viewBox="0 0 848 330" width="100%" role="img" aria-label="濃度－時間曲線與給藥、抽血、SCr 事件">
+<line x1="136.1" x2="136.1" y1="24" y2="310" stroke="#DADFD8" stroke-width="1"/>
+<text x="136.1" y="325" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/18</text>
+<line x1="317.2" x2="317.2" y1="24" y2="310" stroke="#DADFD8" stroke-width="1"/>
+<text x="317.2" y="325" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/19</text>
+<line x1="498.4" x2="498.4" y1="24" y2="310" stroke="#DADFD8" stroke-width="1"/>
+<text x="498.4" y="325" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/20</text>
+<line x1="679.5" x2="679.5" y1="24" y2="310" stroke="#DADFD8" stroke-width="1"/>
+<text x="679.5" y="325" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/21</text>
+<line x1="38" x2="838" y1="244.0" y2="244.0" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="248.0" font-size="12" fill="#52605A" text-anchor="end">0</text>
+<line x1="38" x2="838" y1="175.2" y2="175.2" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="179.2" font-size="12" fill="#52605A" text-anchor="end">10</text>
+<line x1="38" x2="838" y1="106.5" y2="106.5" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="110.5" font-size="12" fill="#52605A" text-anchor="end">20</text>
+<line x1="38" x2="838" y1="37.8" y2="37.8" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="41.8" font-size="12" fill="#52605A" text-anchor="end">30</text>
+<line x1="38" x2="838" y1="106.5" y2="106.5" stroke="#A23B3B" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="44" y="98.5" font-size="12" fill="#8A2B2B" text-anchor="start">Cmin 關切 20</text>
+<rect x="113.5" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="204.0" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="294.6" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="385.2" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="475.7" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="566.3" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="656.9" y="24" width="15.1" height="220.0" fill="#D3E9E5" opacity=".55"/>
+<line x1="656.9" x2="656.9" y1="24" y2="310" stroke="#1B2422" stroke-width="1.2"/>
+<text x="656.9" y="16" font-size="12" fill="#1B2422" text-anchor="middle" font-weight="700">現在 21:07</text>
+<polyline points="113.5,244.0 117.2,210.2 121.0,177.9 124.8,147.0 128.6,117.4 132.3,122.9 136.1,128.1 139.9,133.1 143.7,137.8 147.4,142.4 151.2,146.8 155.0,150.9 158.8,155.0 162.5,158.8 166.3,162.5 170.1,166.0 173.8,169.3 177.6,172.5 181.4,175.6 185.2,178.5 188.9,181.4 192.7,184.1 196.5,186.6 200.3,189.1 204.0,191.5 207.8,160.0 211.6,129.8 215.4,101.0 219.1,73.3 222.9,80.7 226.7,87.7 230.5,94.4 234.2,100.9 238.0,107.0 241.8,112.9 245.5,118.6 249.3,124.0 253.1,129.1 256.9,134.1 260.6,138.8 264.4,143.3 268.2,147.7 272.0,151.8 275.7,155.8 279.5,159.6 283.3,163.2 287.1,166.7 290.8,170.0 294.6,173.2 298.4,142.5 302.2,113.1 305.9,84.9 309.7,58.0 313.5,66.0 317.2,73.7 321.0,81.0 324.8,88.0 328.6,94.7 332.3,101.1 336.1,107.3 339.9,113.2 343.7,118.8 347.4,124.2 351.2,129.3 355.0,134.3 358.8,139.0 362.5,143.5 366.3,147.8 370.1,152.0 373.8,155.9 377.6,159.7 381.4,163.3 385.2,166.8 388.9,136.4 392.7,107.2 396.5,79.4 400.3,52.7 404.0,60.9 407.8,68.8 411.6,76.3 415.4,83.5 419.1,90.4 422.9,97.0 426.7,103.4 430.5,109.4 434.2,115.2 438.0,120.8 441.8,126.1 445.5,131.1 449.3,136.0 453.1,140.6 456.9,145.1 460.6,149.3 464.4,153.4 468.2,157.3 472.0,161.0 475.7,164.6 479.5,134.3 483.3,105.2 487.1,77.4 490.8,50.8 494.6,59.1 498.4,67.1 502.2,74.7 505.9,82.0 509.7,88.9 513.5,95.6 517.2,102.0 521.0,108.1 524.8,114.0 528.6,119.6 532.3,124.9 536.1,130.0 539.9,134.9 543.7,139.6 547.4,144.1 551.2,148.4 555.0,152.5 558.8,156.5 562.5,160.2 566.3,163.8 570.1,133.5 573.8,104.5 577.6,76.7 581.4,50.2 585.2,58.5 588.9,66.5 592.7,74.1 596.5,81.4 600.3,88.4 604.0,95.1 607.8,101.5 611.6,107.7 615.4,113.5 619.1,119.1 622.9,124.5 626.7,129.7 630.5,134.6 634.2,139.3 638.0,143.8 641.8,148.1 645.5,152.2 649.3,156.2 653.1,159.9 656.9,163.6" fill="none" stroke="#154E4B" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="656.9,163.6 660.6,133.3 664.4,104.3 668.2,76.5 672.0,49.9 675.7,58.3 679.5,66.3 683.3,73.9 687.1,81.2 690.8,88.3 694.6,95.0 698.4,101.4 702.2,107.5 705.9,113.4 709.7,119.0 713.5,124.4 717.2,129.5 721.0,134.4 724.8,139.2 728.6,143.7 732.3,148.0 736.1,152.1 739.9,156.1 743.7,159.9 747.4,163.5 751.2,133.2 755.0,104.2 758.8,76.4 762.5,49.9 766.3,58.2 770.1,66.2 773.8,73.9 777.6,81.2 781.4,88.2 785.2,94.9 788.9,101.3 792.7,107.4 796.5,113.3 800.3,118.9 804.0,124.3 807.8,129.5 811.6,134.4 815.4,139.1 819.1,143.6 822.9,147.9 826.7,152.1 830.5,156.0 834.2,159.8 838.0,163.4" fill="none" stroke="#154E4B" stroke-width="2" stroke-dasharray="6 4" opacity=".8"/>
+<circle cx="585.2" cy="74.9" r="5" fill="#1B2422" stroke="#fff" stroke-width="1.5"/>
+<text x="576.2" y="65.9" font-size="13" font-weight="700" fill="#1B2422" text-anchor="end">24.6</text>
+<circle cx="656.3" cy="162.9" r="5" fill="#1B2422" stroke="#fff" stroke-width="1.5"/>
+<text x="647.3" y="180.9" font-size="13" font-weight="700" fill="#1B2422" text-anchor="end">11.8</text>
+<line x1="38" x2="838" y1="250" y2="250" stroke="#DADFD8"/>
+<text x="32" y="264" font-size="12" fill="#52605A" text-anchor="end">給藥</text>
+<line x1="38" x2="838" y1="270" y2="270" stroke="#DADFD8"/>
+<text x="32" y="284" font-size="12" fill="#52605A" text-anchor="end">抽血</text>
+<line x1="38" x2="838" y1="290" y2="290" stroke="#DADFD8"/>
+<text x="32" y="304" font-size="12" fill="#52605A" text-anchor="end">SCr</text>
+<rect x="113.5" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="204.0" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="294.6" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="385.2" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="475.7" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="566.3" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<rect x="656.9" y="254.0" width="15.1" height="12" rx="2" fill="#154E4B"/>
+<circle cx="585.2" cy="280.0" r="5.5" fill="#1B2422"/>
+<circle cx="656.3" cy="280.0" r="5.5" fill="#1B2422"/>
+<path d="M48.0 294.0 l6 6 l-6 6 l-6 -6 z" fill="#A9701F"/>
+<text x="48.0" y="304.0" font-size="12" fill="#6F4609" dx="10">◀ 10/16　1.10</text>
+<path d="M497.6 294.0 l6 6 l-6 6 l-6 -6 z" fill="#A9701F"/>
+<text x="497.6" y="304.0" font-size="12" fill="#6F4609" dx="10">10/20　0.95</text>
+</svg></div><div class="m-chart"><svg class="chart" viewBox="0 0 358 300" width="100%" role="img" aria-label="濃度－時間曲線與給藥、抽血、SCr 事件">
+<line x1="76.0" x2="76.0" y1="24" y2="280" stroke="#DADFD8" stroke-width="1"/>
+<text x="76.0" y="295" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/18</text>
+<line x1="146.2" x2="146.2" y1="24" y2="280" stroke="#DADFD8" stroke-width="1"/>
+<text x="146.2" y="295" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/19</text>
+<line x1="216.4" x2="216.4" y1="24" y2="280" stroke="#DADFD8" stroke-width="1"/>
+<text x="216.4" y="295" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/20</text>
+<line x1="286.6" x2="286.6" y1="24" y2="280" stroke="#DADFD8" stroke-width="1"/>
+<text x="286.6" y="295" font-size="12" fill="#52605A" text-anchor="start" dx="3">10/21</text>
+<line x1="38" x2="348" y1="214.0" y2="214.0" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="218.0" font-size="12" fill="#52605A" text-anchor="end">0</text>
+<line x1="38" x2="348" y1="154.6" y2="154.6" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="158.6" font-size="12" fill="#52605A" text-anchor="end">10</text>
+<line x1="38" x2="348" y1="95.2" y2="95.2" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="99.2" font-size="12" fill="#52605A" text-anchor="end">20</text>
+<line x1="38" x2="348" y1="35.9" y2="35.9" stroke="#DADFD8" stroke-width="1"/>
+<text x="32" y="39.9" font-size="12" fill="#52605A" text-anchor="end">30</text>
+<line x1="38" x2="348" y1="95.2" y2="95.2" stroke="#A23B3B" stroke-width="1.2" stroke-dasharray="5 4"/>
+<text x="44" y="87.2" font-size="12" fill="#8A2B2B" text-anchor="start">Cmin 關切 20</text>
+<rect x="67.2" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="102.3" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="137.4" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="172.5" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="207.6" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="242.7" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<rect x="277.8" y="24" width="5.8" height="190.0" fill="#D3E9E5" opacity=".55"/>
+<line x1="277.8" x2="277.8" y1="24" y2="280" stroke="#1B2422" stroke-width="1.2"/>
+<text x="277.8" y="16" font-size="12" fill="#1B2422" text-anchor="middle" font-weight="700">現在 21:07</text>
+<polyline points="67.2,214.0 68.7,184.8 70.2,156.9 71.6,130.2 73.1,104.7 74.6,109.4 76.0,113.9 77.5,118.2 78.9,122.3 80.4,126.3 81.9,130.0 83.3,133.6 84.8,137.1 86.3,140.4 87.7,143.6 89.2,146.6 90.6,149.5 92.1,152.3 93.6,154.9 95.0,157.5 96.5,159.9 98.0,162.2 99.4,164.5 100.9,166.6 102.3,168.6 103.8,141.4 105.3,115.4 106.7,90.5 108.2,66.6 109.7,73.0 111.1,79.0 112.6,84.8 114.0,90.4 115.5,95.7 117.0,100.8 118.4,105.7 119.9,110.3 121.3,114.8 122.8,119.1 124.3,123.1 125.7,127.1 127.2,130.8 128.7,134.4 130.1,137.8 131.6,141.1 133.0,144.2 134.5,147.2 136.0,150.1 137.4,152.8 138.9,126.3 140.4,100.9 141.8,76.6 143.3,53.4 144.7,60.3 146.2,66.9 147.7,73.2 149.1,79.3 150.6,85.1 152.1,90.6 153.5,95.9 155.0,101.0 156.4,105.9 157.9,110.5 159.4,115.0 160.8,119.2 162.3,123.3 163.8,127.2 165.2,131.0 166.7,134.5 168.1,137.9 169.6,141.2 171.1,144.3 172.5,147.3 174.0,121.1 175.5,95.9 176.9,71.8 178.4,48.8 179.8,55.9 181.3,62.7 182.8,69.2 184.2,75.4 185.7,81.4 187.2,87.1 188.6,92.5 190.1,97.8 191.5,102.8 193.0,107.6 194.5,112.1 195.9,116.5 197.4,120.7 198.8,124.7 200.3,128.6 201.8,132.2 203.2,135.8 204.7,139.1 206.2,142.3 207.6,145.4 209.1,119.2 210.5,94.1 212.0,70.1 213.5,47.2 214.9,54.3 216.4,61.2 217.9,67.8 219.3,74.1 220.8,80.1 222.2,85.9 223.7,91.4 225.2,96.6 226.6,101.7 228.1,106.5 229.6,111.1 231.0,115.6 232.5,119.8 233.9,123.9 235.4,127.7 236.9,131.4 238.3,135.0 239.8,138.4 241.3,141.7 242.7,144.8 244.2,118.6 245.6,93.5 247.1,69.5 248.6,46.6 250.0,53.8 251.5,60.7 253.0,67.3 254.4,73.6 255.9,79.6 257.3,85.4 258.8,91.0 260.3,96.3 261.7,101.3 263.2,106.2 264.7,110.8 266.1,115.2 267.6,119.5 269.0,123.6 270.5,127.4 272.0,131.2 273.4,134.7 274.9,138.1 276.3,141.4 277.8,144.5" fill="none" stroke="#154E4B" stroke-width="2.2" stroke-linejoin="round"/>
+<polyline points="277.8,144.5 279.3,118.4 280.7,93.3 282.2,69.3 283.7,46.4 285.1,53.6 286.6,60.5 288.0,67.1 289.5,73.4 291.0,79.5 292.4,85.3 293.9,90.8 295.4,96.1 296.8,101.2 298.3,106.0 299.7,110.7 301.2,115.1 302.7,119.4 304.1,123.5 305.6,127.3 307.1,131.1 308.5,134.6 310.0,138.1 311.4,141.3 312.9,144.5 314.4,118.3 315.8,93.2 317.3,69.3 318.8,46.3 320.2,53.6 321.7,60.5 323.1,67.1 324.6,73.4 326.1,79.4 327.5,85.2 329.0,90.8 330.5,96.1 331.9,101.1 333.4,106.0 334.8,110.6 336.3,115.1 337.8,119.3 339.2,123.4 340.7,127.3 342.2,131.0 343.6,134.6 345.1,138.0 346.5,141.3 348.0,144.4" fill="none" stroke="#154E4B" stroke-width="2" stroke-dasharray="6 4" opacity=".8"/>
+<circle cx="250.0" cy="67.9" r="5" fill="#1B2422" stroke="#fff" stroke-width="1.5"/>
+<text x="241.0" y="58.9" font-size="13" font-weight="700" fill="#1B2422" text-anchor="end">24.6</text>
+<circle cx="277.6" cy="143.9" r="5" fill="#1B2422" stroke="#fff" stroke-width="1.5"/>
+<text x="268.6" y="161.9" font-size="13" font-weight="700" fill="#1B2422" text-anchor="end">11.8</text>
+<line x1="38" x2="348" y1="220" y2="220" stroke="#DADFD8"/>
+<text x="32" y="234" font-size="12" fill="#52605A" text-anchor="end">給藥</text>
+<line x1="38" x2="348" y1="240" y2="240" stroke="#DADFD8"/>
+<text x="32" y="254" font-size="12" fill="#52605A" text-anchor="end">抽血</text>
+<line x1="38" x2="348" y1="260" y2="260" stroke="#DADFD8"/>
+<text x="32" y="274" font-size="12" fill="#52605A" text-anchor="end">SCr</text>
+<rect x="67.2" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="102.3" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="137.4" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="172.5" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="207.6" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="242.7" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<rect x="277.8" y="224.0" width="5.8" height="12" rx="2" fill="#154E4B"/>
+<circle cx="250.0" cy="250.0" r="5.5" fill="#1B2422"/>
+<circle cx="277.6" cy="250.0" r="5.5" fill="#1B2422"/>
+<path d="M48.0 264.0 l6 6 l-6 6 l-6 -6 z" fill="#A9701F"/>
+<text x="48.0" y="274.0" font-size="12" fill="#6F4609" dx="10">◀ 10/16　1.10</text>
+<path d="M216.1 264.0 l6 6 l-6 6 l-6 -6 z" fill="#A9701F"/>
+<text x="216.1" y="274.0" font-size="12" fill="#6F4609" dx="10">10/20　0.95</text>
+</svg></div></div><div class="legend"><span><i class="lg-bar"></i>給藥（寬度＝輸注時間）</span><span><i class="lg-dot"></i>抽血濃度</span><span><i class="lg-dia"></i>SCr</span><span><i class="lg-dash"></i>預測</span></div></div><div class="rp-sec"><div class="rp-head"><h3>參數</h3><span class="meta">聯合擬合（2 點）</span></div><dl class="defl" style="margin:0"><div><dt>ke（消除速率常數）</dt><dd class="v">0.088</dd><dd class="u">hr⁻¹</dd></div><div><dt>t½（半衰期）</dt><dd class="v">7.9</dd><dd class="u">hr</dd></div><div><dt>Vd（分布體積）</dt><dd class="v">49.8</dd><dd class="u">L　0.77 L/kg</dd></div><div><dt>CL（清除率）</dt><dd class="v">4.38</dd><dd class="u">L/hr</dd></div><div><dt>CrCl（Cockcroft-Gault）</dt><dd class="v">80</dd><dd class="u">mL/min　IBW（Devine）</dd></div><div><dt>Cmax,ss（現行處方推算）</dt><dd class="v">28.2</dd><dd class="u">µg/mL</dd></div><div><dt>Cmin,ss（現行處方推算）</dt><dd class="v">11.7</dd><dd class="u">µg/mL</dd></div><div><dt>AUC₂₄,ss（現行處方推算）</dt><dd class="v">457</dd><dd class="u">mg·hr/L</dd></div><div><dt>AUC/MIC</dt><dd class="v">457</dd><dd class="u">MIC 假設 1</dd></div><div><dt>近 24h 實際 AUC（依已發生給藥推算）</dt><dd class="v">455</dd><dd class="u">mg·hr/L</dd></div></dl></div><div class="rp-sec"><div class="rp-head"><h3>注意事項</h3></div><div class="flag"><span class="chip ok">OK</span><span><b>未偵測到明顯的健全性疑慮。</b> 兩點濃度相距 8.4 小時（約 1.1 個半衰期），足以分辨消除斜率；SCr 穩定（1.1 → 0.95）。</span></div></div><div class="rp-sec"><div class="rp-head"><h3>監測建議</h3></div>
+<div class="grid g2" style="margin:0;gap:16px">
+  <div><h4 style="font-size:13px;margin-bottom:4px">下次 TDM 時機</h4>
+    <p style="font-size:13px">維持現行處方：穩定病人每週追蹤一次。若調整劑量，待新處方達穩態（約 4–5 個半衰期，現估 7.9 小時）後再抽一個 trough。</p></div>
+  <div><h4 style="font-size:13px;margin-bottom:4px">重點監測</h4>
+    <p style="font-size:13px">SCr 每 2–3 天至每週；尿量；腎功能變化、透析啟動、感染惡化時重新評估。</p></div>
+</div></div><div class="rp-sec"><div class="acc"><b>AI 諮詢 Prompt</b><span>整合 lab 趨勢與病程後的第二意見 ▸ 展開</span></div></div></div></div></main><div class="m-bar"><span class="chip ok" style="background:#fff">✓ 達標</span><div><div class="num">AUC₂₄ 457</div><small>目標 400–600 ・ Cmin 11.7</small></div><button class="btn">看結果</button></div>
+<script>
+document.querySelectorAll('.seg button').forEach(function(b){b.addEventListener('click',function(){
+  document.body.classList.toggle('show-input', b.dataset.v==='in');
+  document.querySelectorAll('.seg button').forEach(function(x){x.setAttribute('aria-pressed', x===b ? 'true':'false')});
+});});
+if(location.search.indexOf('full')>-1){document.documentElement.classList.add('full');}
+document.querySelectorAll('.scroll-x').forEach(function(s){s.scrollLeft=s.scrollWidth;});
+</script></body></html>
