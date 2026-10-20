@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L-D 程式完成，等 Brandon 核可 golden 差異）
+最後更新：2026-10-20（L-D 完成，等 Brandon 說「繼續」做 L-E）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**L-D**（Vancomycin 輸注時間：每 500 mg 至少 1 小時）。
+- 下一包：**L-E**（依院內 protocol 校正 azole 目標、分布體積體重、ODD peak 顯示）。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -18,7 +18,7 @@
 | L-A | 完成（待 Brandon 看過） | 見 git log | 無需更新（golden 124/124 0 差異，情境本來就有選性別與 SCr） | 見下方備註 |
 | L-B | 完成（待 Brandon 看過） | 見 git log | 無需更新基準（golden 124/124 0 差異；只改了情境設定，補點 radio） | 見下方備註 |
 | L-C | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt；基準已更新，124/124 | 見下方備註 |
-| L-D | 程式完成；golden 11 項差異等 Brandon 核可後才更新基準 | 見 git log | 待核可：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt | 見下方備註 |
+| L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-E | 未開始 | | | |
 | L-F | 未開始 | | | |
 | D0 | 未開始 | | | 停：Brandon 核可 PRODUCT.md、DESIGN.md |
@@ -68,4 +68,4 @@
 - 副作用（正常）：V2 的旗標區原本在有其他警示時還會先顯示一句「未偵測到明顯的健全性疑慮」（既有行為：這句是在後面的旗標加進來之前判斷的）；新旗標加在判斷之前，所以有輸注提示時這句不再出現。
 - 另外：`test_amg_mic_efficacy.js` 在整批跑時失敗過一次（單獨跑 46/46 全過），疑似整批同時載入 jsdom 的偶發逾時，不是這包造成的；下次整批再觀察。
 - 新測試：`tests/test_infusion_rule.js`（33 項）；`load_harness.js` 匯出清單加 `inferInfusionMinutes`。
-- golden 11 項差異：V1 旗標區多「第 1–7 劑 1000 mg 輸注 60 分鐘…」，候選方案 q12h 1000 mg 60→120 分（Cmax 33.8→32.5、Cmin 14.1→14.7）、q24h 1750 mg 120→210 分（Cmax 41.0→38.7、Cmin 7.2→7.6），AI prompt 同步；V2 旗標區多 2 則（第 1 劑 2000 mg／120 分、第 2–5 劑 1250 mg／90 分），loading 建議 1750 mg 輸注「120 分鐘以上」→「210 分鐘以上」，候選方案 q8h 750 mg 60→90 分、q12h 1000 mg 60→120 分，AI prompt 同步；V3 候選方案 q24h 750 mg 60→90 分，AI prompt 同步；V4 旗標區多「第 1–3 劑 750 mg 輸注 60 分鐘…」，AI prompt 同步。基準尚未更新。
+- golden 11 項差異：V1 旗標區多「第 1–7 劑 1000 mg 輸注 60 分鐘…」，候選方案 q12h 1000 mg 60→120 分（Cmax 33.8→32.5、Cmin 14.1→14.7）、q24h 1750 mg 120→210 分（Cmax 41.0→38.7、Cmin 7.2→7.6），AI prompt 同步；V2 旗標區多 2 則（第 1 劑 2000 mg／120 分、第 2–5 劑 1250 mg／90 分），loading 建議 1750 mg 輸注「120 分鐘以上」→「210 分鐘以上」，候選方案 q8h 750 mg 60→90 分、q12h 1000 mg 60→120 分，AI prompt 同步；V3 候選方案 q24h 750 mg 60→90 分，AI prompt 同步；V4 旗標區多「第 1–3 劑 750 mg 輸注 60 分鐘…」，AI prompt 同步。2026-10-20 Brandon 核可，基準已更新。
