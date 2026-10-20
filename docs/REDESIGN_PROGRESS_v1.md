@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L-E 程式完成，等 Brandon 核可 azole 測試改法與 golden 差異）
+最後更新：2026-10-20（L-E 完成，等 Brandon 說「繼續」做 L-F）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**L-E**（依院內 protocol 校正 azole 目標、分布體積體重、ODD peak 顯示）。
+- 下一包：**L-F**（小修：SCr 頻率判斷、四捨五入浮點、共用電腦提醒與清除鈕、SCr 日期說明）。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -19,7 +19,7 @@
 | L-B | 完成（待 Brandon 看過） | 見 git log | 無需更新基準（golden 124/124 0 差異；只改了情境設定，補點 radio） | 見下方備註 |
 | L-C | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
-| L-E | 程式完成；等 Brandon 核可 9 條 azole 測試斷言改法與 golden 24 項差異 | 見 git log | 待核可（測試與基準都還沒動） | 見下方備註 |
+| L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
 | L-F | 未開始 | | | |
 | D0 | 未開始 | | | 停：Brandon 核可 PRODUCT.md、DESIGN.md |
 | D1 | 未開始 | | | 停：Brandon 選方向 |
@@ -61,13 +61,13 @@
 - 新測試：`tests/test_regimen_tags.js`（24 項）。既有測試沒有斷言舊文字，沒改。
 - golden 5 項差異（都在計畫預期內）：V1 候選方案表 q8h「略接近邊界」→「符合目標（AUC 400–600）」（AUC 408 現在算達標）；V2 q8h「略接近邊界」→「Cmin 15–20，腎毒性風險略升」、q12h／q24h「符合目標」→「符合目標（AUC 400–600）」；V3 q8h 同 V2 的 Cmin 文字；A1 旗標「Peak 6.8 低於目標下限 8，可能療效不足」→「…低於目標下限 8」，AI prompt 同一句。2026-10-20 Brandon 核可，基準已更新。
 
-### L-E（進行中：程式已改，測試與基準待核可）
+### L-E
 - E1：`AZOLE_TARGETS` 改院內值，UpToDate 存 `ref` 欄位只顯示；vori 新增 `cautionLine:5`、`refToxicityLine:5.5`；posa 治療下限 1.25、拿掉 preferLo／preferHi、>1.83 升為 warn；isavu 院內 2–5，4.6–5.1 改 note，拿掉 `typicalFloor`。`checkAzoleTrough` 與 `updateAzoleTargetDisplay` 對應修改，頁首與頁尾說明文字改「院內 TDM protocol 為主、UpToDate 為輔」。
 - E2：AMG 的 Vd 先驗改用 `weightForCG(...)` 選出的體重（IBW／AdjBW／TBW），並加一則 ok 旗標寫明用哪一個（規格只說「說明旗標改寫」，這則是新增，每個 AMG 結果都會出現）。Vanco 極度肥胖（BMI ≥40 且體重 ≥120 kg）改 0.52 L/kg。只影響非 HD 路徑。
 - E3：AMG 表頭改「Cmax(peak，輸注結束後 30 分)」；ODD 策略時目標顯示加一行 30 分鐘說明；計算沒動。
 - 新測試：`tests/test_l_e_targets.js`（49 項，全過）。
-- 要改的既有 azole 斷言共 9 條（核可前沒動）：`test_azole_core_logic.js` 8 條、`test_azole_integration.js` 1 條，詳見 Brandon 的回報訊息。
-- golden 24 項差異（核可前沒動）：A1／A2／A3 AMG（Vd 換體重、新旗標、表頭、A2 目標顯示）、Z1／Z2 azole（院內目標）；V1–V4 沒有差異。
+- 既有 azole 斷言改了 9 條（`test_azole_core_logic.js` 8 條、`test_azole_integration.js` 1 條）並在 core 新增 isavu 5.2 一條（62→63 項）：vori 預防 0.6 改 warn；vori 5.6 改 note（加註 UpToDate 上限 5.5）；vori 6.0 那條改成 6.2 warn 且文字寫院內上限 6；posa 2.0 與 2.5 改 warn（>1.83 院內肝毒性警戒）；isavu 0.5 改 warn（院內下限 2）、原「低值只有 note」那條改成 warn 文字提到感染科；isavu 5.0 改 note；integration isavu 6.0 改檢查「超過院內上限 5」。注意：這 9 條的逐條清單是核可之後才在回報裡列出，核可當下 Brandon 看到的只有條數。
+- golden 差異（已核可、基準已更新）：A1／A2／A3 AMG（Vd 換成體重選擇後的體重、多一則 Vd 體重旗標、表頭、A2 目標顯示多一行）；Z1 vori（預防 trough 0.7 低於院內下限 1 → warn，劑量建議出現增量 25–50%）、Z2 posa（trough 3.9 > 1.83 → warn）；V1–V4、E1／E2 沒有差異。
 
 ### L-D
 - `inferInfusionMinutes` 改為 `Math.max(60, Math.ceil(mg/250 - 1e-9)*30)`，對照表逐點測過（250→60 … 3000→360），浮點邊界也測過。4 個呼叫點不用改。
