@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L-F 程式完成，等 Brandon 核可 golden 差異）
+最後更新：2026-10-20（L 系列全部完成，等 Brandon 說「繼續」做 D0）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**L-F**（小修：SCr 頻率判斷、四捨五入浮點、共用電腦提醒與清除鈕、SCr 日期說明）。
+- 下一包：**D0**（PRODUCT.md 與 DESIGN.md，寫完停下來等 Brandon 核可）。L 系列（邏輯修正）全部完成。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -20,7 +20,7 @@
 | L-C | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
-| L-F | 程式完成；golden 5 項差異等 Brandon 核可後才更新基準 | 見 git log | 待核可：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字 | 見下方備註 |
+| L-F | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字；基準已更新，124/124 | 見下方備註 |
 | D0 | 未開始 | | | 停：Brandon 核可 PRODUCT.md、DESIGN.md |
 | D1 | 未開始 | | | 停：Brandon 選方向 |
 | D2 | 未開始 | | | |
@@ -67,7 +67,7 @@
 - L-13：提醒文字與按鈕加在四個模組的「更多」區塊（病人管理在每個模組各一份）。第一個按鈕 id 是規格的 `tdmClearAllLocal`，其餘三個是 `tdmClearAllLocalAmg`／`Azl`／`Aed`，四個都清同一批資料（四個病人 key；`tdm_ui_` 不動）。按下先 `confirm` 列出各模組幾位；全部都沒資料時改跳 `alert` 說沒有。清除後刷新四個模組的病人下拉。四個匯出按鈕加 `title`「匯出檔含病歷號」。
 - L-14：新 `scrDateNoteFlags`，vanco 與 AMG 擬合路徑各呼叫一次，ok 等級。golden 情境的 SCr 日期離濃度不到 48 小時，所以 golden 沒有這則。
 - 新測試：`tests/test_l_f_minor.js`（37 項）；`load_harness.js` 匯出加 `roundDoseTo250`、`roundDoseAmino`。
-- golden 5 項差異：V1、V2（SCr 1.2→1.4，只上升 1.17 倍，未達 1.3 倍；舊規則因最新值 ≥1.2 就判不穩定）監測文字「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週」；A1、A2（單筆 SCr 1.0）加註「（僅一筆 SCr，無法判斷趨勢）」；A3（HD、單筆 SCr）「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週（僅一筆 SCr，無法判斷趨勢）」。基準尚未更新。
+- golden 5 項差異：V1、V2（SCr 1.2→1.4，只上升 1.17 倍，未達 1.3 倍；舊規則因最新值 ≥1.2 就判不穩定）監測文字「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週」；A1、A2（單筆 SCr 1.0）加註「（僅一筆 SCr，無法判斷趨勢）」；A3（HD、單筆 SCr）「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週（僅一筆 SCr，無法判斷趨勢）」。2026-10-20 Brandon 核可，基準已更新。
 - 提醒：A3 是透析病人，SCr 趨勢本來就不適用，現在不再因為 SCr ≥1.2 被一律說「不穩定」；透析病人的監測頻率文字另有「依透析排程調整抽血時機」一行。
 
 ### L-E
