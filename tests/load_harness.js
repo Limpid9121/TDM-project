@@ -42,7 +42,9 @@ const EXPORT_NAMES = [
   // 2026-10-20 新增（REDESIGN L-C）：達標標籤測試需要
   'regimenTag',
   // 2026-10-20 新增（REDESIGN L-D）：輸注時間規則測試需要
-  'inferInfusionMinutes'
+  'inferInfusionMinutes',
+  // 2026-10-20 新增（REDESIGN L-F）：進位浮點測試需要
+  'roundDoseTo250', 'roundDoseAmino'
 ];
 
 // tests/ 內若有 index.html（舊用法：手動複製進來）就用它；否則用 repo 根目錄的 index.html

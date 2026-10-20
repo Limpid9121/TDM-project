@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-20（L-E 完成，等 Brandon 說「繼續」做 L-F）
+最後更新：2026-10-20（L-F 程式完成，等 Brandon 核可 golden 差異）
 
 ## 現況
 
@@ -20,7 +20,7 @@
 | L-C | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／V3 候選方案表評語欄、A1 旗標文字與 AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
-| L-F | 未開始 | | | |
+| L-F | 程式完成；golden 5 項差異等 Brandon 核可後才更新基準 | 見 git log | 待核可：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字 | 見下方備註 |
 | D0 | 未開始 | | | 停：Brandon 核可 PRODUCT.md、DESIGN.md |
 | D1 | 未開始 | | | 停：Brandon 選方向 |
 | D2 | 未開始 | | | |
@@ -60,6 +60,15 @@
 - `tests/load_harness.js` 的匯出清單加 `regimenTag`（ANCHOR 沒動）。
 - 新測試：`tests/test_regimen_tags.js`（24 項）。既有測試沒有斷言舊文字，沒改。
 - golden 5 項差異（都在計畫預期內）：V1 候選方案表 q8h「略接近邊界」→「符合目標（AUC 400–600）」（AUC 408 現在算達標）；V2 q8h「略接近邊界」→「Cmin 15–20，腎毒性風險略升」、q12h／q24h「符合目標」→「符合目標（AUC 400–600）」；V3 q8h 同 V2 的 Cmin 文字；A1 旗標「Peak 6.8 低於目標下限 8，可能療效不足」→「…低於目標下限 8」，AI prompt 同一句。2026-10-20 Brandon 核可，基準已更新。
+
+### L-F
+- L-10：新 `scrTrendUnstable`／`scrFreqText`（放在 `roundDoseTo250` 旁）。vanco 與 AMG 的監測文字改看趨勢（≥2 筆且最後／最早 >1.3 或 <0.7 → 每 1–2 天（腎功能變動中）；否則每 2–3 天至每週，只有一筆時加註）。`aminoMonitorHtml` 的 `scr` 參數換成 `renalUnstable` 加 `scrCount`（規格只說傳布林值，多傳筆數是為了「僅一筆 SCr」的加註）。
+- L-11：`roundDoseTo250`、`roundDoseAmino` 加 `+1e-9`。
+- L-13：提醒文字與按鈕加在四個模組的「更多」區塊（病人管理在每個模組各一份）。第一個按鈕 id 是規格的 `tdmClearAllLocal`，其餘三個是 `tdmClearAllLocalAmg`／`Azl`／`Aed`，四個都清同一批資料（四個病人 key；`tdm_ui_` 不動）。按下先 `confirm` 列出各模組幾位；全部都沒資料時改跳 `alert` 說沒有。清除後刷新四個模組的病人下拉。四個匯出按鈕加 `title`「匯出檔含病歷號」。
+- L-14：新 `scrDateNoteFlags`，vanco 與 AMG 擬合路徑各呼叫一次，ok 等級。golden 情境的 SCr 日期離濃度不到 48 小時，所以 golden 沒有這則。
+- 新測試：`tests/test_l_f_minor.js`（37 項）；`load_harness.js` 匯出加 `roundDoseTo250`、`roundDoseAmino`。
+- golden 5 項差異：V1、V2（兩筆 SCr、1.1→0.95／類似，不再判為不穩定）監測文字「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週」；A1、A2（單筆 SCr 1.0）加註「（僅一筆 SCr，無法判斷趨勢）」；A3（HD、單筆 SCr）「每 1–2 天（腎功能不穩定）」→「每 2–3 天至每週（僅一筆 SCr，無法判斷趨勢）」。基準尚未更新。
+- 提醒：A3 是透析病人，SCr 趨勢本來就不適用，現在不再因為 SCr ≥1.2 被一律說「不穩定」；透析病人的監測頻率文字另有「依透析排程調整抽血時機」一行。
 
 ### L-E
 - E1：`AZOLE_TARGETS` 改院內值，UpToDate 存 `ref` 欄位只顯示；vori 新增 `cautionLine:5`、`refToxicityLine:5.5`；posa 治療下限 1.25、拿掉 preferLo／preferHi、>1.83 升為 warn；isavu 院內 2–5，4.6–5.1 改 note，拿掉 `typicalFloor`。`checkAzoleTrough` 與 `updateAzoleTargetDisplay` 對應修改，頁首與頁尾說明文字改「院內 TDM protocol 為主、UpToDate 為輔」。

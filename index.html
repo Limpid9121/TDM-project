@@ -556,12 +556,14 @@
       <div class="pm-more-body">
         <div class="pm-field"><label for="patientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
         <div class="btn-row">
-          <button class="btn small" id="exportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="exportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
           <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
           <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <input type="file" id="importFileInput" accept="application/json" style="display:none;">
         <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本，右側會顯示跨收案趨勢圖。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
+      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+        <div class="btn-row"><button class="btn small" id="tdmClearAllLocal" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
       </div>
     </details>
     <div class="hint" id="patientMeta"></div>
@@ -930,12 +932,14 @@
       <div class="pm-more-body">
         <div class="pm-field"><label for="amgPatientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
         <div class="btn-row">
-          <button class="btn small" id="amgExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="amgExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
           <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
           <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
         <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAmg" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
       </div>
     </details>
     <div class="hint" id="amgPatientMeta"></div>
@@ -1284,12 +1288,14 @@
       <div class="pm-more-body">
         <div class="pm-field"><label for="azlPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
         <div class="btn-row">
-          <button class="btn small" id="azlExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="azlExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
           <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
           <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
         <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAzl" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
       </div>
     </details>
     <div class="hint" id="azlPatientMeta"></div>
@@ -1620,12 +1626,14 @@
       <div class="pm-more-body">
         <div class="pm-field"><label for="aedPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
         <div class="btn-row">
-          <button class="btn small" id="aedExportPatientsBtn" type="button">匯出全部（JSON 備份）</button>
+          <button class="btn small" id="aedExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
           <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
           <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
         </div>
         <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
         <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAed" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
       </div>
     </details>
     <div class="hint" id="aedPatientMeta"></div>
@@ -2239,7 +2247,26 @@
     return sum*h;
   }
 
-  function roundDoseTo250(mg){ return Math.max(250, Math.round(mg/250)*250); }
+  // + 1e-9：避免 mg/250 因浮點誤差落在 x.4999999999 而被捨去（例 1124.9999999999998 應進位成 1250）
+  function roundDoseTo250(mg){ return Math.max(250, Math.round(mg/250 + 1e-9)*250); }
+  // 監測建議的 SCr 頻率看趨勢，不看絕對值：SCr ≥2 筆且最後／最早 >1.3 或 <0.7 才算腎功能變動中
+  function scrTrendUnstable(scrRows){
+    if(scrRows.length<2) return false;
+    const ratio = scrRows[scrRows.length-1].v/scrRows[0].v;
+    return ratio>1.3 || ratio<0.7;
+  }
+  function scrFreqText(renalUnstable, scrCount){
+    return renalUnstable ? '每 1–2 天（腎功能變動中）'
+      : '每 2–3 天至每週'+(scrCount===1 ? '（僅一筆 SCr，無法判斷趨勢）' : '');
+  }
+  // L-14：族群先驗用的是最新一筆 SCr；若它比最早一筆濃度晚超過 48 小時，提醒較早的濃度抽血時腎功能可能不同。純顯示。
+  function scrDateNoteFlags(scrRows, levelRows){
+    if(!scrRows.length || !levelRows.length) return [];
+    const lastScr = scrRows[scrRows.length-1];
+    const firstLevelT = Math.min.apply(null, levelRows.map(l=>l.t));
+    if(!(lastScr.t - firstLevelT > 48*3600000)) return [];
+    return [{level:'ok', text:`族群先驗用的是最新 SCr（${toLocalDateValue(new Date(lastScr.t))}）；較早的濃度抽血時腎功能可能不同`}];
+  }
   // 院內規則（Brandon 2026-10-19）：vancomycin 每 500 mg 至少輸注 1 小時，即每 250 mg 30 分鐘、
   // 向上取整、最少 60 分。用整數除法避免 1250 這類劑量的浮點誤差把 150 分算成 180 分。
   // 參考：仿單寫「不超過 10 mg/min 或至少 60 分鐘，取較長者」，院內規則比仿單保守（約 8.3 mg/min）。
@@ -4941,6 +4968,7 @@ ${flagText || '（無特別旗標）'}
     const fitIssues = checkFitPlausibility({CL, V, tHalf, weightKg:weightForVd, CLpop, Vpop, fitMode:fit.mode});
     fitIssues.forEach(f=>flags.push(f));
     infusionRuleFlags().forEach(f=>flags.push(f));
+    scrDateNoteFlags(scrRows, readLevelRows()).forEach(f=>flags.push(f));
     // only meaningful while t-half itself is trustworthy — once the fit has been flagged
     // as implausible, comparing the sampling span against its half-life says nothing
     if(!fitIssues.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
@@ -5129,7 +5157,7 @@ ${flagText || '（無特別旗標）'}
     const nextTdmText = anyNotSS
       ? '建議先讓現行（或調整後）處方達穩態（約 4–5 個半衰期，現估 ' + tHalf.toFixed(1) + ' 小時）後再複測，較能反映真實穩態暴露。'
       : '若本次調整劑量，建議於新處方達穩態後複測（理想為同區間兩點或至少一 trough）；若維持現行處方，穩定病人可每週追蹤一次。';
-    const labList = [`SCr：${scr<1.2?'每 2–3 天至每週':'每 1–2 天（腎功能不穩定）'}`, 'BUN：必要時併同 SCr'];
+    const labList = [`SCr：${scrFreqText(scrTrendUnstable(scrRows), scrRows.length)}`, 'BUN：必要時併同 SCr'];
     if(dialysis!=='none') labList.push('依透析排程調整抽血時機（如 HD 建議 pre-HD level）');
     const signList = ['腎毒性徵象：尿量、SCr 較基礎上升 ≥0.5 mg/dL 或 ≥50%', '療效：發燒、培養結果、發炎指標趨勢'];
     if(document.getElementById('concomitant').value.trim()) signList.push('併用藥物之交互作用徵象（見備註欄）');
@@ -5402,7 +5430,7 @@ ${flagText || '（無特別旗標）'}
   }
 
   // ---------------- dose rounding & tag scoring (aminoglycoside-specific) ----------------
-  function roundDoseAmino(mg){ return Math.max(20, Math.round(mg/10)*10); }
+  function roundDoseAmino(mg){ return Math.max(20, Math.round(mg/10 + 1e-9)*10); }
   // ---------------- 院內安瓿品項對照（劑量捨入用，方便護理師實際操作） ----------------
   // Amikacin: Acemycin Injection 500 mg/2 mL/vial (250 mg/mL). Gentamicin: V-Genta inj
   // 80 mg/2 mL/vial (40 mg/mL). Tobramycin intentionally has no entry — not stocked at
@@ -5945,11 +5973,11 @@ ${flagText || '（無特別旗標）'}
     return cands;
   }
 
-  function aminoMonitorHtml(anyNotSS, tHalf, dialysis, scr, concomitantVal, longCourse){
+  function aminoMonitorHtml(anyNotSS, tHalf, dialysis, renalUnstable, scrCount, concomitantVal, longCourse){
     const nextTdmText = anyNotSS
       ? `建議先讓現行（或調整後）處方達穩態（約 3–4 劑，現估 t½ ≈ ${tHalf.toFixed(1)} 小時）後再複測，較能反映真實穩態暴露。`
       : '若本次調整劑量，建議於調整後第 3–4 劑（達穩態，約 1–2 天）複測；長療程穩定病人每 5–7 天追蹤一組。';
-    const labList = [`SCr／BUN：${scr<1.2?'每 2–3 天至每週':'每 1–2 天（腎功能不穩定）'}`];
+    const labList = [`SCr／BUN：${scrFreqText(renalUnstable, scrCount)}`];
     if(longCourse) labList.push('療程 >1–2 週：建議加做第 8 對腦神經功能（聽力／前庭）評估');
     if(dialysis!=='none') labList.push('依透析排程調整抽血時機');
     const signList = ['腎毒性：SCr 上升、尿量減少、trough 逐漸上升', '耳毒性：耳鳴、聽力減退、眩暈、平衡失調'];
@@ -6058,7 +6086,7 @@ ${flagText || '（無特別旗標）'}
       renderRegimenTableAmino(regimenRows, tau, oddSuggestedTau);
     }
 
-    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(true, tHalf, document.getElementById('amgDialysis').value, parseFloat((readScrRowsAmg().slice(-1)[0]||{}).v)||1.0, document.getElementById('amgConcomitant').value.trim(), false);
+    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(true, tHalf, document.getElementById('amgDialysis').value, scrTrendUnstable(readScrRowsAmg()), readScrRowsAmg().length, document.getElementById('amgConcomitant').value.trim(), false);
 
     // prospective curve
     if(scheduleType!=='tiw'){
@@ -6247,6 +6275,7 @@ ${flagText || '（無特別旗標）'}
     const ke = CL/V, tHalf = 0.693/ke;
     const fitIssues = checkFitPlausibility({CL, V, tHalf, weightKg:weightForVd, CLpop, Vpop, fitMode:fit.mode});
     fitIssues.forEach(f=>flags.push(f));
+    scrDateNoteFlags(scrRows, readLevelRowsAmg()).forEach(f=>flags.push(f));
     // only meaningful while t-half itself is trustworthy — once the fit has been flagged
     // as implausible, comparing the sampling span against its half-life says nothing
     if(!fitIssues.length){ const sp = checkLevelSpacing(levelsForFit, tHalf); if(sp) flags.push(sp); }
@@ -6366,7 +6395,7 @@ ${flagText || '（無特別旗標）'}
     const customResult = updateCustomRowAmg(CL, ke, target, mic);
 
     const longCourse = lastEventRel > 24*10; // >~10 days of recorded therapy
-    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(anyNotSS, tHalf, dialysis, scr, document.getElementById('amgConcomitant').value.trim(), longCourse);
+    document.getElementById('amgMonitorGrid').innerHTML = aminoMonitorHtml(anyNotSS, tHalf, dialysis, scrTrendUnstable(scrRows), scrRows.length, document.getElementById('amgConcomitant').value.trim(), longCourse);
 
     // what-if overlay: driven by the single-select pick, only meaningful for fixed-interval schedules
     const amgPrimeDosesCurve = assumeSteadyStateAmg
@@ -8760,6 +8789,26 @@ ${flagText||'（無）'}
     wireExplorer('amg', amgStore);
     wireExplorer('azl', azoleStore);
     wireExplorer('aed', aedStore);
+
+    // ---------------- 共用電腦：清除本機所有病人資料（REDESIGN L-13） ----------------
+    // 只清四個病人紀錄 key；tdm_ui_ 開頭的設定不動。四個 key 與各 store 的 cfg.key 一致。
+    document.querySelectorAll('[data-tdm-clear-all]').forEach(btn=>btn.addEventListener('click', ()=>{
+      const mods = [
+        {label:'Vancomycin', key:'vanco_tdm_patients_v2', store:vancoStore},
+        {label:'Aminoglycoside', key:'amino_tdm_patients_v2', store:amgStore},
+        {label:'Azole', key:'azole_tdm_patients_v2', store:azoleStore},
+        {label:'抗癲癇藥物', key:'aed_tdm_patients_v2', store:aedStore}
+      ];
+      const counts = mods.map(m=>({label:m.label, n:m.store.getList().length}));
+      if(!counts.some(c=>c.n>0)){ alert('這台電腦的瀏覽器裡沒有任何已儲存的病人資料。'); return; }
+      const lines = counts.map(c=>`${c.label}：${c.n} 位`).join('\n');
+      if(!confirm(`這會刪除這台電腦瀏覽器裡全部的病人紀錄，無法復原：\n${lines}\n\n建議先用各模組「更多」裡的「匯出全部」備份。畫面上目前填的內容不受影響。確定清除嗎？`)) return;
+      mods.forEach(m=>{
+        try{ localStorage.removeItem(m.key); }catch(e){}
+        m.store.clearCurrent();
+        m.store.refreshPatientSelect('');
+      });
+    }));
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
