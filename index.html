@@ -769,7 +769,66 @@
     .param-grid:has(.pc-key){grid-template-columns:repeat(2,minmax(0,1fr));}
     .param-grid:has(.pc-key) > .pc-key .value{font-size:34px;}
   }
+
+  /* =====================================================================
+     REDESIGN D4：頂列整併
+     頂列一行：標題＋藥物分頁｜身分條（病歷號、年齡／性別／體重、CrCl、透析）＋「病人 ▾」｜撞色挑選＋清空。
+     四個病人管理列（pm-bar）搬進「病人 ▾」展開的面板；id 與按鈕行為不變。
+     ===================================================================== */
+  .pm-bar[hidden]{display:none !important;}
+  header.top .hdr-mid{flex:1 1 auto;display:flex;align-items:center;gap:12px;min-width:0;}
+  .hdr-identity{display:flex;flex-wrap:wrap;align-items:center;gap:2px 0;font-size:13px;color:#fff;min-width:0;}
+  .hdr-identity .hid-seg{display:inline-flex;align-items:baseline;gap:6px;padding:0 14px;border-left:1px solid rgba(255,255,255,.28);white-space:nowrap;}
+  .hdr-identity .hid-seg:first-child{border-left:0;padding-left:0;}
+  .hdr-identity i{font-style:normal;color:var(--navy-soft);font-size:12px;}
+  .hdr-identity b{font-weight:700;font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .hdr-identity .hid-missing b{color:#FFD9A0;}
+  .hdr-identity .hid-hot b{color:#fff;box-shadow:inset 0 -2px 0 var(--accent);}
+  header.top .hdr-mid > .btn{flex:0 0 auto;}
+  header.top.pm-open #hdrPmToggle{background:rgba(255,255,255,.16);border-color:#fff;}
+  header.top:has(.pm-bar:not([hidden]) .pm-dirty-dot:not([hidden])) #hdrPmToggle::after{content:" ●";color:#FFB4A8;}
+  .hdr-pm-slot{display:none;position:absolute;left:24px;right:24px;top:100%;z-index:40;background:var(--card);color:var(--ink);
+    border:1px solid var(--line);border-top:0;border-radius:0 0 var(--radius) var(--radius);padding:10px 16px 12px;box-shadow:0 10px 24px rgba(20,23,28,.18);}
+  header.top.pm-open .hdr-pm-slot{display:block;}
+  .hdr-pm-slot .pm-bar{margin:0;padding:0;border:0;background:transparent;}
+  .hdr-pm-slot .pm-bar .pm-more-body{z-index:45;}
+  /* 頂列裡的 .btn 是白字透明底；面板裡要還原成一般按鈕 */
+  header.top .hdr-pm-slot .btn{background:#fff;border-color:var(--border-input);color:var(--ink);}
+  header.top .hdr-pm-slot .btn:hover{border-color:var(--navy);color:var(--navy);background:#fff;}
+  header.top .hdr-pm-slot .btn.primary{background:var(--navy);border-color:var(--navy);color:#fff;}
+  header.top .hdr-pm-slot .btn.primary:hover{background:var(--trace-strong);color:#fff;}
+  header.top .hdr-pm-slot .btn:disabled{opacity:.5;}
+  header.top .meta-line{display:none;}   /* CrCl／CL／AUC 已在右邊判讀面板；元素與寫入保留 */
+
+  .accent-picker{display:inline-flex;align-items:center;gap:8px;}
+  .accent-picker button{width:18px;height:18px;padding:0;border-radius:50%;border:2px solid transparent;cursor:pointer;box-shadow:0 0 0 1px rgba(255,255,255,.45);}
+  .accent-picker button[aria-pressed="true"]{box-shadow:0 0 0 2px #fff;}
+  .accent-picker button:focus-visible{outline:2px solid #fff;outline-offset:3px;}
+  .accent-picker [data-accent-pick="magenta"]{background:#C2185B;}
+  .accent-picker [data-accent-pick="vermilion"]{background:#E4572E;}
+  .accent-picker [data-accent-pick="mustard"]{background:#F2B705;}
+  .accent-picker [data-accent-pick="none"]{background:linear-gradient(135deg,transparent 44%,#fff 44%,#fff 56%,transparent 56%),var(--navy-2);}
+
+  /* 從其他模組帶入基本資料 */
+  .carry-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:-2px 0 8px;font-size:13px;color:var(--ink-soft);}
+  .carry-row select{width:auto;max-width:170px;font-size:13px;padding:4px 7px;}
+  .carry-row .carry-msg{flex:1 1 100%;font-size:12px;color:var(--ink-soft);min-height:0;}
+  .carry-row .carry-msg:empty{display:none;}
+
+  @media (max-width:1280px){
+    .hdr-identity .hid-seg{padding:0 10px;}
+    header.top .header-right{gap:10px;}
+  }
+  @media (max-width:980px){
+    header.top .hdr-mid{flex:1 1 100%;order:3;}
+    .hdr-pm-slot{left:0;right:0;}
+  }
+  @media (max-width:640px){
+    header.top{position:relative;z-index:30;}   /* 手機頂列不固定，但病人面板要以頂列為基準往下展開 */
+    .hdr-pm-slot{box-shadow:0 10px 24px rgba(20,23,28,.25);}
+  }
 </style>
+<script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
 <body>
 <div class="app">
@@ -788,37 +847,121 @@
         <button class="btn small drug-switch-btn" type="button" role="tab" aria-selected="false" data-drug="aed">抗癲癇藥物</button>
       </div>
     </div>
+    <div class="hdr-mid">
+      <div class="hdr-identity" id="hdrIdentity" aria-live="polite"></div>
+      <button class="btn small" id="hdrPmToggle" type="button" aria-expanded="false" aria-controls="hdrPmSlot" title="已存病人、收案版本、載入、儲存、備份">病人 ▾</button>
+      <div class="hdr-pm-slot" id="hdrPmSlot">
+      <div class="pm-bar" id="pmBarVanco">
+        <div class="pm-field"><label for="patientLabel">病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
+        <div class="pm-field"><label for="patientSelect">已存病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        <div class="pm-field"><label for="patientVisitSelect">收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+        <button class="btn small" id="loadPatientBtn" type="button">載入</button>
+        <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="vancoDirtyDot" hidden>●</span>
+        <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+        <details class="pm-more">
+          <summary title="評估時點、備份、刪除">更多</summary>
+          <div class="pm-more-body">
+            <div class="pm-field"><label for="patientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
+            <div class="btn-row">
+              <button class="btn small" id="exportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
+              <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
+              <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
+            </div>
+            <input type="file" id="importFileInput" accept="application/json" style="display:none;">
+            <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本，右側會顯示跨收案趨勢圖。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
+          <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+            <div class="btn-row"><button class="btn small" id="tdmClearAllLocal" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
+          </div>
+        </details>
+        <div class="hint" id="patientMeta"></div>
+      </div>
+      <div class="pm-bar" id="pmBarAmg" hidden>
+        <div class="pm-field"><label for="amgPatientLabel">病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
+        <div class="pm-field"><label for="amgPatientSelect">已存病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        <div class="pm-field"><label for="amgPatientVisitSelect">收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+        <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
+        <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="amgDirtyDot" hidden>●</span>
+        <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+        <details class="pm-more">
+          <summary title="評估時點、備份、刪除">更多</summary>
+          <div class="pm-more-body">
+            <div class="pm-field"><label for="amgPatientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
+            <div class="btn-row">
+              <button class="btn small" id="amgExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
+              <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
+              <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
+            </div>
+            <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
+            <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+          <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+            <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAmg" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
+          </div>
+        </details>
+        <div class="hint" id="amgPatientMeta"></div>
+      </div>
+      <div class="pm-bar" id="pmBarAzole" hidden>
+        <div class="pm-field"><label for="azlPatientLabel">病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
+        <div class="pm-field"><label for="azlPatientSelect">已存病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        <div class="pm-field"><label for="azlPatientVisitSelect">收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+        <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
+        <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="azlDirtyDot" hidden>●</span>
+        <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+        <details class="pm-more">
+          <summary title="評估時點、備份、刪除">更多</summary>
+          <div class="pm-more-body">
+            <div class="pm-field"><label for="azlPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
+            <div class="btn-row">
+              <button class="btn small" id="azlExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
+              <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
+              <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
+            </div>
+            <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
+            <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+          <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+            <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAzl" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
+          </div>
+        </details>
+        <div class="hint" id="azlPatientMeta"></div>
+      </div>
+      <div class="pm-bar" id="pmBarAed" hidden>
+        <div class="pm-field"><label for="aedPatientLabel">病歷號</label><input type="text" id="aedPatientLabel" placeholder=""></div>
+        <div class="pm-field"><label for="aedPatientSelect">已存病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
+        <div class="pm-field"><label for="aedPatientVisitSelect">收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
+        <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
+        <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="aedDirtyDot" hidden>●</span>
+        <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
+        <details class="pm-more">
+          <summary title="評估時點、備份、刪除">更多</summary>
+          <div class="pm-more-body">
+            <div class="pm-field"><label for="aedPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
+            <div class="btn-row">
+              <button class="btn small" id="aedExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
+              <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
+              <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
+            </div>
+            <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
+            <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
+          <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
+            <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAed" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
+          </div>
+        </details>
+        <div class="hint" id="aedPatientMeta"></div>
+      </div>
+      </div>
+    </div>
     <div class="header-right">
       <div class="meta-line" id="headerMeta">尚未輸入資料</div>
+      <div class="accent-picker" id="accentPicker" role="group" aria-label="撞色（介面強調色）">
+        <button type="button" data-accent-pick="magenta" aria-pressed="true" aria-label="洋紅" title="洋紅"></button>
+        <button type="button" data-accent-pick="vermilion" aria-pressed="false" aria-label="朱紅" title="朱紅"></button>
+        <button type="button" data-accent-pick="mustard" aria-pressed="false" aria-label="芥末黃" title="芥末黃"></button>
+        <button type="button" data-accent-pick="none" aria-pressed="false" aria-label="不用撞色" title="不用撞色"></button>
+      </div>
       <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始；已儲存的病人存檔不受影響">清空此頁（開始新病人）</button>
     </div>
   </header>
 
   <div id="drug-vancomycin" class="drug-module active">
-  <div class="pm-bar" id="pmBarVanco">
-    <div class="pm-field"><label for="patientLabel">病歷號</label><input type="text" id="patientLabel" placeholder=""></div>
-    <div class="pm-field"><label for="patientSelect">已存病人</label><select id="patientSelect"><option value="">（新病人／未選擇）</option></select></div>
-    <div class="pm-field"><label for="patientVisitSelect">收案版本</label><select id="patientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-    <button class="btn small" id="loadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="vancoDirtyDot" hidden>●</span>
-    <button class="btn small" id="updateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-    <details class="pm-more">
-      <summary title="評估時點、備份、刪除">更多</summary>
-      <div class="pm-more-body">
-        <div class="pm-field"><label for="patientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="patientAsOf"></div>
-        <div class="btn-row">
-          <button class="btn small" id="exportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="importPatientsBtn" type="button">匯入 JSON</button>
-          <button class="btn small" id="deletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <input type="file" id="importFileInput" accept="application/json" style="display:none;">
-        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本，右側會顯示跨收案趨勢圖。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），不會上傳；建議定期用「匯出」備份成檔案，換瀏覽器/電腦或本工具更新版本後用「匯入」找回。</div>
-      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
-        <div class="btn-row"><button class="btn small" id="tdmClearAllLocal" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
-      </div>
-    </details>
-    <div class="hint" id="patientMeta"></div>
-  </div>
   <div class="guard-modal hide" id="vancoGuardModal" role="alertdialog" aria-modal="true">
     <div class="guard-modal-box">
       <p id="vancoGuardMsg"></p>
@@ -842,6 +985,7 @@
       <!-- 1. 病人與腎功能 -->
       <div class="card">
         <h2><span class="idx">01</span>病人與腎功能</h2>
+        <div class="carry-row"><label for="vancoCarrySrc">從</label><select id="vancoCarrySrc"><option value="aminoglycoside">Aminoglycoside</option><option value="azole">Azole</option><option value="aed">抗癲癇藥物</option></select><button class="btn small" id="vancoCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="vancoCarryMsg" role="status"></span></div>
         <p class="hint">SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。</p>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="age" value="55" min="0" max="120"></div>
@@ -1180,30 +1324,6 @@
   </div>
   <!-- ============ AMINOGLYCOSIDE DRUG MODULE (injected below, mirrors structure above) ============ -->
   <div id="drug-aminoglycoside" class="drug-module">
-  <div class="pm-bar" id="pmBarAmg">
-    <div class="pm-field"><label for="amgPatientLabel">病歷號</label><input type="text" id="amgPatientLabel" placeholder=""></div>
-    <div class="pm-field"><label for="amgPatientSelect">已存病人</label><select id="amgPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-    <div class="pm-field"><label for="amgPatientVisitSelect">收案版本</label><select id="amgPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-    <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="amgDirtyDot" hidden>●</span>
-    <button class="btn small" id="amgUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-    <details class="pm-more">
-      <summary title="評估時點、備份、刪除">更多</summary>
-      <div class="pm-more-body">
-        <div class="pm-field"><label for="amgPatientAsOf">評估時點（留空自動帶最相關日期）</label><input type="datetime-local" id="amgPatientAsOf"></div>
-        <div class="btn-row">
-          <button class="btn small" id="amgExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="amgImportPatientsBtn" type="button">匯入 JSON</button>
-          <button class="btn small" id="amgDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <input type="file" id="amgImportFileInput" accept="application/json" style="display:none;">
-        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與 Vancomycin 模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
-      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
-        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAmg" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
-      </div>
-    </details>
-    <div class="hint" id="amgPatientMeta"></div>
-  </div>
   <div class="guard-modal hide" id="amgGuardModal" role="alertdialog" aria-modal="true">
     <div class="guard-modal-box">
       <p id="amgGuardMsg"></p>
@@ -1227,6 +1347,7 @@
       <!-- 1. 病人與腎功能 -->
       <div class="card">
         <h2><span class="idx">01</span>病人與腎功能</h2>
+        <div class="carry-row"><label for="amgCarrySrc">從</label><select id="amgCarrySrc"><option value="vancomycin">Vancomycin</option><option value="azole">Azole</option><option value="aed">抗癲癇藥物</option></select><button class="btn small" id="amgCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="amgCarryMsg" role="status"></span></div>
         <p class="hint">SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。Aminoglycoside 清除率與腎功能高度相關，CrCl 估算的準確性直接影響起始劑量。</p>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="amgAge" value="60" min="0" max="120"></div>
@@ -1544,30 +1665,6 @@
   </div>
 
   <div id="drug-azole" class="drug-module">
-  <div class="pm-bar" id="pmBarAzole">
-    <div class="pm-field"><label for="azlPatientLabel">病歷號</label><input type="text" id="azlPatientLabel" placeholder=""></div>
-    <div class="pm-field"><label for="azlPatientSelect">已存病人</label><select id="azlPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-    <div class="pm-field"><label for="azlPatientVisitSelect">收案版本</label><select id="azlPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-    <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="azlDirtyDot" hidden>●</span>
-    <button class="btn small" id="azlUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-    <details class="pm-more">
-      <summary title="評估時點、備份、刪除">更多</summary>
-      <div class="pm-more-body">
-        <div class="pm-field"><label for="azlPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="azlPatientAsOf"></div>
-        <div class="btn-row">
-          <button class="btn small" id="azlExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="azlImportPatientsBtn" type="button">匯入 JSON</button>
-          <button class="btn small" id="azlDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <input type="file" id="azlImportFileInput" accept="application/json" style="display:none;">
-        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。打錯要修正時用「更新目前這筆 visit」。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
-      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
-        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAzl" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
-      </div>
-    </details>
-    <div class="hint" id="azlPatientMeta"></div>
-  </div>
   <div class="guard-modal hide" id="azlGuardModal" role="alertdialog" aria-modal="true">
     <div class="guard-modal-box">
       <p id="azlGuardMsg"></p>
@@ -1611,6 +1708,7 @@
       <!-- 2. 人口學 -->
       <div class="card">
         <h2><span class="idx">02</span>人口學與身體計測</h2>
+        <div class="carry-row"><label for="azlCarrySrc">從</label><select id="azlCarrySrc"><option value="vancomycin">Vancomycin</option><option value="aminoglycoside">Aminoglycoside</option><option value="aed">抗癲癇藥物</option></select><button class="btn small" id="azlCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="azlCarryMsg" role="status"></span></div>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="azlAge" value="55" min="0" max="120"></div>
           <div class="field"><label>生理性別</label><select id="azlSex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select></div>
@@ -1882,30 +1980,6 @@
   </div>
 
   <div id="drug-aed" class="drug-module">
-  <div class="pm-bar" id="pmBarAed">
-    <div class="pm-field"><label for="aedPatientLabel">病歷號</label><input type="text" id="aedPatientLabel" placeholder=""></div>
-    <div class="pm-field"><label for="aedPatientSelect">已存病人</label><select id="aedPatientSelect"><option value="">（新病人／未選擇）</option></select></div>
-    <div class="pm-field"><label for="aedPatientVisitSelect">收案版本</label><select id="aedPatientVisitSelect"><option value="">（選病人後顯示收案版本）</option></select></div>
-    <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
-    <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button><span class="pm-dirty-dot" id="aedDirtyDot" hidden>●</span>
-    <button class="btn small" id="aedUpdateVisitBtn" type="button" disabled>更新目前這筆 visit</button>
-    <details class="pm-more">
-      <summary title="評估時點、備份、刪除">更多</summary>
-      <div class="pm-more-body">
-        <div class="pm-field"><label for="aedPatientAsOf">評估時點（留空自動帶抽血日期）</label><input type="datetime-local" id="aedPatientAsOf"></div>
-        <div class="btn-row">
-          <button class="btn small" id="aedExportPatientsBtn" type="button" title="匯出檔含病歷號">匯出全部（JSON 備份）</button>
-          <button class="btn small" id="aedImportPatientsBtn" type="button">匯入 JSON</button>
-          <button class="btn small" id="aedDeletePatientBtn" type="button">刪除所選病人</button>
-        </div>
-        <input type="file" id="aedImportFileInput" accept="application/json" style="display:none;">
-        <div class="hint">依病歷號追蹤同一位病人：每次評估用「存為新收案」追加一筆有日期的版本，載入時可回看任一版本。資料只存在這台電腦這個瀏覽器裡（localStorage），與其他藥物模組分開存放，不會上傳；建議定期用「匯出」備份成檔案。</div>
-      <div class="hint" style="margin-top:8px;">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
-        <div class="btn-row"><button class="btn small" id="tdmClearAllLocalAed" data-tdm-clear-all type="button" title="清掉四個藥物模組在這台電腦上存的全部病人紀錄">清除本機所有病人資料</button></div>
-      </div>
-    </details>
-    <div class="hint" id="aedPatientMeta"></div>
-  </div>
   <div class="guard-modal hide" id="aedGuardModal" role="alertdialog" aria-modal="true">
     <div class="guard-modal-box">
       <p id="aedGuardMsg"></p>
@@ -1953,6 +2027,7 @@
       <!-- 02. 人口學 -->
       <div class="card">
         <h2><span class="idx">02</span>人口學與身體計測</h2>
+        <div class="carry-row"><label for="aedCarrySrc">從</label><select id="aedCarrySrc"><option value="vancomycin">Vancomycin</option><option value="aminoglycoside">Aminoglycoside</option><option value="azole">Azole</option></select><button class="btn small" id="aedCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="aedCarryMsg" role="status"></span></div>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="aedAge" value="45" min="0" max="120"></div>
           <div class="field"><label>生理性別</label><select id="aedSex"><option value="">請選擇</option><option value="M">男</option><option value="F">女</option></select></div>
@@ -9204,6 +9279,171 @@ ${flagText||'（無）'}
         new MutationObserver(()=>animateCurve(id)).observe(svg, {childList:true});
         animateCurve(id);   // 開頁時已畫好的曲線：記下形狀（之後第一次改數字才能從它變形），也順便做進場動畫
       }
+    });
+
+    // ---------------- D4：頂列（身分條、病人面板、撞色）與「從其他模組帶入」 ----------------
+    // 都是顯示／搬運層：不改任何計算；帶入只寫「目標模組自己的輸入欄位」，寫完觸發目標模組自己的 render。
+    const HDR = document.querySelector('header.top');
+    // 1) 撞色挑選（tdm_ui_accent；預設洋紅＝不寫 data-accent）
+    const ACCENT_KEY = 'tdm_ui_accent';
+    function applyAccent(v, save){
+      if(!['magenta','vermilion','mustard','none'].includes(v)) v = 'magenta';
+      if(v==='magenta') document.documentElement.removeAttribute('data-accent');
+      else document.documentElement.setAttribute('data-accent', v);
+      document.querySelectorAll('[data-accent-pick]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.accentPick===v)));
+      if(save){ try{ localStorage.setItem(ACCENT_KEY, v); }catch(e){} }
+    }
+    document.querySelectorAll('[data-accent-pick]').forEach(b=>b.addEventListener('click', ()=>applyAccent(b.dataset.accentPick, true)));
+    let accentSaved = null;
+    try{ accentSaved = localStorage.getItem(ACCENT_KEY); }catch(e){}
+    applyAccent(accentSaved || 'magenta', false);
+
+    // 2) 病人面板開關（點外面或按 Esc 收起）
+    const pmToggle = document.getElementById('hdrPmToggle');
+    function setPmOpen(open){
+      HDR.classList.toggle('pm-open', open);
+      pmToggle.setAttribute('aria-expanded', String(open));
+    }
+    pmToggle.addEventListener('click', ()=>setPmOpen(!HDR.classList.contains('pm-open')));
+    document.addEventListener('click', e=>{ if(HDR.classList.contains('pm-open') && !HDR.contains(e.target)) setPmOpen(false); });
+    document.addEventListener('keydown', e=>{ if(e.key==='Escape' && HDR.classList.contains('pm-open')){ setPmOpen(false); pmToggle.focus(); } });
+
+    // 3) 身分條＋只顯示目前模組的病人列：讀輸入欄位與參數格，不重算
+    const ID_VIEWS = {
+      vancomycin:     {pm:'pmBarVanco', label:'patientLabel',    age:'age',    sex:'sex',    tbw:'tbw',    dial:{id:'dialysis', kind:'select'},    grid:'paramGrid'},
+      aminoglycoside: {pm:'pmBarAmg',   label:'amgPatientLabel', age:'amgAge', sex:'amgSex', tbw:'amgTbw', dial:{id:'amgDialysis', kind:'select'}, grid:'amgParamGrid'},
+      azole:          {pm:'pmBarAzole', label:'azlPatientLabel', age:'azlAge', sex:'azlSex', tbw:'azlTbw', dial:null,                              grid:'azlParamGrid'},
+      aed:            {pm:'pmBarAed',   label:'aedPatientLabel', age:'aedAge', sex:'aedSex', tbw:'aedTbw', dial:{id:'aedDialysis', kind:'check'},    grid:'aedParamGrid'}
+    };
+    const escHtml = t=>String(t).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    function refreshIdentity(){
+      const v = ID_VIEWS[currentDrugModule];
+      if(!v) return;
+      Object.values(ID_VIEWS).forEach(o=>{ document.getElementById(o.pm).hidden = (o!==v); });
+      const val = id=>{ const el = document.getElementById(id); return el ? String(el.value).trim() : ''; };
+      const sexTxt = {M:'男', F:'女'}[val(v.sex)];
+      const age = val(v.age), tbw = val(v.tbw), label = val(v.label);
+      const segs = [];
+      segs.push(label ? `<span class="hid-seg"><i>病歷號</i><b>${escHtml(label)}</b></span>`
+                      : `<span class="hid-seg hid-missing"><i>病歷號</i><b>未填</b></span>`);
+      const bits = [age ? `<b>${escHtml(age)} 歲</b>` : `<b class="hid-missing">年齡未填</b>`,
+                    sexTxt ? `<b>${sexTxt}</b>` : `<b class="hid-missing">性別未填</b>`,
+                    tbw ? `<b>${escHtml(tbw)} kg</b>` : `<b class="hid-missing">體重未填</b>`];
+      segs.push(`<span class="hid-seg">${bits.join('<i>／</i>')}</span>`);
+      const grid = document.getElementById(v.grid);
+      const crclCell = grid && Array.from(grid.querySelectorAll('.param-cell')).find(c=>{ const l = c.querySelector('.label'); return l && l.textContent.trim().startsWith('CrCl'); });
+      const crclVal = crclCell && crclCell.querySelector('.value') ? crclCell.querySelector('.value').textContent.replace(/\s+/g,' ').trim() : '';
+      if(crclVal && /\d/.test(crclVal)) segs.push(`<span class="hid-seg"><i>CrCl</i><b>${escHtml(crclVal)}</b></span>`);
+      if(v.dial){
+        const el = document.getElementById(v.dial.id);
+        const on = v.dial.kind==='check' ? el.checked : el.value !== 'none';
+        const txt = v.dial.kind==='check' ? (on ? '是' : '否') : (el.value==='none' ? '否' : el.value);
+        segs.push(`<span class="hid-seg${on ? ' hid-hot' : ''}"><i>透析：</i><b>${escHtml(txt)}</b></span>`);
+      }
+      document.getElementById('hdrIdentity').innerHTML = segs.join('');
+    }
+    ['input','change'].forEach(ev=>document.addEventListener(ev, refreshIdentity));
+    Object.values(ID_VIEWS).forEach(v=>{
+      const g = document.getElementById(v.grid);
+      if(g) new MutationObserver(refreshIdentity).observe(g, {childList:true, subtree:true});
+    });
+    document.querySelectorAll('.drug-module').forEach(m=>new MutationObserver(refreshIdentity).observe(m, {attributes:true, attributeFilter:['class']}));
+    refreshIdentity();
+
+    // 4) 從其他模組帶入基本資料（UIUX_IMPL_SPEC Phase 6）
+    //    只帶來源「有值」的欄位；目標已有不同的值先 confirm，列出會被蓋掉的欄位名稱；
+    //    SCr 表用目標自己的 add*ScrRow；做完觸發目標自己的 render；不連動、不新增存檔結構。
+    const CARRY = {
+      vancomycin:     {name:'Vancomycin',     pre:'vanco', f:{age:'age', sex:'sex', height:'height', tbw:'tbw', dry:'dryWeight'},
+                       scr:{table:'scrTable', add:(d,v)=>addScrRow(d,v)}, dial:{id:'dialysis', kind:'select', toggle:()=>toggleDialysisUI()}, render:()=>render()},
+      aminoglycoside: {name:'Aminoglycoside', pre:'amg',   f:{age:'amgAge', sex:'amgSex', height:'amgHeight', tbw:'amgTbw', dry:'amgDryWeight'},
+                       scr:{table:'amgScrTable', add:(d,v)=>addScrRowAmg(d,v)}, dial:{id:'amgDialysis', kind:'select', toggle:()=>toggleAmgDialysisUI()}, render:()=>renderAmino()},
+      azole:          {name:'Azole',          pre:'azl',   f:{age:'azlAge', sex:'azlSex', height:'azlHeight', tbw:'azlTbw', preg:'azlPregnancy'},
+                       scr:{single:'azlScr', date:'azlLabDate'}, dial:null, render:()=>renderAzole()},
+      aed:            {name:'抗癲癇藥物',     pre:'aed',   f:{age:'aedAge', sex:'aedSex', height:'aedHeight', tbw:'aedTbw', preg:'aedPregnancy'},
+                       scr:{single:'aedScr', date:'aedLabDate'}, dial:{id:'aedDialysis', kind:'check'}, render:()=>renderAed()}
+    };
+    const CARRY_LABEL = {age:'年齡', sex:'性別', height:'身高', tbw:'體重', dry:'乾體重', preg:'懷孕／哺乳'};
+    const $v = id=>String(document.getElementById(id).value).trim();
+    const sameVal = (a,b)=> a===b || (a!=='' && b!=='' && isFinite(Number(a)) && isFinite(Number(b)) && Number(a)===Number(b));
+    function readScrOf(m){
+      if(m.scr.table){
+        return Array.from(document.querySelectorAll('#'+m.scr.table+' .entry-row')).map(r=>({date:r.querySelector('.scr-date').value, val:r.querySelector('.scr-val').value}))
+          .filter(r=>r.date && r.val!=='');
+      }
+      const val = $v(m.scr.single), date = $v(m.scr.date);
+      return (val!=='' && date) ? [{date, val}] : [];
+    }
+    function fireInputs(el){ el.dispatchEvent(new Event('input',{bubbles:true})); el.dispatchEvent(new Event('change',{bubbles:true})); }
+    function carryFrom(srcKey, tgtKey){
+      const S = CARRY[srcKey], T = CARRY[tgtKey];
+      const changes = [], conflicts = [], notes = [];
+      // 欄位
+      Object.keys(S.f).forEach(k=>{
+        if(!T.f[k]) return;
+        const sv = $v(S.f[k]); if(sv==='') return;
+        const tv = $v(T.f[k]); if(sameVal(sv, tv)) return;
+        if(tv!=='') conflicts.push(CARRY_LABEL[k]);
+        changes.push({label:CARRY_LABEL[k], run:()=>{ const el = document.getElementById(T.f[k]); el.value = sv; fireInputs(el); }});
+      });
+      // 透析：select → select 直接帶；select → 勾選框（有透析＝勾）；勾選框 → select 不帶（只知道有透析、不知道哪一種）
+      if(S.dial && T.dial && !(S.dial.kind==='check' && T.dial.kind==='select')){
+        const sEl = document.getElementById(S.dial.id), tEl = document.getElementById(T.dial.id);
+        if(T.dial.kind==='select'){
+          if(tEl.value !== sEl.value){ conflicts.push('透析'); changes.push({label:'透析', run:()=>{ tEl.value = sEl.value; if(T.dial.toggle) T.dial.toggle(); fireInputs(tEl); }}); }
+        } else {
+          const want = sEl.value !== 'none';
+          if(tEl.checked !== want){ conflicts.push('透析'); changes.push({label:'透析', run:()=>{ tEl.checked = want; fireInputs(tEl); }}); }
+        }
+      }
+      // SCr
+      const srcScr = readScrOf(S);
+      if(!srcScr.length){
+        if(!S.scr.table && $v(S.scr.single)!=='' && !$v(S.scr.date)) notes.push('SCr 沒帶（來源缺 lab 日期）');
+      } else if(T.scr.table){
+        const tgtScr = readScrOf(T);
+        if(S.scr.table){
+          if(JSON.stringify(srcScr) !== JSON.stringify(tgtScr)){
+            if(tgtScr.length) conflicts.push('SCr 紀錄');
+            changes.push({label:'SCr 紀錄', run:()=>{ document.querySelectorAll('#'+T.scr.table+' .entry-row').forEach(r=>r.remove()); srcScr.forEach(r=>T.scr.add(r.date, r.val)); }});
+          }
+        } else {
+          const one = srcScr[0], hit = Array.from(document.querySelectorAll('#'+T.scr.table+' .entry-row')).find(r=>r.querySelector('.scr-date').value===one.date);
+          if(!hit) changes.push({label:'SCr', run:()=>T.scr.add(one.date, one.val)});
+          else if(!sameVal(hit.querySelector('.scr-val').value.trim(), one.val)){
+            conflicts.push('SCr（' + one.date + '）');
+            changes.push({label:'SCr', run:()=>{ const el = hit.querySelector('.scr-val'); el.value = one.val; fireInputs(el); }});
+          }
+        }
+      } else {
+        const latest = srcScr.slice().sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).pop();
+        const tv = $v(T.scr.single), td = $v(T.scr.date);
+        if(!(sameVal(tv, latest.val) && td===latest.date)){
+          if(tv!=='' || td) conflicts.push('SCr');
+          changes.push({label:'SCr', run:()=>{ const a = document.getElementById(T.scr.single), b = document.getElementById(T.scr.date); a.value = latest.val; b.value = latest.date; fireInputs(a); fireInputs(b); }});
+        }
+      }
+      return {S, T, changes, conflicts, notes};
+    }
+    Object.keys(CARRY).forEach(tgtKey=>{
+      const T = CARRY[tgtKey];
+      const btn = document.getElementById(T.pre+'CarryBtn');
+      btn.addEventListener('click', ()=>{
+        const srcKey = document.getElementById(T.pre+'CarrySrc').value;
+        const msg = document.getElementById(T.pre+'CarryMsg');
+        const plan = carryFrom(srcKey, tgtKey);
+        const tail = plan.notes.length ? '（' + plan.notes.join('、') + '）' : '';
+        if(!plan.changes.length){
+          msg.textContent = (plan.notes.length ? '沒有可帶入的資料' : '來源與目前相同，沒有需要帶入的資料') + tail;
+          return;
+        }
+        if(plan.conflicts.length && !confirm(`「${T.name}」已有不同的資料，帶入「${plan.S.name}」的值會蓋掉：${plan.conflicts.join('、')}。\n要繼續嗎？`)) return;
+        plan.changes.forEach(c=>c.run());
+        T.render();
+        refreshIdentity();
+        const labels = []; plan.changes.forEach(c=>{ if(!labels.includes(c.label)) labels.push(c.label); });
+        msg.textContent = `已帶入（從 ${plan.S.name}）：${labels.join('、')}${tail}`;
+      });
     });
 
     // ---------------- drug switcher wiring ----------------

@@ -90,12 +90,16 @@ function buildInstrumentedHtml(indexHtmlPath) {
   return html;
 }
 
-async function loadHarness(indexHtmlPath = INDEX_HTML_PATH) {
+// opts.localStorage：載入前先放進 localStorage 的鍵值（測「重新載入後讀得回來」用）
+async function loadHarness(indexHtmlPath = INDEX_HTML_PATH, opts = {}) {
   const html = buildInstrumentedHtml(indexHtmlPath);
   const dom = new JSDOM(html, {
     runScripts: 'dangerously',
     resources: 'usable',
-    url: 'http://localhost/'
+    url: 'http://localhost/',
+    beforeParse(window) {
+      Object.entries(opts.localStorage || {}).forEach(([k, v]) => window.localStorage.setItem(k, v));
+    }
   });
   await new Promise(resolve => {
     if (dom.window.__captured) return resolve();
