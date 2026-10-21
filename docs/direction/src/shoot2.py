@@ -33,7 +33,10 @@ def mobile(page, h, full, out):
     if full: crop_bottom(out)
 
 for k in 'abc':
+    # 主要目標：24 吋 1920×1080，瀏覽器可用約 1920×940
+    edge(BASE + 'C2%s.html' % k, 1920, 940, os.path.join(SH, 'C2%s_24in_fold.png' % k))
     edge(BASE + 'C2%s.html' % k, 1440, 900, os.path.join(SH, 'C2%s_desktop_fold.png' % k))
+edge(BASE + 'C2a.html?rs=560', 1920, 940, os.path.join(SH, 'C2a_24in_rightscrolled.png'))
 edge(BASE + 'C2a.html?rs=600', 1440, 900, os.path.join(SH, 'C2a_desktop_rightscrolled.png'))
 # 「左邊捲下去、右邊仍固定」這個狀態無頭 Edge 畫不出來（sticky＋已捲動時合成錯誤），
 # shots/C2a_desktop_leftscrolled.jpg 是在一般瀏覽器 1440×900 實際捲動後截的（縮成 800 寬）。

@@ -205,6 +205,16 @@ p.tx{font-size:13px;margin-bottom:6px}
 .chart .dose{fill:var(--navy)}
 .chart .scr{fill:#fff;stroke:var(--ink-soft);stroke-width:1.5}
 
+.wide{display:none}
+/* ---- 24 吋（1920×1080）為主要目標：版面用滿寬度，曲線與候選方案並排 ---- */
+@media (min-width:1600px){
+  .app{max-width:1920px;grid-template-columns:540px minmax(0,1fr);gap:28px}
+  .pair{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:28px;align-items:start}
+  .tbl td.t{white-space:nowrap}
+  .dsk{display:none}.wide{display:block}
+  .nums .key .v{font-size:38px}
+  .nums .v{font-size:24px}
+}
 .seg,.m-bar{display:none}
 @media (max-width:980px){
   .app{grid-template-columns:minmax(0,1fr);padding:16px}
@@ -307,17 +317,17 @@ def panel():
     <div><div class="l">Vd</div><div class="v">49.8<small>L</small></div><div class="t">0.77 L/kg</div></div>
   </div>
   <div class="flagline"><b>注意事項</b><span>無明顯健全性疑慮：兩點相距 8.4 h（約 1.1 個半衰期）；SCr 穩定 1.1 → 0.95</span></div>
-  <div class="sec"><h4>濃度曲線與時間軸<span>給藥・抽血・SCr 共用時間軸</span></h4>
-    <div class="dsk">{chart2(820, 268)}</div><div class="mob" style="display:none">{chart2(340, 268)}</div>
+  <div class="pair"><div class="sec"><h4>濃度曲線與時間軸<span>給藥・抽血・SCr 共用時間軸</span></h4>
+    <div class="dsk">{chart2(820, 268)}</div><div class="wide">{chart2(656, 300)}</div><div class="mob" style="display:none">{chart2(340, 268)}</div>
     <div class="legend"><span><i class="lg-bar"></i>給藥（寬＝輸注時間）</span><span><i class="lg-dot"></i>抽血</span><span><i class="lg-dia"></i>SCr</span><span><i class="lg-dash"></i>預測</span></div></div>
   <div class="sec"><h4>候選方案<span>選一列＝在曲線上疊加預測</span></h4>
     <div style="overflow-x:auto"><table class="tbl"><tr><th>方案</th><th>劑量／輸注</th><th>AUC₂₄</th><th>Cmin</th><th class="hm">Cmax</th><th>判讀</th></tr>{cand_rows}
-      <tr class="custom"><td class="t"><b>自訂</b></td><td class="t"><span class="ci">mg</span> ／ <span class="ci">min</span> q <span class="ci" style="min-width:36px">h</span></td><td>—</td><td>—</td><td class="hm">—</td><td class="t" style="color:var(--ink-soft);font-size:12px">輸入即算</td></tr></table></div></div>
-  <div class="more"><span>▼ 以下捲動：監測與下次抽血・完整參數・AI Prompt</span><span>右邊面板可單獨捲動</span></div>
-  <div class="sec"><h4>監測與下次抽血</h4>
+      <tr class="custom"><td class="t"><b>自訂</b></td><td class="t"><span class="ci">mg</span> ／ <span class="ci">min</span> q <span class="ci" style="min-width:36px">h</span></td><td>—</td><td>—</td><td class="hm">—</td><td class="t" style="color:var(--ink-soft);font-size:12px">輸入即算</td></tr></table></div>
+  <div class="sec mon"><h4>監測與下次抽血</h4>
     <p class="tx"><b>維持現行處方：</b>穩定者每週一次 trough。</p>
     <p class="tx"><b>若改處方：</b>新處方開始後約 <b class="num">32–40</b> 小時（4–5 × t½ 7.9 h）再抽 trough。</p>
-    <p class="tx">SCr 每 2–3 天至每週；尿量；腎功能變化、透析啟動、感染惡化時重新評估。</p></div>
+    <p class="tx">SCr 每 2–3 天至每週；尿量；腎功能變化、透析啟動、感染惡化時重新評估。</p></div></div></div>
+  <div class="more"><span>▼ 以下捲動：完整參數・AI Prompt</span><span>右邊面板可單獨捲動</span></div>
   <div class="sec"><h4>完整參數<span>聯合擬合（2 點）</span></h4><dl class="defl">{params}</dl></div>
   <div class="acc"><b>AI 諮詢 Prompt</b><span>整合 lab 趨勢與病程後的第二意見 ▸ 展開</span></div>
 </div></div>"""

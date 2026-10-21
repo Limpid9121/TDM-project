@@ -30,4 +30,6 @@ Brandon 看完第一輪：三張都不滿意，勉強選 C，回饋三點：
 - 撞色只出現在三個地方：頂列下緣一條線、候選方案表的「現行」標籤、曲線上的「現在」標籤。
 - 唯一保留的圖是濃度曲線加時間軸：它提供數字給不了的資訊（抽血時點相對給藥的位置）。
 
-截圖：`shots/C2*_desktop_fold.png`（三種撞色）、`C2a_desktop_rightscrolled.png`（右邊面板往下捲）、`C2a_desktop_leftscrolled.jpg`（左邊捲到底、右邊仍固定；在一般瀏覽器截的，無頭 Edge 畫不出這個狀態）、`C2a_mobile_*`。產生器：`src/boards2.py`、`src/shoot2.py`。
+**主要目標是 24 吋螢幕（1920×1080）**（Brandon 2026-10-21）：寬度 ≥1600 時曲線與候選方案並排，監測與下次抽血也進到不用捲動的範圍。
+
+截圖：`shots/C2*_24in_fold.png`（24 吋 1920×940，主要）、`C2a_24in_rightscrolled.png`、`shots/C2*_desktop_fold.png`（1440，三種撞色）、`C2a_desktop_rightscrolled.png`（右邊面板往下捲）、`C2a_desktop_leftscrolled.jpg`（左邊捲到底、右邊仍固定；在一般瀏覽器截的，無頭 Edge 畫不出這個狀態）、`C2a_mobile_*`。產生器：`src/boards2.py`、`src/shoot2.py`。
