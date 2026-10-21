@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（Brandon 核可 C3 版面與改寫後的 DESIGN.md；L-G 候選間隔程式完成，等 golden 核可，之後做 D2）
+最後更新：2026-10-21（L-G 完成、D1 定案 C3，開始 D2）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**D2**（換外觀，照 C3 與改寫後的 DESIGN.md）。要先等 Brandon 核可改寫後的 DESIGN.md。L 系列全部完成；D0 原版 DESIGN.md 已被 C3 取代。
+- 進行中：**D2**（換外觀，照 `docs/direction/C3.html` 與 DESIGN.md）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -21,9 +21,10 @@
 | L-D | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 11 項：V1／V2／V3／V4 的候選方案、loading 建議、旗標區、AI prompt；基準已更新，124/124 | 見下方備註 |
 | L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
 | L-F | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字；基準已更新，124/124 | 見下方備註 |
-| D0 | 文件完成，等 Brandon 核可 PRODUCT.md、DESIGN.md | 見 git log | 不適用（沒改 index.html） | 停：核可後才做 D1；重點看 DESIGN.md 頂端說明的三處「我提出的」 |
-| D1 | 第三輪 C3 完成；DESIGN.md 已依 C3 改寫，等 Brandon 核可 | 見 git log | 不適用（沒改 index.html） | 方向：C3（洋紅預設、可自選強調色、參數兩列）。核可 DESIGN.md 後做 D2 |
-| D2 | 未開始 | | | |
+| L-G | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-21 Brandon 核可 8 項：V1／V2／V3 候選方案表與 AI prompt、V1／V4 存檔資料；基準已更新，124/124 | 2026-10-21 新增：候選給藥間隔 |
+| D0 | 完成（DESIGN.md 已被 D1 第三輪改寫版取代） | 見 git log | 不適用 | PRODUCT.md 2026-10-20 核可；DESIGN.md 改寫版 2026-10-21 核可 |
+| D1 | 完成：方向定案 C3 | 見 git log | 不適用（沒改 index.html） | 2026-10-21 Brandon 核可 C3 版面與改寫後的 DESIGN.md |
+| D2 | 進行中 | | | |
 | D3 | 未開始 | | | |
 | D4 | 未開始 | | | |
 | D5 | 未開始 | | | |
@@ -66,6 +67,14 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### L-G 候選給藥間隔（2026-10-21 新增）
+- Brandon 臨床經驗：腎功能不是很差的病人很少用 q24h，最常用 q6h、q8h、q12h；工具卻預設列 q8／q12／q24，示範病例（CrCl 80）出現「2250 mg q24h、輸注 270 分」。
+- 查證（pharmacist-ebm-consult 流程）：2020 ASHP/IDSA/PIDS/SIDP 共識成人腎功能正常 15–20 mg/kg q8–12h（A-II，已讀 AJHP 原文核對）；q6h 在共識裡只出現在兒科；成人 q6h 沒找到直接比較的研究，屬藥動學推論與實務（ARC 文獻顯示清除加快、濃度偏低）；各院依 CrCl 選 q24h 的切點不一（30–49、50–79、40–60 都有）。
+- Brandon 決定：q6h／q8h／q12h 預設勾、q24h 保留但不勾；不依 CrCl 自動切換（院內未提供切點，之後提供院內表可再做）；存檔記住 q6h（新增選填欄位 `cand6`，舊存檔沒有時視為勾選，R10 例外已核可）；在 D2 前做。
+- 改動：新勾選框 `vancoCand6`（照命名規則用模組前綴；舊的 `cand8/12/24` id 不動）；`render()` 與 `renderProspective()` 的候選間隔加 6（R1／R2 例外已核可）；清空時 q24h 改不勾；`applyState` 舊存檔 `cand24` 照原值。
+- 新測試：`tests/test_cand_intervals.js`（18 項）。
+- golden 8 項差異：V1／V2／V3 的候選方案表與 AI prompt（多 q6h 列、預設不再有 q24h 列）；V1／V4 存檔資料（多 `cand6:true`，`cand24` 由 true 變 false）。2026-10-21 Brandon 核可，基準已更新。
 
 ### D1 第三輪（2026-10-21）
 - Brandon 選洋紅（C2c）為預設，但要讓使用者自己換 → 頂列四色塊（洋紅、朱紅、芥末黃、不用撞色），存 `tdm_ui_accent`（符合 R10 的 `tdm_ui_` 前綴）。洋紅在深藍頂列上只有 2.4:1，所以洋紅與「不用撞色」時分頁底線改白色。
