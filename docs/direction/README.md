@@ -33,3 +33,12 @@ Brandon 看完第一輪：三張都不滿意，勉強選 C，回饋三點：
 **主要目標是 24 吋螢幕（1920×1080）**（Brandon 2026-10-21）：寬度 ≥1600 時曲線與候選方案並排，監測與下次抽血也進到不用捲動的範圍。
 
 截圖：`shots/C2*_24in_fold.png`（24 吋 1920×940，主要）、`C2a_24in_rightscrolled.png`、`shots/C2*_desktop_fold.png`（1440，三種撞色）、`C2a_desktop_rightscrolled.png`（右邊面板往下捲）、`C2a_desktop_leftscrolled.jpg`（左邊捲到底、右邊仍固定；在一般瀏覽器截的，無頭 Edge 畫不出這個狀態）、`C2a_mobile_*`。產生器：`src/boards2.py`、`src/shoot2.py`。
+
+
+## 第三輪（2026-10-21）：C3（定案候選）
+
+Brandon：洋紅為預設，但要讓使用者自己決定；「完整參數」一行一個太浪費。
+- `C3.html`：頂列右邊四個色塊（洋紅、朱紅、芥末黃、不用撞色），點了立刻換，存在這台電腦（`tdm_ui_accent`）。網址加 `?accent=vermilion` 等可直接預覽。
+- 10 個參數併進最上方兩列（AUC₂₄ 大字跨兩列），拿掉重複的「完整參數」整段；24 吋上右邊只剩 AI Prompt 需要捲動。
+- 截圖：`shots/C3_24in_fold.png`（預設洋紅）、`C3_24in_vermilion.png`、`C3_24in_none.png`、`C3_1440_fold.png`、`C3_mobile_*`。產生器：`src/boards3.py`、`src/shoot3.py`（共用 `src/shoot_lib.py`）。
+- `DESIGN.md` 已依 C3 改寫，待核可。

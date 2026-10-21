@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（D1 第二輪 C2 完成，等 Brandon 選撞色）
+最後更新：2026-10-21（D1 第三輪 C3 與改寫後的 DESIGN.md 完成，等 Brandon 核可後做 D2）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**D2**（換外觀）。要先等 Brandon 從 D1 的三張方向板（`docs/direction/`）挑一張。D0 已核可（2026-10-20）。L 系列（邏輯修正）全部完成。
+- 下一包：**D2**（換外觀，照 C3 與改寫後的 DESIGN.md）。要先等 Brandon 核可改寫後的 DESIGN.md。L 系列全部完成；D0 原版 DESIGN.md 已被 C3 取代。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -22,7 +22,7 @@
 | L-E | 完成 | 見 git log（程式、azole 測試、基準各一個 commit） | 2026-10-20 Brandon 核可：9 條 azole 斷言改法、golden 24 項差異（A1／A2／A3、Z1／Z2；31 個欄位）；基準已更新，124/124 | 見下方備註 |
 | L-F | 完成 | 見 git log（程式與基準各一個 commit） | 2026-10-20 Brandon 核可 5 項：V1／V2／A1／A2／A3 的監測建議 SCr 頻率文字；基準已更新，124/124 | 見下方備註 |
 | D0 | 文件完成，等 Brandon 核可 PRODUCT.md、DESIGN.md | 見 git log | 不適用（沒改 index.html） | 停：核可後才做 D1；重點看 DESIGN.md 頂端說明的三處「我提出的」 |
-| D1 | 第二輪 C2（三種撞色）完成，等 Brandon 選 | 見 git log | 不適用（沒改 index.html） | 第一輪 A／B／C 都不滿意、勉強選 C；C2 依回饋重做。選定後要先改 DESIGN.md（配色已變）再做 D2 |
+| D1 | 第三輪 C3 完成；DESIGN.md 已依 C3 改寫，等 Brandon 核可 | 見 git log | 不適用（沒改 index.html） | 方向：C3（洋紅預設、可自選強調色、參數兩列）。核可 DESIGN.md 後做 D2 |
 | D2 | 未開始 | | | |
 | D3 | 未開始 | | | |
 | D4 | 未開始 | | | |
@@ -66,6 +66,11 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### D1 第三輪（2026-10-21）
+- Brandon 選洋紅（C2c）為預設，但要讓使用者自己換 → 頂列四色塊（洋紅、朱紅、芥末黃、不用撞色），存 `tdm_ui_accent`（符合 R10 的 `tdm_ui_` 前綴）。洋紅在深藍頂列上只有 2.4:1，所以洋紅與「不用撞色」時分頁底線改白色。
+- 「完整參數一行一個太浪費」→ 10 個參數併進上方兩列（AUC₂₄ 大字跨兩列），拿掉重複整段。這剛好對應工具既有 `paramGrid` 的 10 格，D2 只要用 CSS 排版，不用改 render。
+- DESIGN.md 全面改寫成 C3 的系統（取代 D0 版本），待核可；impeccable context 讀得到、沒有格式警告。
 
 ### D1 第二輪（2026-10-21）
 - Brandon 回饋：(1) 目標帶尺等「重講數字的圖」沒用，藥師看數字就知道（已存成記憶 no-redundant-visual-aids）；(2) 綠色配色 AI 味重，要黑白灰＋深藍＋大膽撞色、優雅有質感；(3) 右邊要固定在畫面上，不捲動就看到最重要的資訊、左邊輸入時即時看到變化，細節往下捲。
