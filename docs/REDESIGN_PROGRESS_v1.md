@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（D3 完成，等 Brandon 看畫面後做 D4）
+最後更新：2026-10-21（D3 依 Brandon 要求調整：曲線進首屏、劑量調整建議往下放、曲線動畫；等看畫面後做 D4）
 
 ## 現況
 
@@ -25,7 +25,7 @@
 | D0 | 完成（DESIGN.md 已被 D1 第三輪改寫版取代） | 見 git log | 不適用 | PRODUCT.md 2026-10-20 核可；DESIGN.md 改寫版 2026-10-21 核可 |
 | D1 | 完成：方向定案 C3 | 見 git log | 不適用（沒改 index.html） | 2026-10-21 Brandon 核可 C3 版面與改寫後的 DESIGN.md |
 | D2 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 設計偵測 70 → 3；對比不足、字太小都歸零 |
-| D3 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 曲線與候選方案並排留給 D6（見備註） |
+| D3 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | Brandon 要求曲線進首屏、劑量調整建議往下放（已做）；曲線動畫已做 |
 | D4 | 未開始 | | | |
 | D5 | 未開始 | | | |
 | D6 | 未開始 | | | golden 曲線比對改法單獨核可 |
@@ -69,11 +69,13 @@
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
 
 ### D3 右區重排（2026-10-21）
-- 做法：只用 CSS `order`／grid 搬位置，DOM 順序與所有 id 不變。右區順序：判讀標題列 → 參數（AUC 大字加兩列）→ 注意事項 → 候選方案 → 曲線 → 監測 → 趨勢 → AI Prompt。用 `:has()` 選區塊（`.section-block:has(#flagList)` 等）。
+- 做法：只用 CSS `order`／grid 搬位置，DOM 順序與所有 id 不變。右區順序（Brandon 2026-10-21 要求曲線進固定面板的第一屏、劑量調整建議往下放）：判讀標題列 → 參數（AUC 大字加兩列）→ 注意事項 → **曲線** → 劑量調整建議（候選方案）→ 監測 → 趨勢 → AI Prompt。用 `:has()` 選區塊（`.section-block:has(#flagList)` 等）。
 - 新增純顯示 helper（放在 drug switcher wiring 之前，R8）：`MutationObserver` 掛在 `paramGrid`／`amgParamGrid`，render 每次重寫參數格就替每格依標籤加 `pc-*` class（`pc-key` 是 vancomycin 的 AUC₂₄,ss、AMG 的 Cmax,ss），並更新判讀標題列（`#vancoConclusion`／`#amgConclusion`：現行處方、濃度點數與相距小時，讀既有輸入欄位）。完全不碰 render，textContent 不變，golden 0 差異。標籤在預測模式會多「預測 」前綴，所以用 `includes`／`^` 規則比對（測試抓到的）。
 - key 格下面的「目標 400–600　■ 目標內」用 CSS `::after` 補（不在 textContent，不影響 golden）；狀態文字依 `flag-ok/warn/danger`。
 - 右欄固定：頂列 48 px，面板 `top:60px`、`max-height:calc(100vh - 72px)`，自己捲動；左邊捲到哪右邊都在。
-- **和 C3 方向板的差異**：曲線與候選方案左右並排**沒有做**。原因：現在的曲線是固定 920×340 的畫布，並排時只剩約 70% 寬，圖上文字（原本 9.5 到 10.5 的 SVG 單位）會縮到 7 px 左右，違反最小 12 px。改成：24 吋也是上下排，候選方案在曲線之前（計畫 D3 原文就是「候選方案表移到曲線之前」），首屏仍涵蓋判讀、參數、注意事項、候選方案。並排留給 D6（重畫曲線時依可用寬度畫）。
+- **和 C3 方向板的差異**：曲線與候選方案左右並排沒有做（曲線是固定 920×340 的畫布，並排時只剩約 70% 寬，圖上文字會縮到 7 px 左右）。Brandon 看過後改要求：曲線放進首屏、劑量調整建議往下放，所以也不需要並排了。24 吋（≥1600）曲線高度上限 400 px，左右置中留白，避免把監測與劑量調整建議全擠出首屏。
+- **首屏尺寸**：1920×940 在頁面未捲動時，面板上緣在 164 px（頂列加病人管理列加分頁佔掉），所以曲線底部差約 76 px 才完整；D4 把病人管理收進頂列後，面板上緣會到約 60 px，整張曲線就在第一屏內。往下捲動後面板固定在 60 px，此時曲線完整可見（已用 1920×940 截圖確認）。
+- **曲線動畫**（純顯示、`MutationObserver` 接手 render 重畫之後）：第一次出現（開頁、換藥物、載入病人、從缺資料回來）主曲線用 `stroke-dashoffset` 畫出來（約 0.5 秒），預測與 what-if 線淡入；在左邊改數字時新曲線從上一版形狀用 CSS `d` 屬性平滑變形（0.25 秒，線段數不同時改淡入）。只在瀏覽器支援 `d` 屬性、有 `matchMedia`、使用者沒開「減少動態」時啟動；jsdom 的 `CSS.supports` 對什麼都回 true，所以靠「沒有 matchMedia」排除，golden 的曲線雜湊不受影響。內建瀏覽器確認有建立 `CSSTransition`（property `d`、250 ms、running）；預覽窗在背景所以動畫時鐘不走，實際播放要在前景視窗看。新測試 `tests/test_curve_motion.js`（13 項）。
 - 驗證：全部測試過（新測試 `tests/test_d3_results.js` 46 項）、golden 124/124；內建瀏覽器 1920／1440／1024／390 × 四模組：沒有水平捲軸、右欄捲動時固定、面板內沒有內容超出；沒有 console 錯誤。
 
 ### D2 換外觀（2026-10-21）

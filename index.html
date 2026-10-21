@@ -333,6 +333,8 @@
   .regimen-table td.pick-col, .regimen-table th.pick-col{width:26px;text-align:center;padding-left:10px;padding-right:2px;}
   .regimen-table input[type="radio"]{width:14px;height:14px;cursor:pointer;}
   svg.curve{width:100%;height:auto;display:block;cursor:crosshair;}
+  /* 24 吋：曲線不要高到把監測、劑量調整建議全擠出首屏；超過時左右留白置中（viewBox 等比縮放） */
+  @media (min-width:1600px){ svg.curve{max-height:400px;} }
 
   /* ---- 歷程趨勢（跨收案）: small-multiples trend chart, loop C ---- */
   svg.trend{width:100%;height:auto;display:block;}
@@ -693,7 +695,8 @@
 
   /* =====================================================================
      REDESIGN D3：右區重排（只用 CSS order／grid 搬位置；DOM 順序與 id 不變）
-     順序：判讀標題列 → 參數（AUC 大字＋兩列）→ 注意事項 → 候選方案 → 曲線 → 監測 → 趨勢 → AI Prompt
+     順序：判讀標題列 → 參數（AUC 大字＋兩列）→ 注意事項 → 曲線 → 劑量調整建議（候選方案）→ 監測 → 趨勢 → AI Prompt
+     曲線在固定面板的第一屏；劑量調整建議要規劃時再往下捲（Brandon 2026-10-21）。
      ===================================================================== */
   /* 右欄固定在畫面上：頂列 48 px，之下留 12 px */
   @media (min-width:981px){
@@ -706,8 +709,8 @@
   #resultsPanel > .pop-model-toggle{order:3;}
   #resultsPanel > .param-grid, #amgResultsPanel > .param-grid{order:4;}
   .section-block:has(#flagList), .section-block:has(#amgFlagList){order:5;}
-  .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable){order:6;}
-  #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{order:7;border-top:1px solid var(--line);}
+  #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{order:6;border-top:1px solid var(--line);}
+  .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable){order:7;}
   .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){order:8;}
   #resultsPanel > [id$="TrendBlock"], #amgResultsPanel > [id$="TrendBlock"]{order:9;}
   .section-block:has(textarea[id$="iPromptOut"]){order:10;}   /* aiPromptOut／amgAiPromptOut */
@@ -765,7 +768,6 @@
   @media (max-width:640px){
     .param-grid:has(.pc-key){grid-template-columns:repeat(2,minmax(0,1fr));}
     .param-grid:has(.pc-key) > .pc-key .value{font-size:34px;}
-    #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{order:7;}
   }
 </style>
 </head>
@@ -9136,6 +9138,72 @@ ${flagText||'（無）'}
       };
       new MutationObserver(refresh).observe(grid, {childList:true});
       refresh();
+    });
+
+    // ---------------- D3：曲線動畫（純顯示） ----------------
+    // 曲線每次 render 都整張重畫（innerHTML 換掉），所以用 MutationObserver 在重畫後接手：
+    //  · 第一次出現（換藥物、載入病人、從缺資料狀態回來）：主曲線「畫出來」（stroke-dashoffset，約 0.5 秒）
+    //  · 在左邊改數字：新曲線從上一版形狀平滑變形過去（CSS d 屬性轉場，0.25 秒）；線段數不同時改成淡入
+    // 只在瀏覽器支援 CSS d 屬性且使用者沒有開「減少動態」時啟動；jsdom 沒有 CSS.supports，不會啟動。
+    const curvePrev = {};
+    function curveMotionOk(){
+      try{
+        if(!window.CSS || !CSS.supports || !CSS.supports('d','path("M0 0L1 1")')) return false;
+        // jsdom 的 CSS.supports 對什麼都回 true、但沒有 matchMedia；真實瀏覽器一定有 matchMedia，所以靠它排除 jsdom（golden 才不會被動畫改到 SVG）
+        if(!window.matchMedia) return false;
+        if(window.matchMedia('(prefers-reduced-motion: reduce)').matches) return false;
+        return true;
+      }catch(e){ return false; }
+    }
+    function animateCurve(svgId){
+      const svg = document.getElementById(svgId);
+      if(!svg) return;
+      const paths = Array.from(svg.querySelectorAll(':scope > path'));
+      const now = paths.map(pa=>({stroke:pa.getAttribute('stroke'), d:pa.getAttribute('d')||''}));
+      const prev = curvePrev[svgId];
+      curvePrev[svgId] = now.length ? now : null;
+      if(!now.length || !curveMotionOk()) return;
+      const segs = d=>(d.match(/[ML]/g)||[]).length;
+      paths.forEach((pa,i)=>{
+        const cur = now[i];
+        const old = prev && prev.find(o=>o.stroke===cur.stroke && segs(o.d)===segs(cur.d));
+        if(old){
+          if(old.d===cur.d) return;
+          pa.style.d = `path("${old.d}")`;
+          void pa.getBoundingClientRect();
+          pa.style.transition = 'd 250ms cubic-bezier(.2,.8,.2,1)';
+          pa.style.d = `path("${cur.d}")`;
+        } else if(!prev){
+          // 第一次出現：主曲線畫出來，其餘淡入
+          const isMain = cur.stroke==='var(--trace)' && !pa.getAttribute('stroke-dasharray');
+          if(isMain && pa.getTotalLength){
+            const len = Math.ceil(pa.getTotalLength());
+            pa.style.strokeDasharray = `${len}`;
+            pa.style.strokeDashoffset = `${len}`;
+            void pa.getBoundingClientRect();
+            pa.style.transition = 'stroke-dashoffset 500ms cubic-bezier(.2,.8,.2,1)';
+            pa.style.strokeDashoffset = '0';
+            setTimeout(()=>{ pa.style.strokeDasharray=''; pa.style.strokeDashoffset=''; pa.style.transition=''; }, 560);
+          } else {
+            pa.style.opacity = '0';
+            void pa.getBoundingClientRect();
+            pa.style.transition = 'opacity 300ms ease 300ms';
+            pa.style.opacity = '1';
+          }
+        } else {
+          pa.style.opacity = '0';
+          void pa.getBoundingClientRect();
+          pa.style.transition = 'opacity 150ms ease';
+          pa.style.opacity = '1';
+        }
+      });
+    }
+    ['curveSvg','amgCurveSvg'].forEach(id=>{
+      const svg = document.getElementById(id);
+      if(svg){
+        new MutationObserver(()=>animateCurve(id)).observe(svg, {childList:true});
+        animateCurve(id);   // 開頁時已畫好的曲線：記下形狀（之後第一次改數字才能從它變形），也順便做進場動畫
+      }
     });
 
     // ---------------- drug switcher wiring ----------------
