@@ -217,39 +217,63 @@ p.tx{font-size:13px;margin-bottom:6px}
   .pgrid .key{grid-row:auto;grid-column:1/-1;border-top:0}
   .pgrid .key .v{font-size:34px}
 }
+
+.ws-bar{position:sticky;top:51px;z-index:5;background:var(--bg);display:flex;align-items:center;gap:6px;padding:8px 0 10px;margin-top:-4px;border-bottom:1px solid var(--line)}
+.ws-bar .jump{font-family:var(--font-num);font-size:12px;font-weight:700;min-width:34px;height:28px;border:1.5px solid var(--navy);border-radius:3px;background:#fff;color:var(--navy);cursor:pointer}
+.ws-bar .jump.open{background:var(--navy);color:#fff}
+.ws-bar .sp{flex:1}
+.ws-bar .btn{min-height:28px;padding:3px 10px}
+.ws-sec h2{margin-bottom:0}
+.ws-tg{all:unset;box-sizing:border-box;display:flex;align-items:center;gap:8px;width:100%;cursor:pointer;font-size:15px;font-weight:700;padding:2px 0}
+.ws-tg:focus-visible{outline:2px solid var(--navy);outline-offset:2px}
+.ws-tg .sum{margin-left:12px;font-size:13px;font-weight:400;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;display:none}
+.ws-tg .chev{margin-left:auto;color:var(--ink-soft);font-size:12px;transition:transform 180ms ease}
+.ws-sec.closed .ws-tg .sum{display:block}
+.ws-sec.closed .ws-tg .chev{transform:rotate(-90deg)}
+.ws-sec.closed .ws-body{display:none}
+.ws-sec.closed{padding:9px 0}
+.ws-body{padding-top:8px}
+.ws-sec.flash{animation:flash 1.2s ease}
+@keyframes flash{0%{background:var(--navy-tint)}100%{background:transparent}}
+.older{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--navy);padding:6px 0 6px 28px;cursor:pointer;border-bottom:1px dashed var(--line)}
+.older b{font-weight:700}
+.dose-old{display:none}
+.show-old .dose-old{display:grid}
+.show-old .older{display:none}
+@media (prefers-reduced-motion:reduce){.ws-tg .chev{transition:none}.ws-sec.flash{animation:none}}
+@media (max-width:640px){.ws-bar{top:0}}
 </style></head><body><div class="cap"><b>D1 第三輪・C3（洋紅為預設，可自選強調色）</b><span>參數併成兩列、不重複；右上可換強調色（存在這台電腦）</span><span>示範病例真實數字・靜態畫面</span></div><header class="top-bar"><h1>TDM 工作台</h1><nav class="tabs" aria-label="藥物模組"><a class="on" href="#">Vancomycin</a><a href="#">Aminoglycoside</a><a href="#">Azole</a><a href="#">抗癲癇藥物</a></nav>
-<div class="id"><span>病歷號 <b class="num">示範-001</b></span><span class="sep">｜</span><span><b class="num">55</b> 歲・男・168 cm・65 kg</span><span class="sep">｜</span><span>CrCl <b class="num">80</b> mL/min</span><span class="sep">｜</span><span>非透析</span><div class="acc-pick" role="group" aria-label="強調色"><span>強調色</span><button type="button" class="" data-v="magenta" style="--sw:#C2185B" title="洋紅" aria-label="強調色：洋紅" aria-pressed="true"></button><button type="button" class="" data-v="vermilion" style="--sw:#E4572E" title="朱紅" aria-label="強調色：朱紅" aria-pressed="false"></button><button type="button" class="" data-v="mustard" style="--sw:#F2B705" title="芥末黃" aria-label="強調色：芥末黃" aria-pressed="false"></button><button type="button" class="none" data-v="none" style="--sw:#C9D2E3" title="不用撞色" aria-label="強調色：不用撞色" aria-pressed="false"></button></div><button class="btn">存為新收案</button><button class="btn">清空此頁</button></div></header><div class="seg" role="group" aria-label="輸入或結果"><button data-v="in" aria-pressed="false">輸入</button><button data-v="out" aria-pressed="true">結果</button></div><main class="app"><div class="left">
-<section class="ws-sec"><h2><span class="idx">01</span>病人與腎功能</h2>
+<div class="id"><span>病歷號 <b class="num">示範-001</b></span><span class="sep">｜</span><span><b class="num">55</b> 歲・男・168 cm・65 kg</span><span class="sep">｜</span><span>CrCl <b class="num">80</b> mL/min</span><span class="sep">｜</span><span>非透析</span><div class="acc-pick" role="group" aria-label="強調色"><span>強調色</span><button type="button" class="" data-v="magenta" style="--sw:#C2185B" title="洋紅" aria-label="強調色：洋紅" aria-pressed="true"></button><button type="button" class="" data-v="vermilion" style="--sw:#E4572E" title="朱紅" aria-label="強調色：朱紅" aria-pressed="false"></button><button type="button" class="" data-v="mustard" style="--sw:#F2B705" title="芥末黃" aria-label="強調色：芥末黃" aria-pressed="false"></button><button type="button" class="none" data-v="none" style="--sw:#C9D2E3" title="不用撞色" aria-label="強調色：不用撞色" aria-pressed="false"></button></div><button class="btn">存為新收案</button><button class="btn">清空此頁</button></div></header><div class="seg" role="group" aria-label="輸入或結果"><button data-v="in" aria-pressed="false">輸入</button><button data-v="out" aria-pressed="true">結果</button></div><main class="app"><div class="left"><div class="ws-bar" role="toolbar" aria-label="段落"><button type="button" class="jump open" data-s="01" title="只展開 01 並跳過去">01</button><button type="button" class="jump" data-s="02" title="只展開 02 並跳過去">02</button><button type="button" class="jump open" data-s="03" title="只展開 03 並跳過去">03</button><button type="button" class="jump open" data-s="04" title="只展開 04 並跳過去">04</button><button type="button" class="jump open" data-s="05" title="只展開 05 並跳過去">05</button><button type="button" class="jump" data-s="06" title="只展開 06 並跳過去">06</button><span class="sp"></span><button type="button" class="btn" data-all="close">全部收合</button><button type="button" class="btn" data-all="open">全部展開</button></div><section class="ws-sec" data-s="01"><h2><button type="button" class="ws-tg" aria-expanded="true"><span class="idx">01</span>病人與腎功能<span class="sum">55 歲・男・168 cm・65 kg・非透析・SCr 0.95（10/20）</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body">
   <div class="grid g3"><div class="fld"><label>年齡（歲）</label><div class="inp">55</div></div><div class="fld"><label>生理性別</label><div class="inp sel">男</div></div><div class="fld"><label>身高（cm）</label><div class="inp">168</div></div></div>
   <div class="grid g2"><div class="fld"><label>實際體重 TBW（kg）</label><div class="inp">65</div></div><div class="fld"><label>是否透析</label><div class="inp sel">否</div></div></div>
   <div class="thead s"><span></span><span>SCr 日期</span><span>SCr（mg/dL）</span><span></span></div>
   <div class="row s"><span class="n">1</span><div class="inp">2026/10/16</div><div class="inp">1.1</div><span class="x">×</span></div>
   <div class="row s"><span class="n">2</span><div class="inp">2026/10/20</div><div class="inp">0.95</div><span class="x">×</span></div>
   <div class="btn-row"><button class="btn">＋ 新增一筆 SCr</button></div>
-</section>
-<section class="ws-sec collapsed"><h2><span class="idx">02</span>感染／臨床脈絡<span class="sum">治療（經驗性）・穩定</span></h2></section>
-<section class="ws-sec"><h2><span class="idx">03</span>給藥處方與紀錄</h2>
+</div></section>
+<section class="ws-sec closed" data-s="02"><h2><button type="button" class="ws-tg" aria-expanded="false"><span class="idx">02</span>感染／臨床脈絡<span class="sum">治療（經驗性）・穩定</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body"><div class="grid g2"><div class="fld"><label>適應症</label><div class="inp sel">治療（經驗性）</div></div><div class="fld"><label>嚴重度</label><div class="inp sel">穩定</div></div></div>
+<div class="grid g2"><div class="fld"><label>感染部位</label><div class="inp" style="color:var(--ink-soft)">如：菌血症、肺炎…</div></div><div class="fld"><label>菌種／MIC</label><div class="inp" style="color:var(--ink-soft)">如：MRSA</div></div></div></div></section>
+<section class="ws-sec" data-s="03"><h2><button type="button" class="ws-tg" aria-expanded="true"><span class="idx">03</span>給藥處方與紀錄<span class="sum">1000 mg q12h・輸注 120 分・給藥 7 筆（最後 10/20 21:06）</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body">
   <div class="grid g3"><div class="fld"><label>維持劑量（mg）</label><div class="inp">1000</div></div><div class="fld"><label>給藥間隔 τ（小時）</label><div class="inp">12</div></div><div class="fld"><label>輸注時間（分鐘）</label><div class="inp">120</div></div></div>
   <div class="radio-grp"><div class="t">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
     <label><i class="on"></i>第一筆紀錄就是本療程第一劑</label><label><i></i>之前已規則給藥（已達穩態），第一筆只是我登錄的起點</label></div>
   <div class="chk" style="margin:6px 0"><i></i>首劑為獨立 loading 劑量（劑量與維持劑量不同）</div>
   <div class="btn-row"><button class="btn primary">依上述處方自動展開給藥紀錄</button></div>
   <div class="thead"><span>#</span><span>給藥開始時間</span><span>劑量</span><span>輸注</span><span></span></div>
-  <div class="row"><span class="n">1</span><div class="inp">2026/10/17 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">2</span><div class="inp">2026/10/18 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">3</span><div class="inp">2026/10/18 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">4</span><div class="inp">2026/10/19 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">5</span><div class="inp">2026/10/19 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">6</span><div class="inp">2026/10/20 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">7</span><div class="inp live">2026/10/20 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div>
-</section>
-<section class="ws-sec"><h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
+  <div class="row dose-old"><span class="n">1</span><div class="inp">2026/10/17 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row dose-old"><span class="n">2</span><div class="inp">2026/10/18 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row dose-old"><span class="n">3</span><div class="inp">2026/10/18 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row dose-old"><span class="n">4</span><div class="inp">2026/10/19 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="older" role="button" tabindex="0">▸ <b>較早 4 筆</b>（10/17 21:06 – 10/19 09:06）已收起，點這裡展開</div><div class="row"><span class="n">5</span><div class="inp">2026/10/19 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">6</span><div class="inp">2026/10/20 09:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div><div class="row"><span class="n">7</span><div class="inp live">2026/10/20 21:06</div><div class="inp">1000<span class="u">mg</span></div><div class="inp">120<span class="u">min</span></div><span class="x">×</span></div>
+</div></section>
+<section class="ws-sec" data-s="04"><h2><button type="button" class="ws-tg" aria-expanded="true"><span class="idx">04</span>血中濃度量測（自由時點）<span class="sum">2 筆：24.6（10/20 12:36）、11.8（10/20 21:01）</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body">
   <div class="thead s"><span>#</span><span>抽血時間</span><span>濃度</span><span></span></div>
   <div class="row s"><span class="n">1</span><div class="inp">2026/10/20 12:36</div><div class="inp">24.6<span class="u">µg/mL</span></div><span class="x">×</span></div>
   <div class="note">第 6 劑輸注結束後 1.5 小時（peak 附近）</div>
   <div class="row s"><span class="n">2</span><div class="inp">2026/10/20 21:01</div><div class="inp">11.8<span class="u">µg/mL</span></div><span class="x">×</span></div>
   <div class="note">第 7 劑給藥前 5 分鐘（trough）</div>
-</section>
-<section class="ws-sec"><h2><span class="idx">05</span>目標與情境設定</h2>
+</div></section>
+<section class="ws-sec" data-s="05"><h2><button type="button" class="ws-tg" aria-expanded="true"><span class="idx">05</span>目標與情境設定<span class="sum">MIC 1・目標 AUC₂₄ 500・候選 q8h／q12h／q24h</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body">
   <div class="grid g2"><div class="fld"><label>MIC 假設（µg/mL）</label><div class="inp">1</div></div><div class="fld"><label>目標 AUC₂₄（mg·h/L）</label><div class="inp">500</div></div></div>
   <div class="fld"><label>候選給藥間隔</label><div class="btn-row" style="margin:2px 0 0"><span class="chk"><i class="on"></i>q8h</span><span class="chk"><i class="on"></i>q12h</span><span class="chk"><i class="on"></i>q24h</span></div></div>
-</section>
-<section class="ws-sec collapsed"><h2><span class="idx">06</span>併用藥物與其他備註<span class="sum">未填</span></h2></section>
-</div><div class="right">
+</div></section>
+<section class="ws-sec closed" data-s="06"><h2><button type="button" class="ws-tg" aria-expanded="false"><span class="idx">06</span>併用藥物與其他備註<span class="sum">未填</span><span class="chev" aria-hidden="true">▾</span></button></h2><div class="ws-body"><div class="fld"><label>腎毒性／交互作用相關併用藥物</label><div class="inp" style="height:44px;color:var(--ink-soft)">如：piperacillin-tazobactam、NSAID…</div></div></div></section></div><div class="right">
 
 <div class="rp"><div class="rp-in">
   <div class="rp-head"><h3>判讀</h3><span class="rx">現行 <b>1000 mg q12h</b>・輸注 120 分</span><span class="fit">聯合擬合（2 點，相距 8.4 h）</span>
@@ -445,5 +469,23 @@ var r=q.match(/rs=(\d+)/); if(r){document.querySelector('.rp').scrollTop=+r[1];}
   var m=location.search.match(/accent=(\w+)/); if(m) saved=m[1];
   apply(saved);
   document.querySelectorAll('.acc-pick button').forEach(function(b){ b.addEventListener('click',function(){ apply(b.dataset.v); try{localStorage.setItem(KEY,b.dataset.v);}catch(e){} }); });
+})();
+</script>
+<script>
+(function(){
+  function setOpen(sec, open){ sec.classList.toggle('closed', !open); sec.querySelector('.ws-tg').setAttribute('aria-expanded', open?'true':'false');
+    var j=document.querySelector('.ws-bar .jump[data-s="'+sec.dataset.s+'"]'); if(j) j.classList.toggle('open', open); }
+  var secs=[].slice.call(document.querySelectorAll('.ws-sec[data-s]'));
+  secs.forEach(function(s){ s.querySelector('.ws-tg').addEventListener('click', function(){ setOpen(s, s.classList.contains('closed')); }); });
+  document.querySelectorAll('.ws-bar .jump').forEach(function(b){ b.addEventListener('click', function(){
+    secs.forEach(function(s){ setOpen(s, s.dataset.s===b.dataset.s); });
+    var t=document.querySelector('.ws-sec[data-s="'+b.dataset.s+'"]'); t.scrollIntoView({block:'start'}); window.scrollBy(0,-100);
+    t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash'); }); });
+  document.querySelector('.ws-bar [data-all="close"]').addEventListener('click', function(){ secs.forEach(function(s){ setOpen(s,false); }); });
+  document.querySelector('.ws-bar [data-all="open"]').addEventListener('click', function(){ secs.forEach(function(s){ setOpen(s,true); }); });
+  var o=document.querySelector('.older'); if(o) o.addEventListener('click', function(){ o.parentNode.classList.add('show-old'); });
+  // 預覽用：?open=04 只展開 04；?open=none 全部收合
+  var m=location.search.match(/open=([\w,]+)/);
+  if(m){ var keep=m[1]==='none'?[]:m[1].split(','); secs.forEach(function(s){ setOpen(s, keep.indexOf(s.dataset.s)>-1); }); }
 })();
 </script></body></html>

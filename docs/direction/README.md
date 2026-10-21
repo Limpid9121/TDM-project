@@ -41,4 +41,5 @@ Brandon：洋紅為預設，但要讓使用者自己決定；「完整參數」�
 - `C3.html`：頂列右邊四個色塊（洋紅、朱紅、芥末黃、不用撞色），點了立刻換，存在這台電腦（`tdm_ui_accent`）。網址加 `?accent=vermilion` 等可直接預覽。
 - 10 個參數併進最上方兩列（AUC₂₄ 大字跨兩列），拿掉重複的「完整參數」整段；24 吋上右邊只剩 AI Prompt 需要捲動。
 - 截圖：`shots/C3_24in_fold.png`（預設洋紅）、`C3_24in_vermilion.png`、`C3_24in_none.png`、`C3_1440_fold.png`、`C3_mobile_*`。產生器：`src/boards3.py`、`src/shoot3.py`（共用 `src/shoot_lib.py`）。
+- 左欄可收合（Brandon 2026-10-21：改某幾個數字時不用整頁捲動）：每段收起來時標題列顯示摘要；左欄頂端段落列 01–06（只展開該段並跳過去）＋全部收合／全部展開；給藥紀錄只顯示最近 3 筆，較早的收成一行。預覽：`C3.html?open=none`（全部收合）、`?open=03`（只開 03）。截圖 `C3_24in_allcollapsed.png`、`C3_24in_only03.png`。產生器 `src/boards3_collapse.py`。
 - `DESIGN.md` 已依 C3 改寫，待核可。

@@ -8,6 +8,8 @@ edge(BASE + 'C3.html', 1920, 940, os.path.join(SH, 'C3_24in_fold.png'))
 edge(BASE + 'C3.html?accent=vermilion', 1920, 940, os.path.join(SH, 'C3_24in_vermilion.png'))
 edge(BASE + 'C3.html?accent=none', 1920, 940, os.path.join(SH, 'C3_24in_none.png'))
 edge(BASE + 'C3.html', 1440, 900, os.path.join(SH, 'C3_1440_fold.png'))
+edge(BASE + 'C3.html?open=none', 1920, 940, os.path.join(SH, 'C3_24in_allcollapsed.png'))
+edge(BASE + 'C3.html?open=03', 1920, 940, os.path.join(SH, 'C3_24in_only03.png'))
 mobile('C3.html', 844, False, os.path.join(SH, 'C3_mobile_fold.png'))
 mobile('C3.html', 3200, True, os.path.join(SH, 'C3_mobile_full.png'))
 for f in sorted(os.listdir(SH)):

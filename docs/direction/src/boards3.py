@@ -100,6 +100,13 @@ def page():
     html = html.replace('數字優先、拿掉圖尺；右邊固定在畫面上，往下捲看細節', '參數併成兩列、不重複；右上可換強調色（存在這台電腦）')
     html = html.replace('<title>方向板 C2（洋紅）</title>', '<title>方向板 C3</title>')
     html = html.replace('</body>', PICKER_JS + '</body>', 1)
+    # 左欄：可收合段落＋段落列＋較早給藥收起（Brandon 2026-10-21）
+    import boards3_collapse as CO
+    old_ws = B.worksheet()
+    assert html.count(old_ws) == 1
+    html = html.replace(old_ws, CO.worksheet(), 1)
+    html = html.replace('</style>', CO.CSS + '</style>', 1)
+    html = html.replace('</body>', CO.JS + '</body>', 1)
     return html
 
 if __name__ == '__main__':
