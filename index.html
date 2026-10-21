@@ -334,7 +334,6 @@
   .regimen-table input[type="radio"]{width:14px;height:14px;cursor:pointer;}
   svg.curve{width:100%;height:auto;display:block;cursor:crosshair;}
   /* 24 吋：曲線不要高到把監測、劑量調整建議全擠出首屏；超過時左右留白置中（viewBox 等比縮放） */
-  @media (min-width:1600px){ svg.curve{max-height:400px;} }
 
   /* ---- 歷程趨勢（跨收案）: small-multiples trend chart, loop C ---- */
   svg.trend{width:100%;height:auto;display:block;}
@@ -833,7 +832,6 @@
      ===================================================================== */
   .tl{display:block;width:100%;height:auto;margin:0 0 2px;}
   .tl[hidden]{display:none;}
-  @media (min-width:1600px){ .tl{max-width:1082px;margin-inline:auto;} }   /* 與 svg.curve 的 max-height:400px 同寬，兩者才對得齊 */
   .tl-ev{cursor:pointer;outline:none;}
   .tl-ev .tl-hit{fill:transparent;stroke:transparent;stroke-width:2;rx:3;}
   .tl-ev:hover .tl-hit{fill:var(--navy-tint);}
@@ -3791,9 +3789,25 @@
     el.textContent = `變更後穩態 → Cmax ${cmax.toFixed(1)}／Cmin ${cmin.toFixed(1)}／AUC₂₄ ${auc24.toFixed(0)}`;
   }
 
+  // 曲線區可用寬度（扣掉 .curve-wrap 的左右 padding）；量不到就回傳舊的 920×340
+  function curveMeasure(svg){
+    let w = 0;
+    try{
+      const par = svg.parentElement;
+      if(par){
+        const cs = getComputedStyle(par);
+        w = par.clientWidth - (parseFloat(cs.paddingLeft)||0) - (parseFloat(cs.paddingRight)||0);
+      }
+    }catch(e){}
+    if(!(w>=300)) return {w:920, h:340, measured:false};
+    w = Math.round(w);
+    return {w, h:Math.max(280, Math.min(360, Math.round(w*0.34))), measured:true};   // 高度封頂 360：24 吋首屏還留得出候選方案的標題列
+  }
   function drawCurve(ctx){
     const svg = document.getElementById(ctx.svgId || 'curveSvg');
-    const W=920, H=340, ML=52, MR=18, MT=18, MB=34;
+    // D6：依曲線區實際可用寬度畫，圖上文字才是真正的 12 px；量不到（隱藏中、jsdom）時沿用 920×340
+    const meas = curveMeasure(svg);
+    const W=meas.w, H=meas.h, ML=52, MR=18, MT=18, MB=34;
     const plotW = W-ML-MR, plotH = H-MT-MB;
     const {doses, levels, CL, V, ke, tau, cMaxDomain, target, altTrough} = ctx;
     const toxLine = (ctx.toxLine!==undefined && ctx.toxLine!==null) ? ctx.toxLine : 20;
@@ -3872,9 +3886,9 @@
     for(let c=0; c<=cMaxDomain+0.01; c+=cStep){
       const y = yScale(c);
       svgParts.push(`<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`);
-      svgParts.push(`<text x="${ML-8}" y="${y+4}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="end">${c}</text>`);
+      svgParts.push(`<text x="${ML-8}" y="${y+4}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="end">${c}</text>`);
     }
-    svgParts.push(`<text x="${ML-8}" y="${MT-4}" font-family="var(--mono)" font-size="10" fill="var(--ink-faint)" text-anchor="end">µg/mL</text>`);
+    svgParts.push(`<text x="${ML-8}" y="${MT-4}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="end">µg/mL</text>`);
 
     // x gridlines: aligned to calendar midnight when an absolute anchor (t0Ms) is
     // available; otherwise fall back to plain relative-hour marks every 24h.
@@ -3887,7 +3901,7 @@
         if(tb >= tMin-0.01 && tb <= tDomainMax+0.01){
           const x = xScale(tb);
           svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
-          svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="middle">${fmtAxisDate(cursorMs)}</text>`);
+          svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">${fmtAxisDate(cursorMs)}</text>`);
         }
         cursorMs += 24*3600000;
         guard++;
@@ -3896,7 +3910,7 @@
       for(let t=0; t<=tDomainMax; t+=24){
         const x = xScale(t);
         svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
-        svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="10.5" fill="var(--ink-faint)" text-anchor="middle">+${t}h</text>`);
+        svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">+${t}h</text>`);
       }
     }
 
@@ -3904,17 +3918,17 @@
     if(toxLine!==null && toxLine<=cMaxDomain){
       const yTox = yScale(toxLine);
       svgParts.push(`<line x1="${ML}" y1="${yTox}" x2="${W-MR}" y2="${yTox}" stroke="var(--crimson)" stroke-width="1.3" stroke-dasharray="5,4"/>`);
-      svgParts.push(`<text x="${W-MR}" y="${yTox-5}" font-family="var(--sans)" font-size="10.5" fill="var(--crimson)" text-anchor="end">${toxLabel}</text>`);
+      svgParts.push(`<text x="${W-MR}" y="${yTox-5}" font-family="var(--sans)" font-size="12" fill="var(--crimson)" text-anchor="end">${toxLabel}</text>`);
     }
     if(band){
       const yLo=yScale(band.lo), yHi=yScale(band.hi);
       svgParts.push(`<rect x="${ML}" y="${yHi}" width="${plotW}" height="${yLo-yHi}" fill="var(--amber-soft)" opacity="0.5"/>`);
-      svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="10" fill="var(--amber)">${band.label}</text>`);
+      svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="12" fill="var(--amber)">${band.label}</text>`);
     }
     if(micLine && micLine.value!=null && isFinite(micLine.value) && micLine.value<=cMaxDomain){
       const yMic = yScale(micLine.value);
       svgParts.push(`<line x1="${ML}" y1="${yMic}" x2="${W-MR}" y2="${yMic}" stroke="var(--trace-strong)" stroke-width="1.3" stroke-dasharray="2,3"/>`);
-      svgParts.push(`<text x="${ML+6}" y="${yMic-5}" font-family="var(--sans)" font-size="10" fill="var(--trace-strong)">${micLine.label}</text>`);
+      svgParts.push(`<text x="${ML+6}" y="${yMic-5}" font-family="var(--sans)" font-size="12" fill="var(--trace-strong)">${micLine.label}</text>`);
     }
 
     // dose infusion bars (baseline: actual + projected)
@@ -3923,7 +3937,7 @@
       if(d.t_rel > tDomainMax) return;
       const x1=xScale(d.t_rel), x2=xScale(d.t_rel+d.infHr);
       const isFuture = nowRel!==undefined && d.t_rel > nowRel;
-      svgParts.push(`<rect x="${x1}" y="${baseY-5}" width="${Math.max(1.5,x2-x1)}" height="5" fill="${isFuture?'var(--line-strong)':'var(--ink-faint)'}" opacity="${isFuture?0.5:0.85}"/>`);
+      svgParts.push(`<rect x="${x1}" y="${baseY-5}" width="${Math.max(1.5,x2-x1)}" height="5" fill="${isFuture?'var(--line-strong)':'var(--trace)'}" opacity="${isFuture?0.5:0.55}"/>`);
     });
     // what-if dose bars (amber, slightly above baseline bars)
     if(whatIf){
@@ -3978,19 +3992,24 @@
       const yPred=yScale(Math.min(predBaseline(lv.t_rel),cMaxDomain*1.3));
       const dtLabel = t0Ms!==null ? fmtDateTimeFull(t0Ms+lv.t_rel*3600000) : `+${lv.t_rel.toFixed(1)}h`;
       svgParts.push(`<line x1="${x}" y1="${yObs}" x2="${x}" y2="${yPred}" stroke="var(--ink-faint)" stroke-width="1" stroke-dasharray="2,2"/>`);
-      svgParts.push(`<circle cx="${x}" cy="${yObs}" r="5" fill="var(--trace-strong)" stroke="#fff" stroke-width="1.5"><title>實測 ${lv.conc.toFixed(1)} µg/mL @ ${dtLabel}（相對 +${lv.t_rel.toFixed(1)}h，預測 ${predBaseline(lv.t_rel).toFixed(1)}）</title></circle>`);
+      svgParts.push(`<circle cx="${x}" cy="${yObs}" r="5" fill="var(--ink)" stroke="#fff" stroke-width="1.5"><title>實測 ${lv.conc.toFixed(1)} µg/mL @ ${dtLabel}（相對 +${lv.t_rel.toFixed(1)}h，預測 ${predBaseline(lv.t_rel).toFixed(1)}）</title></circle>`);
+      const rightEdge = x > W-MR-44;
+      svgParts.push(`<text x="${rightEdge ? x-9 : x+9}" y="${yObs-8}" font-family="var(--mono)" font-size="12" font-weight="700" fill="var(--ink)" stroke="#fff" stroke-width="3" paint-order="stroke" text-anchor="${rightEdge?'end':'start'}">${lv.conc.toFixed(1)}</text>`);
     });
 
     // "now" marker
     if(nowRel<=tDomainMax && nowRel>=tMin){
       const xn = xScale(nowRel);
-      svgParts.push(`<line x1="${xn}" y1="${MT}" x2="${xn}" y2="${MT+plotH}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="1,3" opacity="0.5"/>`);
+      svgParts.push(`<line x1="${xn}" y1="${MT}" x2="${xn}" y2="${MT+plotH}" stroke="var(--ink)" stroke-width="1.5" opacity="0.85"/>`);
+      const nlx = Math.max(ML, Math.min(W-MR-36, xn-18));
+      svgParts.push(`<rect x="${nlx}" y="${MT-17}" width="36" height="17" rx="3" fill="var(--accent)"/>`);
+      svgParts.push(`<text x="${nlx+18}" y="${MT-4}" font-family="var(--sans)" font-size="12" font-weight="700" fill="var(--on-accent)" text-anchor="middle">現在</text>`);
     }
     // what-if start marker (distinct from "now" when the pharmacist delays/skips doses)
     if(whatIf && Math.abs(whatIf.startRel-nowRel)>0.05 && whatIf.startRel>=tMin && whatIf.startRel<=tDomainMax){
       const xs = xScale(whatIf.startRel);
       svgParts.push(`<line x1="${xs}" y1="${MT}" x2="${xs}" y2="${MT+plotH}" stroke="var(--amber)" stroke-width="1.3" stroke-dasharray="1,3" opacity="0.7"/>`);
-      svgParts.push(`<text x="${xs+3}" y="${MT+12}" font-family="var(--sans)" font-size="9.5" fill="var(--amber)">新處方起始</text>`);
+      svgParts.push(`<text x="${xs+3}" y="${MT+12}" font-family="var(--sans)" font-size="12" fill="var(--amber)">新處方起始</text>`);
     }
 
     // generic extra markers (e.g. HD session boundaries) — labeled vertical lines,
@@ -4000,7 +4019,7 @@
       if(m.rel<tMin || m.rel>tDomainMax) return;
       const xm = xScale(m.rel);
       svgParts.push(`<line x1="${xm}" y1="${MT}" x2="${xm}" y2="${MT+plotH}" stroke="${m.color||'var(--ink-faint)'}" stroke-width="1.3" stroke-dasharray="2,3" opacity="0.8"/>`);
-      if(m.label) svgParts.push(`<text x="${xm+3}" y="${MT+12}" font-family="var(--sans)" font-size="9.5" fill="${m.color||'var(--ink-faint)'}">${m.label}</text>`);
+      if(m.label) svgParts.push(`<text x="${xm+3}" y="${MT+12}" font-family="var(--sans)" font-size="12" fill="${m.color||'var(--ink-faint)'}">${m.label}</text>`);
     });
     // generic shaded bands (e.g. HD session duration) — same visual language as the
     // existing alt-trough band, but can appear multiple times and anywhere on the domain.
@@ -4009,17 +4028,17 @@
       if(hi<=lo) return;
       const x1=xScale(lo), x2=xScale(hi);
       svgParts.push(`<rect x="${x1}" y="${MT}" width="${x2-x1}" height="${plotH}" fill="${b.color||'var(--line-strong)'}" opacity="${b.opacity!==undefined?b.opacity:0.25}"/>`);
-      if(b.label) svgParts.push(`<text x="${(x1+x2)/2}" y="${MT+plotH-6}" font-family="var(--sans)" font-size="9.5" fill="var(--ink-soft)" text-anchor="middle">${b.label}</text>`);
+      if(b.label) svgParts.push(`<text x="${(x1+x2)/2}" y="${MT+plotH-6}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">${b.label}</text>`);
     });
 
     // legend when what-if is active
     if(whatIf){
       const lx=ML+8, ly=MT+8;
-      svgParts.push(`<rect x="${lx}" y="${ly}" width="150" height="34" fill="#fff" opacity="0.86" stroke="var(--line)" rx="4"/>`);
-      svgParts.push(`<line x1="${lx+8}" y1="${ly+12}" x2="${lx+28}" y2="${ly+12}" stroke="var(--trace)" stroke-width="2.4"/>`);
-      svgParts.push(`<text x="${lx+34}" y="${ly+15}" font-family="var(--sans)" font-size="10" fill="var(--ink-soft)">目前處方</text>`);
-      svgParts.push(`<line x1="${lx+8}" y1="${ly+26}" x2="${lx+28}" y2="${ly+26}" stroke="var(--amber)" stroke-width="2.4" stroke-dasharray="7,4"/>`);
-      svgParts.push(`<text x="${lx+34}" y="${ly+29}" font-family="var(--sans)" font-size="10" fill="var(--ink-soft)">變更後（what-if）</text>`);
+      svgParts.push(`<rect x="${lx}" y="${ly}" width="172" height="44" fill="#fff" opacity="0.86" stroke="var(--line)" rx="4"/>`);
+      svgParts.push(`<line x1="${lx+8}" y1="${ly+14}" x2="${lx+28}" y2="${ly+14}" stroke="var(--trace)" stroke-width="2.4"/>`);
+      svgParts.push(`<text x="${lx+34}" y="${ly+18}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">目前處方</text>`);
+      svgParts.push(`<line x1="${lx+8}" y1="${ly+33}" x2="${lx+28}" y2="${ly+33}" stroke="var(--amber)" stroke-width="2.4" stroke-dasharray="7,4"/>`);
+      svgParts.push(`<text x="${lx+34}" y="${ly+37}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">變更後（what-if）</text>`);
     }
 
     // interactive crosshair (stock-chart style): follows pointer/touch, shows date/time
@@ -4027,16 +4046,18 @@
     svgParts.push(`
 <g class="crosshair-group" style="display:none;pointer-events:none;">
   <line class="ch-vline" x1="0" y1="${MT}" x2="0" y2="${MT+plotH}" stroke="var(--ink)" stroke-width="1" stroke-dasharray="3,3" opacity="0.55"/>
-  <rect class="ch-date-bg" x="0" y="2" width="118" height="16" rx="3" fill="var(--ink)" opacity="0.85"/>
-  <text class="ch-date-text" x="0" y="13" font-family="var(--mono)" font-size="10.5" fill="#fff" text-anchor="middle">--</text>
+  <rect class="ch-date-bg" x="0" y="2" width="118" height="17" rx="3" fill="var(--ink)" opacity="0.85"/>
+  <text class="ch-date-text" x="0" y="13" font-family="var(--mono)" font-size="12" fill="#fff" text-anchor="middle">--</text>
   <rect class="ch-base-bg" x="0" y="0" width="70" height="15" rx="3" fill="var(--trace)" opacity="0.92"/>
-  <text class="ch-base-text" x="0" y="0" font-family="var(--mono)" font-size="10" fill="#fff" text-anchor="middle">--</text>
+  <text class="ch-base-text" x="0" y="0" font-family="var(--mono)" font-size="12" fill="#fff" text-anchor="middle">--</text>
   <circle class="ch-dot-base" cx="0" cy="0" r="4" fill="var(--trace)" stroke="#fff" stroke-width="1.3"/>
   <rect class="ch-whatif-bg" x="0" y="0" width="70" height="15" rx="3" fill="var(--amber)" opacity="0.92" style="display:none;"/>
-  <text class="ch-whatif-text" x="0" y="0" font-family="var(--mono)" font-size="10" fill="#fff" text-anchor="middle" style="display:none;">--</text>
+  <text class="ch-whatif-text" x="0" y="0" font-family="var(--mono)" font-size="12" fill="#fff" text-anchor="middle" style="display:none;">--</text>
   <circle class="ch-dot-whatif" cx="0" cy="0" r="4" fill="var(--amber)" stroke="#fff" stroke-width="1.3" style="display:none;"/>
 </g>`);
 
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg._ctx = ctx;   // D6：視窗寬度改變時用同一組參數重畫
     svg.innerHTML = svgParts.join('\n');
     // D5 時間軸用：曲線的時間範圍與座標（JS 屬性，不寫進 SVG 內容）
     svg._tl = {t0Ms, tMin, tDomainMax, ML, MR, W, bands: ctx.extraBands || []};
@@ -4071,7 +4092,7 @@
       } catch(e){ return null; }
     }
     function placeValueLabel(bgEl, textEl, x, y){
-      const w = Math.max(56, String(textEl.textContent).length*6+12);
+      const w = Math.max(64, String(textEl.textContent).length*7.2+14);
       let lx = x+8;
       if(lx+w > g.W-g.MR) lx = x-8-w;
       const ly = Math.max(g.MT, y-20);
@@ -4090,7 +4111,7 @@
 
       const dateStr = g.t0Ms!==null ? fmtDateTimeShort(g.t0Ms + t*3600000) : ((t>=0?'+':'')+t.toFixed(1)+'h');
       chDateText.textContent = dateStr;
-      const labelW = Math.max(74, dateStr.length*6.6+14);
+      const labelW = Math.max(84, dateStr.length*7.6+16);
       let lx = x - labelW/2;
       lx = Math.max(g.ML, Math.min(g.W-g.MR-labelW, lx));
       chDateBg.setAttribute('x', lx); chDateBg.setAttribute('width', labelW);
@@ -9260,6 +9281,7 @@ ${flagText||'（無）'}
       const now = paths.map(pa=>({stroke:pa.getAttribute('stroke'), d:pa.getAttribute('d')||''}));
       const prev = curvePrev[svgId];
       curvePrev[svgId] = now.length ? now : null;
+      if(svg._resizeRedraw){ svg._resizeRedraw = false; return; }   // D6：因視窗寬度重畫，不做轉場
       if(!now.length || !curveMotionOk()) return;
       const segs = d=>(d.match(/[ML]/g)||[]).length;
       paths.forEach((pa,i)=>{
@@ -9568,6 +9590,21 @@ ${flagText||'（無）'}
       if(curve) new MutationObserver(()=>drawTimeline(v)).observe(curve, {childList:true});
       drawTimeline(v);
     });
+
+    // D6：曲線依可用寬度重畫（視窗或面板寬度變動時用同一組參數重畫；寬度差不到 4 px 不動）
+    if(window.ResizeObserver){
+      const redrawIfWider = svg=>{
+        if(!svg || !svg._ctx || !svg.children.length) return;
+        const m = curveMeasure(svg);
+        if(!m.measured || (svg._tl && Math.abs(svg._tl.W - m.w) < 4)) return;
+        svg._resizeRedraw = true;
+        drawCurve(svg._ctx);
+      };
+      const ro = new ResizeObserver(entries=>{
+        requestAnimationFrame(()=>entries.forEach(en=>redrawIfWider(en.target.querySelector('svg.curve'))));
+      });
+      ['curveSvg','amgCurveSvg'].forEach(id=>{ const el = document.getElementById(id); if(el && el.parentElement) ro.observe(el.parentElement); });
+    }
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{

@@ -91,6 +91,7 @@ function buildInstrumentedHtml(indexHtmlPath) {
 }
 
 // opts.localStorage：載入前先放進 localStorage 的鍵值（測「重新載入後讀得回來」用）
+// opts.beforeParse(window)：載入前的鉤子（例如裝假的 ResizeObserver、requestAnimationFrame）
 async function loadHarness(indexHtmlPath = INDEX_HTML_PATH, opts = {}) {
   const html = buildInstrumentedHtml(indexHtmlPath);
   const dom = new JSDOM(html, {
@@ -99,6 +100,7 @@ async function loadHarness(indexHtmlPath = INDEX_HTML_PATH, opts = {}) {
     url: 'http://localhost/',
     beforeParse(window) {
       Object.entries(opts.localStorage || {}).forEach(([k, v]) => window.localStorage.setItem(k, v));
+      if (opts.beforeParse) opts.beforeParse(window);   // 例如預先裝上假的 ResizeObserver
     }
   });
   await new Promise(resolve => {
