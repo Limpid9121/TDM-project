@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（D4 完成：頂列整併、身分條、撞色挑選、從其他模組帶入基本資料；等 Brandon 看畫面）
+最後更新：2026-10-21（D5 完成：共用時間軸；Brandon 指示 D6 前不必等核可，一路做下去）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**D5**（共用時間軸）。D2、D3、D4 完成，等 Brandon 看畫面。L 系列（含 L-G）全部完成；D0、D1 已核可。
+- 下一包：**D6**（曲線換樣式；golden 曲線比對改法）。D2–D5 完成，等 Brandon 看畫面。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -27,7 +27,7 @@
 | D2 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 設計偵測 70 → 3；對比不足、字太小都歸零 |
 | D3 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | Brandon 要求曲線進首屏、劑量調整建議往下放（已做）；曲線動畫已做 |
 | D4 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 頂列一行、病人面板收進「病人 ▾」、身分條、撞色四色塊、從其他模組帶入 |
-| D5 | 未開始 | | | |
+| D5 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 曲線上方三軌時間軸（給藥、濃度、SCr；HD 加透析軌），點事件跳到左邊那一列並標亮 |
 | D6 | 未開始 | | | golden 曲線比對改法單獨核可 |
 | D7 | 未開始 | | | |
 | D8 | 未開始 | | | |
@@ -67,6 +67,15 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### D5 共用時間軸（2026-10-21）
+- 曲線正上方一條 SVG（`#vancoTimeline`／`#amgTimeline`），三軌：給藥（輸注時段的小方條）、濃度（黑點）、SCr（菱形）；HD 模式讀曲線的 `extraBands` 多一條「透析」軌。事件直接讀左邊工作底稿的列（`#doseTable／#levelTable／#scrTable` 與 AMG 的三張表），純讀取。
+- **與曲線對齊**：`drawCurve` 末尾多一行 `svg._tl = {t0Ms, tMin, tDomainMax, ML, MR, W, bands}`（JS 屬性，不寫進 SVG 內容，所以曲線輸出與 golden 完全不變）；時間軸用同一組範圍與邊界。≥1600 px 時曲線因 `max-height:400px` 變窄置中，時間軸同步限寬 1082 px 置中，兩者才對得齊（D6 改成依可用寬度重畫曲線後這個限寬可以拿掉）。
+- **範圍外的事件**（例如第一筆 SCr 早於曲線起點）夾在左右邊緣畫成三角形，名稱註明「在曲線時間範圍之外」，仍可跳轉。
+- **跳轉**：點事件或 Tab 到事件按 Enter／空白鍵 → 所在段落若收合先展開（同 `wireRequiredEmptyState` 的做法）、`scrollIntoView`、那一列標亮 1.6 秒（`.ws-flash`）。不搬動鍵盤焦點、不改欄位。減少動態偏好時不用平滑捲動。
+- **坑**：SVG 元素沒有 `.hidden` 屬性（只有 HTMLElement 有），`el.hidden = true` 在真瀏覽器只是加一個無效的 JS 屬性、靜態 HTML 的 `hidden` attribute 一直留著，時間軸整條不顯示；jsdom 測試看不出來。改用 `setAttribute／removeAttribute('hidden')`，測試也改查 attribute。
+- 測試：`tests/test_d5_timeline.js`（41 項）。全部測試過、golden 124/124 0 差異。內建瀏覽器 1920×940：時間軸與曲線的給藥條、濃度點對齊，曲線整張仍在首屏。
+- 已知：事件很多（例如 30 筆給藥）時每個事件都是一個 Tab 停靠點；之後若覺得太多再改成方向鍵移動。
 
 ### D4 頂列整併、撞色、從其他模組帶入（2026-10-21）
 - **頂列**：一行（48 px）：品名＋藥物分頁｜身分條（病歷號、年齡／性別／體重、CrCl、透析）＋「病人 ▾」｜撞色四色塊＋「清空此頁」。四個病人管理列（`pmBarVanco/Amg/Azole/Aed`）整塊搬進頂列的 `#hdrPmSlot`，按「病人 ▾」往下展開成面板（點外面或 Esc 收起）；只顯示目前模組那一個（`hidden` 由 MutationObserver 隨模組切換同步）。所有 id、按鈕行為不變；未儲存的小圓點在「病人 ▾」上也看得到。右欄固定面板因此上緣回到 60 px，曲線整張進首屏（1920×940 實測）。
