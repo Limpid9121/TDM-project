@@ -21,6 +21,7 @@ colors:
   accent-vermilion: "#E4572E"
   accent-mustard: "#F2B705"
   accent-none: "#C9D2E3"
+  shadow: "rgba(0,0,0,.08)"
 typography:
   page-title:
     fontFamily: "Microsoft JhengHei, PingFang TC, Noto Sans TC, system-ui, sans-serif"
@@ -52,6 +53,11 @@ typography:
     fontSize: "12px"
     fontWeight: 400
     lineHeight: 1.45
+  input-mobile:
+    fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.3
   value:
     fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
     fontSize: "22px"

@@ -4,30 +4,39 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vancomycin TDM 擬合引擎</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  /* REDESIGN D2：配色與字體改為 DESIGN.md（C3）。保留舊變數名稱以免動到 render 與曲線，
+     值換成新系統：--trace＝深藍主色、--ink-faint 改成與 --ink-soft 同值（舊值只有 2.4–3.1:1）。 */
   :root{
-    --paper:#F4F5F1;
-    --card:#FFFFFF;
-    --ink:#1B2422;
-    --ink-soft:#57645D;
-    --ink-faint:#8B968F;
-    --line:#DADFD8;
-    --line-strong:#C2C9C0;
-    --trace:#1F6F6B;
-    --trace-strong:#154E4B;
-    --trace-soft:#D3E9E5;
-    --trace-dim:#93BAB6;
-    --amber:#A9701F;
-    --amber-soft:#F2E3C7;
-    --crimson:#A23B3B;
-    --crimson-soft:#F1D8D5;
-    --radius:10px;
-    --sans:'IBM Plex Sans','PingFang TC','Microsoft JhengHei',-apple-system,BlinkMacSystemFont,sans-serif;
-    --mono:'IBM Plex Mono','PingFang TC',ui-monospace,SFMono-Regular,Menlo,monospace;
+    --paper:#F3F4F6;          /* 頁面底 bg */
+    --card:#FFFFFF;           /* surface */
+    --field:#FAFAFB;
+    --ink:#14171C;
+    --ink-soft:#4F5663;
+    --ink-faint:#4F5663;
+    --line:#E1E4E8;
+    --line-strong:#C9CED6;
+    --border-input:#868D99;   /* 輸入框邊界：對白 3.3:1 */
+    --trace:#1B2A4A;          /* 深藍主色 navy */
+    --trace-strong:#121E36;
+    --trace-soft:#EEF1F6;     /* navy-tint */
+    --trace-dim:#5B6B8C;
+    --navy:#1B2A4A; --navy-2:#2C3E66; --navy-soft:#C9D2E3; --navy-tint:#EEF1F6;
+    --amber:#9A5A00;          /* caution（文字） */
+    --amber-soft:#FBF3E6;
+    --crimson:#B42318;        /* danger（文字與線） */
+    --crimson-soft:#FBECEA;
+    --ok:#1C7A43;
+    --accent:#C2185B; --on-accent:#FFFFFF; --tab-ind:#FFFFFF;   /* 撞色：預設洋紅（D4 加使用者選擇） */
+    --radius:6px;
+    --sans:"Microsoft JhengHei","PingFang TC","Noto Sans TC",system-ui,sans-serif;
+    --mono:"Segoe UI",system-ui,"Microsoft JhengHei","PingFang TC",sans-serif;   /* 數字用；一律 tabular-nums */
+    --code:ui-monospace,Consolas,"Microsoft JhengHei",monospace;
+    --muted:#4F5663;          /* AED 參考列用 var(--muted,#888)：定義後不再落到 #888 */
   }
+  :root[data-accent="vermilion"]{--accent:#E4572E;--on-accent:#14171C;--tab-ind:#E4572E}
+  :root[data-accent="mustard"]{--accent:#F2B705;--on-accent:#14171C;--tab-ind:#F2B705}
+  :root[data-accent="none"]{--accent:#C9D2E3;--on-accent:#14171C;--tab-ind:#FFFFFF}
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
@@ -54,15 +63,15 @@
     font-size:22px;font-weight:700;letter-spacing:.01em;margin:0;color:var(--ink);
   }
   header.top .subtitle{
-    font-size:13px;color:var(--ink-soft);margin-top:4px;
+    font-size:13px;color:var(--navy-soft);margin-top:4px;
   }
   header.top .eyebrow{
-    font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
     color:var(--trace);background:var(--trace-soft);padding:3px 8px;border-radius:4px;
     font-weight:600;
   }
   header.top .meta-line{
-    font-family:var(--mono);font-size:12px;color:var(--ink-faint);text-align:right;
+    font-family:var(--mono);font-size:13px;color:var(--navy-soft);text-align:right;
   }
   header.top .header-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;}
 
@@ -90,15 +99,15 @@
   .pm-bar #patientMeta, .pm-bar #amgPatientMeta, .pm-bar #azlPatientMeta, .pm-bar #aedPatientMeta{flex-basis:100%;order:99;margin:2px 0 0;min-height:14px;}
 
   /* ---------- Unsaved-changes guard (WP3.3, D4) ---------- */
-  .pm-dirty-dot{color:var(--crimson);font-size:10px;margin-left:4px;vertical-align:2px;}
+  .pm-dirty-dot{color:var(--crimson);font-size:12px;margin-left:4px;vertical-align:2px;}
   .guard-modal{position:fixed;inset:0;background:rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;z-index:50;}
   .guard-modal.hide{display:none;}
   .guard-modal-box{background:var(--card);border-radius:var(--radius);padding:18px 20px;max-width:360px;}
 
   /* ---------- Input panel ---------- */
   .card{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    padding:18px 18px 20px;
+    background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;
+    padding:14px 0;
   }
   .card h2{
     font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:none;
@@ -106,7 +115,7 @@
     display:flex;align-items:center;gap:8px;
   }
   .card h2 .idx{
-    font-family:var(--mono);font-size:11px;color:var(--trace);background:var(--trace-soft);
+    font-family:var(--mono);font-size:12px;color:var(--trace);background:var(--trace-soft);
     padding:1px 6px;border-radius:4px;font-weight:600;
   }
 
@@ -143,7 +152,7 @@
     .panel-tools, .card-chev{display:none;}
   }
   .hint{font-size:12px;color:var(--ink-faint);margin:0 0 14px;}
-  .hint-inline{font-size:11px;color:var(--ink-faint);font-weight:400;}
+  .hint-inline{font-size:12px;color:var(--ink-faint);font-weight:400;}
   #aedPkContent > p, #aedVpaDoseContent > p{font-size:12.5px;}
 
   /* 靠上對齊：標題有最小高度，輸入框自然對齊；靠下對齊會讓「下方多一行說明」的欄位把隔壁擠歪（驗收後修正） */
@@ -155,13 +164,13 @@
   /* ---------- "現在" quick-fill button (WP4.4, W14) ---------- */
   .with-now{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px;}
   .with-now .now-btn{white-space:nowrap;}
-  .field label{font-size:11.5px;color:var(--ink-soft);font-weight:500;display:block;min-height:2.6em;line-height:1.3;}
+  .field label{font-size:12px;color:var(--ink-soft);font-weight:500;display:block;min-height:2.6em;line-height:1.3;}
   /* 標題預留兩行高度只為了和隔壁欄位對齊；整列只有一個欄位時不需要，否則標題會離自己的控制項太遠 */
   .field-row > .field:only-child > label{min-height:0;}
   .checkline + .field-row{margin-top:12px;}
   .field input, .field select, .field textarea{
     font-family:var(--mono);font-size:13.5px;color:var(--ink);
-    background:#FBFBF9;border:1px solid var(--line-strong);border-radius:6px;
+    background:var(--field);border:1px solid var(--line-strong);border-radius:6px;
     padding:7px 8px;width:100%;
   }
   .field input[type="text"], .field textarea{font-family:var(--sans);font-size:13px;}
@@ -184,7 +193,7 @@
   .ui-radio small{display:block;font-size:12px;color:var(--ink-soft);}
 
   /* ---- WP4.1 (W3): card-03 internal reorg helpers ---- */
-  .card h3{font-size:11.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;margin:10px 0 5px;}
+  .card h3{font-size:12px;font-weight:600;letter-spacing:.04em;color:var(--ink-soft);text-transform:uppercase;margin:10px 0 5px;}
   .card h3:first-of-type{margin-top:8px;}
   details.adv, details.batch-ops{margin:8px 0;border:1px solid var(--line);border-radius:var(--radius);background:var(--paper);}
   details.adv > summary, details.batch-ops > summary{cursor:pointer;font-size:12.5px;font-weight:600;color:var(--ink-soft);padding:6px 12px;list-style:revert;}
@@ -193,7 +202,7 @@
   details.adv > *:last-child:not(summary), details.batch-ops > *:last-child:not(summary){padding-bottom:8px;}
   details.adv > .field-row:not(summary), details.adv > .checkline:not(summary){padding-left:12px;padding-right:12px;}
   .hint-more{display:inline;}
-  .hint-more summary{display:inline;cursor:pointer;color:var(--trace);font-size:11.5px;}
+  .hint-more summary{display:inline;cursor:pointer;color:var(--trace);font-size:12px;}
   .hint-more[open]{display:block;margin-top:4px;}
   .weekday-group{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-top:6px;}
   .weekday-group .checkline{margin:0;justify-content:center;border:1px solid var(--line);border-radius:6px;padding:4px 2px;}
@@ -214,10 +223,10 @@
   .entry-rows{display:flex;flex-direction:column;gap:8px;margin-top:8px;}
   .entry-row{
     display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;
-    padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:#FBFBF9;
+    padding:9px 10px;border:1px solid var(--line);border-radius:6px;background:var(--field);
   }
   .entry-row .idx-badge{
-    flex:0 0 auto;font-family:var(--mono);font-size:11px;color:var(--ink-faint);
+    flex:0 0 auto;font-family:var(--mono);font-size:12px;color:var(--ink-faint);
     min-width:16px;text-align:center;
   }
   .entry-row input[type="datetime-local"], .entry-row input[type="date"]{
@@ -229,7 +238,7 @@
     width:72px;flex:0 0 auto;font-family:var(--mono);font-size:13px;color:var(--ink);
     background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:6px 7px;
   }
-  .entry-row .num-field .unit{font-size:11px;color:var(--ink-faint);white-space:nowrap;}
+  .entry-row .num-field .unit{font-size:12px;color:var(--ink-faint);white-space:nowrap;}
   .entry-row input:focus{outline:2px solid var(--trace-dim);outline-offset:0;border-color:var(--trace);}
   .entry-row .row-del{flex:0 0 auto;margin-left:auto;}
 
@@ -249,7 +258,7 @@
   .entry-row .row-del{margin-left:0;}
   .entry-rows{gap:4px;}
 
-  .entry-head{display:grid;gap:6px;padding:0 8px;font-size:11px;color:var(--ink-faint);margin-bottom:2px;}
+  .entry-head{display:grid;gap:6px;padding:0 8px;font-size:12px;color:var(--ink-faint);margin-bottom:2px;}
   .entry-head:has(+ .entry-rows:empty){display:none;}
   .entry-head--scr  {grid-template-columns:minmax(0,1fr) 84px 28px;}
   .entry-head--dose {grid-template-columns:20px minmax(0,1fr) 72px 60px 28px;}
@@ -267,33 +276,33 @@
   .btn{
     font-family:var(--sans);font-size:12.5px;font-weight:600;cursor:pointer;
     border-radius:6px;padding:8px 12px;border:1px solid var(--line-strong);
-    background:#FBFBF9;color:var(--ink);
+    background:var(--field);color:var(--ink);
   }
   .btn:hover{border-color:var(--trace);color:var(--trace-strong);}
   .btn.primary{background:var(--trace);border-color:var(--trace);color:#fff;}
   .btn.primary:hover{background:var(--trace-strong);border-color:var(--trace-strong);color:#fff;}
-  .btn.small{font-size:11.5px;padding:5px 9px;}
+  .btn.small{font-size:12px;padding:5px 9px;}
 
   /* WP1.1：示範病例常駐橫幅（S1/D1）——示範資料載入後在輸入欄與結果面板頂端各顯示一次，
      提醒目前畫面上是虛構數值，不是真實病人資料。 */
   .demo-banner{
     display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
-    font-size:12.5px;color:#6B4610;background:var(--amber-soft);border:1px solid var(--amber);
-    border-radius:8px;padding:9px 12px;margin-bottom:14px;
+    font-size:12.5px;color:var(--ink);background:var(--amber-soft);border:1px solid var(--amber);
+    border-radius:6px;padding:9px 12px;margin-bottom:14px;
   }
   .demo-banner[hidden]{display:none;}
   .pop-model-toggle{margin:2px 0 14px;}
   .pop-model-toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .pop-model-toggle-label{font-size:12px;color:var(--ink-soft);}
-  .pop-model-refs{font-size:10.5px;color:var(--ink-faint);margin-top:6px;line-height:1.5;}
+  .pop-model-refs{font-size:12px;color:var(--ink-faint);margin-top:6px;line-height:1.5;}
   .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .prune-tool{
-    display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);
+    display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);
     margin-left:auto;flex-wrap:wrap;
   }
   .prune-tool input[type="datetime-local"]{
     font-family:var(--mono);font-size:12px;border:1px solid var(--line-strong);border-radius:6px;
-    padding:5px 6px;background:#FBFBF9;color:var(--ink);
+    padding:5px 6px;background:var(--field);color:var(--ink);
   }
 
   /* ---------- Results panel ---------- */
@@ -303,7 +312,7 @@
   }
   .results-head h2{font-size:14px;font-weight:600;margin:0;}
   .mode-badge{
-    font-family:var(--mono);font-size:11px;padding:3px 8px;border-radius:4px;font-weight:600;
+    font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:4px;font-weight:600;
     background:var(--trace-soft);color:var(--trace-strong);
   }
 
@@ -311,16 +320,16 @@
   .regimen-pick-bar{
     display:none;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:9px 10px;
     font-size:12px;color:var(--ink-soft);border:1px solid var(--amber);background:var(--amber-soft);
-    border-radius:7px;margin-top:8px;
+    border-radius:6px;margin-top:8px;
   }
   .regimen-pick-bar.active{display:flex;}
-  .regimen-pick-bar .pick-summary{font-weight:600;color:#6B4610;}
+  .regimen-pick-bar .pick-summary{font-weight:600;color:var(--ink);}
   .regimen-pick-bar .pick-start-field{display:flex;align-items:center;gap:5px;font-family:var(--mono);}
   .regimen-pick-bar .pick-start-field input{
-    font-family:var(--mono);font-size:12px;border:1px solid var(--line-strong);border-radius:5px;
+    font-family:var(--mono);font-size:12px;border:1px solid var(--line-strong);border-radius:4px;
     padding:4px 6px;background:#fff;color:var(--ink);
   }
-  .whatif-readout{font-family:var(--sans);color:#6B4610;font-weight:600;}
+  .whatif-readout{font-family:var(--sans);color:var(--ink);font-weight:600;}
   .regimen-table td.pick-col, .regimen-table th.pick-col{width:26px;text-align:center;padding-left:10px;padding-right:2px;}
   .regimen-table input[type="radio"]{width:14px;height:14px;cursor:pointer;}
   svg.curve{width:100%;height:auto;display:block;cursor:crosshair;}
@@ -332,11 +341,11 @@
     padding:8px 10px;background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);
   }
   .trend-picker label{
-    display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink-soft);cursor:pointer;white-space:nowrap;
+    display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink-soft);cursor:pointer;white-space:nowrap;
   }
   .trend-picker input{margin:0;cursor:pointer;}
   .trend-picker label.disabled{opacity:0.4;cursor:not-allowed;}
-  .trend-empty{font-size:11.5px;color:var(--ink-faint);padding:10px 0;}
+  .trend-empty{font-size:12px;color:var(--ink-faint);padding:10px 0;}
 
   /* Hairlines are drawn by each cell's own right/bottom border rather than by a grey
      container background showing through a 1px gap. With the old approach, any row that
@@ -357,11 +366,11 @@
   /* the final cell is followed by empty space, not another cell — a right border there
      would dangle in the middle of the row */
   .param-grid > .param-cell:last-child{border-right:none;}
-  .param-cell .label{font-size:11px;color:var(--ink-faint);margin-bottom:3px;}
-  .param-cell .value{font-family:var(--mono);font-size:19px;font-weight:600;color:var(--ink);}
+  .param-cell .label{font-size:12px;color:var(--ink-faint);margin-bottom:3px;}
+  .param-cell .value{font-family:var(--mono);font-size:22px;font-weight:600;color:var(--ink);}
   .param-cell .value .unit{font-size:12px;font-weight:500;color:var(--ink-soft);margin-left:2px;}
   .param-cell .value.text{font-family:var(--sans);font-size:15px;line-height:1.35;}
-  .param-cell .sub{font-size:11px;color:var(--ink-faint);margin-top:2px;}
+  .param-cell .sub{font-size:12px;color:var(--ink-faint);margin-top:2px;}
   .param-cell.flag-ok .value{color:var(--trace-strong);}
   .param-cell.flag-warn .value{color:var(--amber);}
   .param-cell.flag-danger .value{color:var(--crimson);}
@@ -369,41 +378,41 @@
   .section-block{padding:18px 20px;border-top:1px solid var(--line);}
   .section-block h3{font-size:13px;font-weight:600;margin:0 0 10px;display:flex;align-items:center;gap:8px;}
   .section-block h3 .idx{
-    font-family:var(--mono);font-size:11px;color:var(--trace);background:var(--trace-soft);
+    font-family:var(--mono);font-size:12px;color:var(--trace);background:var(--trace-soft);
     padding:1px 6px;border-radius:4px;font-weight:600;
   }
 
   .flag-list{display:flex;flex-direction:column;gap:8px;}
   .flag-item{
-    display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:9px 11px;border-radius:7px;
-    background:#FAFAF8;border:1px solid var(--line);
+    display:flex;gap:9px;align-items:flex-start;font-size:12.5px;padding:9px 11px;border-radius:6px;
+    background:var(--field);border:1px solid var(--line);
   }
-  .flag-item.warn{background:var(--amber-soft);border-color:#E4C98C;color:#6B4610;}
-  .flag-item.danger{background:var(--crimson-soft);border-color:#E1B4B0;color:#6E2626;}
+  .flag-item.warn{background:var(--amber-soft);border-color:var(--line-strong);color:var(--ink);}
+  .flag-item.danger{background:var(--crimson-soft);border-color:var(--line-strong);color:var(--ink);}
   .flag-item .dot{width:6px;height:6px;border-radius:50%;background:var(--ink-faint);margin-top:5px;flex:none;}
   .flag-item.warn .dot{background:var(--amber);}
   .flag-item.danger .dot{background:var(--crimson);}
 
   .regimen-table{width:100%;border-collapse:collapse;font-size:12.5px;}
   .regimen-table th{
-    text-align:left;font-size:11px;color:var(--ink-faint);font-weight:500;padding:6px 8px;
+    text-align:left;font-size:12px;color:var(--ink-faint);font-weight:500;padding:6px 8px;
     border-bottom:1px solid var(--line-strong);
   }
   .regimen-table td{padding:8px 8px;border-bottom:1px solid var(--line);font-family:var(--mono);}
-  .regimen-table td.reason{font-family:var(--sans);color:var(--ink-soft);font-size:11.5px;}
+  .regimen-table td.reason{font-family:var(--sans);color:var(--ink-soft);font-size:12px;}
   .regimen-table tr.picked{background:var(--amber-soft);}
   .regimen-table td .tag{
-    display:inline-block;font-family:var(--sans);font-size:10.5px;font-weight:600;padding:1px 6px;
+    display:inline-block;font-family:var(--sans);font-size:12px;font-weight:600;padding:1px 6px;
     border-radius:3px;margin-left:6px;
   }
   .tag.ok{background:var(--trace-soft);color:var(--trace-strong);}
-  .tag.warn{background:var(--amber-soft);color:#6B4610;}
-  .tag.danger{background:var(--crimson-soft);color:#6E2626;}
+  .tag.warn{background:var(--amber-soft);color:var(--ink);}
+  .tag.danger{background:var(--crimson-soft);color:var(--ink);}
 
-  .regimen-table tfoot tr{background:#FAFAF8;}
+  .regimen-table tfoot tr{background:var(--field);}
   .regimen-table tfoot td{border-top:2px dashed var(--line-strong);padding-top:10px;font-family:var(--sans);}
   .custom-input{
-    font-family:var(--mono);font-size:12.5px;border:1px solid var(--line-strong);border-radius:5px;
+    font-family:var(--mono);font-size:12.5px;border:1px solid var(--line-strong);border-radius:4px;
     padding:5px 6px;background:#fff;color:var(--ink);
   }
   .custom-input.dose{width:64px;}
@@ -418,15 +427,15 @@
   .monitor-grid li{margin-bottom:4px;}
 
   textarea#aiPromptOut, textarea#amgAiPromptOut, textarea#azlAiPromptOut, textarea#aedAiPromptOut{
-    width:100%;min-height:220px;font-family:var(--mono);font-size:11.5px;line-height:1.6;
-    background:#FBFBF9;border:1px solid var(--line-strong);border-radius:8px;padding:12px;color:var(--ink);
+    width:100%;min-height:220px;font-family:var(--mono);font-size:12px;line-height:1.6;
+    background:var(--field);border:1px solid var(--line-strong);border-radius:6px;padding:12px;color:var(--ink);
     white-space:pre-wrap;
   }
-  .copy-status{font-size:11.5px;color:var(--trace-strong);margin-left:10px;}
+  .copy-status{font-size:12px;color:var(--trace-strong);margin-left:10px;}
 
   footer.disclaimer{
-    margin-top:30px;padding:16px 18px;border:1px dashed var(--line-strong);border-radius:8px;
-    font-size:11.5px;color:var(--ink-soft);
+    margin-top:30px;padding:16px 18px;border:1px dashed var(--line-strong);border-radius:6px;
+    font-size:12px;color:var(--ink-soft);
   }
   footer.disclaimer strong{color:var(--ink);}
 
@@ -440,27 +449,27 @@
   .empty-state .empty-onboarding p{font-size:12.5px;color:var(--ink-soft);margin:0 0 10px;}
   #curveSvg:empty,#amgCurveSvg:empty{display:none;}
   .entry-row.row-invalid{border-left:3px solid var(--crimson);}
-  .row-note{grid-column:1/-1;font-size:11px;color:var(--crimson);padding:0 2px;}
-  .level-timing{grid-column:1/-1;font-size:11px;color:var(--ink-soft);padding:0 2px;}
-  .entry-row.row-autofill{background:#FBF3E4;}
+  .row-note{grid-column:1/-1;font-size:12px;color:var(--crimson);padding:0 2px;}
+  .level-timing{grid-column:1/-1;font-size:12px;color:var(--ink-soft);padding:0 2px;}
+  .entry-row.row-autofill{background:var(--amber-soft);}
 
   /* ---------- Drug switcher (WP3.4, D8：改分頁觀感) ---------- */
   /* #drugSwitch 前綴：.drug-switch-btn 同時帶 .btn.small（specificity 0,2,0），
      單純 .drug-switch-btn（0,1,0）字級/padding 會被蓋掉，改用 #drugSwitch 前綴
      （1,1,0／1,2,0）確保穩贏，不改動 .btn/.btn.small 本身。 */
-  .drug-switch{display:flex;gap:2px;margin-top:12px;flex-wrap:wrap;border-bottom:1px solid var(--line);}
+  .drug-switch{display:flex;gap:2px;margin-top:12px;flex-wrap:wrap;}
   .drug-switch-btn{position:relative;}
   #drugSwitch .drug-switch-btn{
     height:34px;font-size:13px;font-weight:600;
     background:transparent;border:none;border-bottom:3px solid transparent;
-    border-radius:0;color:var(--ink-soft);padding:0 10px;margin-bottom:-1px;
+    border-radius:0;color:var(--navy-soft);padding:0 10px;margin-bottom:-1px;
   }
   #drugSwitch .drug-switch-btn:not(.coming-soon):hover{color:var(--trace);}
   #drugSwitch .drug-switch-btn.primary{background:transparent;border-color:transparent;border-bottom-color:var(--trace);color:var(--trace-strong);}
   .drug-switch-btn.coming-soon{opacity:.55;cursor:default;}
   .drug-switch-btn.coming-soon:hover{border-color:var(--line-strong);color:var(--ink);}
   .drug-switch-btn .soon-tag{
-    font-family:var(--mono);font-size:9.5px;margin-left:5px;color:var(--ink-faint);
+    font-family:var(--mono);font-size:12px;margin-left:5px;color:var(--ink-faint);
   }
   /* ---------- 模組內「計算／病人資料」子分頁（WP3.4, D5） ---------- */
   .mod-tabs{display:flex;gap:2px;margin:14px 0 16px;border-bottom:1px solid var(--line);}
@@ -520,7 +529,7 @@
     .results-head{padding:14px 14px;}
     .curve-wrap{padding:12px 14px 2px;}
     .section-block{padding:14px 14px;}
-    .regimen-table{font-size:11.5px;}
+    .regimen-table{font-size:12px;}
     .table-scroll{margin:0 -14px;padding:0 14px;}
     .btn{padding:9px 12px;} /* keep tap targets comfortable */
     .row-del{padding:6px 10px;font-size:17px;}
@@ -531,6 +540,155 @@
     header.top{position:static;top:auto;}
     .drug-switch{margin-top:8px;width:100%;}
     .drug-switch-btn{flex:1 1 auto;}
+  }
+
+  /* =====================================================================
+     REDESIGN D2 外觀層（DESIGN.md／docs/direction/C3.html）
+     只改外觀：不改任何元素 id、不改 render 輸出文字；版面順序（D3）、頂列病人身分條與
+     強調色選擇（D4）、段落收合摘要（R7 單獨一包）之後再做。
+     ===================================================================== */
+  body{font-variant-numeric:tabular-nums;line-height:1.5;}
+  ::selection{background:var(--navy-tint);color:var(--ink);}
+  :focus-visible{outline:2px solid var(--navy);outline-offset:2px;}
+
+  /* 24 吋（1920×1080）為主要目標：版面用滿寬度 */
+  .app{max-width:1920px;padding:0 24px 64px;}
+  /* 只在桌機寬度生效；寫在原本的手機單欄規則之後，不加 media 會把手機也撐成兩欄 */
+  @media (min-width:1600px){ main.grid{grid-template-columns:540px minmax(0,1fr);gap:28px;} }
+
+  /* 頂列：深藍、底下一條撞色線；副標與 Free-Sampling 徽章收掉（id 保留，setHeader 照常寫入） */
+  header.top{
+    margin:0 -24px;padding:0 24px;min-height:48px;align-items:center;gap:16px 24px;
+    background:var(--navy);color:#fff;box-shadow:inset 0 -3px 0 var(--accent);
+  }
+  header.top > div:first-child{display:flex;align-items:center;gap:8px 28px;flex-wrap:wrap;}
+  header.top .brand-mark{align-items:center;}
+  header.top h1{font-size:17px;color:#fff;letter-spacing:.02em;}
+  header.top .eyebrow, header.top .subtitle{display:none;}
+  header.top .header-right{flex-direction:row;align-items:center;gap:16px;}
+  header.top .meta-line{color:var(--navy-soft);font-size:13px;text-align:right;}
+  header.top .btn{background:transparent;border-color:rgba(255,255,255,.55);color:#fff;}
+  header.top .btn:hover{background:rgba(255,255,255,.1);border-color:#fff;color:#fff;}
+  .drug-switch{margin-top:0;border-bottom:0;align-self:stretch;}
+  #drugSwitch .drug-switch-btn{height:48px;color:var(--navy-soft);font-weight:400;border-bottom-width:3px;padding:0 12px;margin-bottom:0;}
+  #drugSwitch .drug-switch-btn:not(.coming-soon):hover{color:#fff;}
+  #drugSwitch .drug-switch-btn.primary{color:#fff;font-weight:700;border-bottom-color:var(--tab-ind);}
+
+  /* 病人管理列與模組分頁：白底工具列（D4 再收進頂列） */
+  .pm-bar{background:transparent;border-bottom:1px solid var(--line);margin:0 0 4px;padding:8px 0;}
+  .pm-bar .pm-field{font-size:13px;}
+  .mod-tabs{margin:4px 0 12px;}
+  .mod-tab{font-size:13px;}
+  .mod-tab.active{color:var(--ink);border-bottom-color:var(--navy);}
+
+  /* 示範病例：只留左欄一條細條；結果區那條不顯示（元素與 hidden 切換照舊） */
+  [id$="DemoBannerResults"]{display:none !important;}
+  .demo-banner{background:var(--amber-soft);border:0;border-left:3px solid var(--amber);border-radius:0;color:var(--ink);font-size:13px;padding:6px 10px;margin-bottom:10px;}
+
+  /* 左欄：卡片外框改成細線段落（段落編號 01–06 與收合功能照舊） */
+  .stack{gap:0;}
+  .stack > .card{background:transparent;border:0;border-top:1px solid var(--line);border-radius:0;padding:14px 0 14px;}
+  .stack > .card:first-of-type{border-top:0;}
+  .card.collapsed{padding-bottom:14px;}
+  .card h2{font-size:15px;font-weight:700;letter-spacing:0;margin-bottom:6px;}
+  .card h2 .idx, .section-block h3 .idx{
+    font-family:var(--mono);font-size:12px;font-weight:700;color:var(--navy);background:transparent;
+    border:1.5px solid var(--navy);border-radius:3px;padding:0 5px;line-height:18px;
+  }
+  .card h2.card-head:hover{color:var(--navy);}
+  .card-chev{color:var(--ink-soft);}
+  .panel-tools{margin-bottom:0;}
+
+  /* 輸入框與按鈕 */
+  .field label{font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .field input, .field select, .field textarea, .custom-input, .prune-tool input[type="datetime-local"],
+  .entry-row input[type="datetime-local"], .entry-row input[type="date"], .entry-row .num-field input,
+  .pm-bar .pm-field select, .pm-bar .pm-field input, .regimen-pick-bar .pick-start-field input{
+    background:var(--field);border:1px solid var(--border-input);border-radius:4px;color:var(--ink);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus, .entry-row input:focus, .custom-input:focus{
+    outline:2px solid var(--navy);outline-offset:0;border-color:var(--navy);
+  }
+  .entry-row{background:transparent;border:0;border-radius:0;padding:3px 0;}
+  .entry-row.row-autofill{background:var(--amber-soft);}
+  .entry-row .idx-badge{font-size:12px;color:var(--ink-soft);}
+  .entry-head{color:var(--ink-soft);font-weight:700;padding:0;}
+  .btn{background:#fff;border-color:var(--border-input);border-radius:4px;font-weight:700;}
+  .btn:hover{border-color:var(--navy);color:var(--navy);}
+  .btn.primary{background:var(--navy);border-color:var(--navy);}
+  .btn.primary:hover{background:var(--trace-strong);border-color:var(--trace-strong);}
+  .btn.small{font-size:12px;padding:5px 10px;}
+  .row-del:hover{color:var(--crimson);background:transparent;}
+  .checkline input, .ui-radio input, .regimen-table input[type="radio"], .weekday-group input{accent-color:var(--navy);}
+  .weekday-group .checkline:has(input:checked){background:var(--navy-tint);border-color:var(--navy);}
+  .ui-radio-group [role="radiogroup"]{background:#fff;border-radius:4px;}
+
+  /* 右欄判讀面板 */
+  .panel{border-radius:6px;}
+  .results-head{padding:12px 20px;}
+  .results-head h2{font-size:15px;font-weight:700;}
+  .mode-badge{font-family:var(--sans);font-size:12px;background:transparent;color:var(--ink-soft);padding:0;font-weight:400;}
+
+  /* 參數：一格一格的細線表；數值 22 px、標籤 12 px 粗體 */
+  .param-grid{grid-template-columns:repeat(5,minmax(0,1fr));margin:8px 20px -1px;border-top:1px solid var(--line);}
+  .param-cell{padding:10px 12px 10px 0;margin-right:12px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .param-grid > .param-cell:nth-child(5n){border-right:0;margin-right:0;}
+  .param-cell .label{font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .param-cell .value{font-family:var(--mono);font-size:22px;font-weight:700;}
+  .param-cell .value .unit{font-size:12px;font-weight:400;}
+  .param-cell .sub{font-size:12px;color:var(--ink-soft);}
+  .param-cell.flag-ok .value{color:var(--ok);}
+  .param-cell.flag-warn .value{color:var(--amber);}
+  .param-cell.flag-danger .value{color:var(--crimson);}
+  @media (max-width:1100px){ .param-grid{grid-template-columns:repeat(3,minmax(0,1fr));} .param-grid > .param-cell:nth-child(5n){border-right:1px solid var(--line);margin-right:12px;} .param-grid > .param-cell:nth-child(3n){border-right:0;margin-right:0;} }
+
+  .section-block{padding:14px 20px;}
+  .section-block h3{font-size:15px;font-weight:700;}
+
+  /* 注意事項：不用色塊底，左邊一條狀態色＋小方塊 */
+  .flag-list{gap:0;}
+  .flag-item{background:transparent;border:0;border-left:3px solid var(--line-strong);border-radius:0;padding:7px 10px;font-size:13px;color:var(--ink);}
+  .flag-item.warn{background:transparent;border-left-color:var(--amber);color:var(--ink);}
+  .flag-item.danger{background:transparent;border-left-color:var(--crimson);color:var(--ink);}
+  .flag-item .dot{width:8px;height:8px;border-radius:0;background:var(--ok);margin-top:5px;}
+  .flag-item.warn .dot{background:var(--amber);}
+  .flag-item.danger .dot{background:var(--crimson);}
+
+  /* 候選方案表：狀態只用文字顏色＋小方塊；目前處方／選取列用深藍底 */
+  .regimen-table{font-size:13px;}
+  .regimen-table th{font-size:12px;font-weight:700;color:var(--ink-soft);}
+  .regimen-table td{font-family:var(--mono);}
+  .regimen-table td.reason{font-size:13px;color:var(--ink-soft);}
+  .regimen-table tr.picked{background:var(--navy-tint);}
+  .regimen-table td .tag, .tag{font-size:12px;font-weight:700;background:transparent;padding:0;border-radius:0;}
+  .tag.ok,.tag.warn,.tag.danger{background:transparent;}
+  .tag.ok{color:var(--ok);} .tag.warn{color:var(--amber);} .tag.danger{color:var(--crimson);}
+  .tag.ok::before,.tag.warn::before,.tag.danger::before{content:"";display:inline-block;width:8px;height:8px;margin-right:4px;vertical-align:0;background:currentColor;}
+  .regimen-table td .tag[style]{background:var(--accent) !important;color:var(--on-accent) !important;padding:0 6px;border-radius:3px;}
+  .regimen-table .hint[style]{font-size:12px !important;}
+  .regimen-table tfoot tr{background:transparent;}
+  .regimen-pick-bar{background:var(--navy-tint);border:0;border-left:3px solid var(--accent);border-radius:0;color:var(--ink);}
+  .regimen-pick-bar .pick-summary, .whatif-readout{color:var(--ink);}
+
+  .monitor-grid h4{font-size:13px;color:var(--ink);}
+  .monitor-grid p, .monitor-grid ul{font-size:13px;}
+  textarea#aiPromptOut, textarea#amgAiPromptOut, textarea#azlAiPromptOut, textarea#aedAiPromptOut{font-family:var(--code);font-size:12px;background:var(--field);border-color:var(--border-input);border-radius:4px;}
+  .copy-status{color:var(--ok);}
+  footer.disclaimer{border:0;border-top:1px solid var(--line);border-radius:0;padding:14px 0;font-size:12px;}
+  .empty-state .req-missing-list li{color:var(--navy);}
+  .is-missing{outline:2px solid var(--crimson);outline-offset:1px;border-color:var(--crimson);}
+  .trend-picker{background:#fff;border-radius:4px;}
+  .explorer-list{border-radius:4px;}
+  @media (max-width:640px){
+    .app{padding:0 14px 60px;}
+    header.top{margin:0 -14px;padding:8px 14px;}
+    header.top .header-right{width:100%;justify-content:space-between;}
+    /* 藥物分頁一行排完，可橫向捲動（DESIGN：手機） */
+    .drug-switch{flex-wrap:nowrap;overflow-x:auto;width:100%;scrollbar-width:none;}
+    #drugSwitch .drug-switch-btn{flex:0 0 auto;height:44px;}
+    .param-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin:8px 14px -1px;}
+    .param-grid > .param-cell:nth-child(n){border-right:0;margin-right:0;}
+    .param-cell .value{font-size:22px;}
   }
 </style>
 </head>
@@ -5939,7 +6097,7 @@ ${flagText || '（無特別旗標）'}
     const cmin = cmaxAtInfusionEnd*Math.exp(-ke*(tauC-infHr));
     const cmaxT1 = ssConcAtT1(R, CL, ke, infHr, cmaxAtInfusionEnd, cmin);
     const {tag, tagText} = regimenTagAmino(cmax, cmin, target, mic);
-    cmaxEl.innerHTML = `${cmax.toFixed(1)}<br><span class="hint" style="font-size:10px;">參考 T1 ${cmaxT1.toFixed(1)}</span>`;
+    cmaxEl.innerHTML = `${cmax.toFixed(1)}<br><span class="hint" style="font-size:12px;">參考 T1 ${cmaxT1.toFixed(1)}</span>`;
     cminEl.textContent = cmin.toFixed(1);
     ratioEl.textContent = (isFinite(mic)&&mic>0) ? (cmax/mic).toFixed(1) : '—';
     reasonEl.innerHTML = `${tagText}<span class="tag ${tag}">${tag==='ok'?'OK':(tag==='warn'?'留意':'風險')}</span>`;
@@ -5987,7 +6145,7 @@ ${flagText || '（無特別旗標）'}
         <td>q${r.candTau}h${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}${suggestedTau!=null && r.candTau===suggestedTau?' <span class="tag ok">建議</span>':''}</td>
         <td>${doseText}／${r.infMinC} min輸注</td>
         <td>q${r.candTau}h</td>
-        <td>${fmt1(r.cmax)}<br><span class="hint" style="font-size:10px;">參考 T1 ${fmt1(r.cmaxT1)}</span></td>
+        <td>${fmt1(r.cmax)}<br><span class="hint" style="font-size:12px;">參考 T1 ${fmt1(r.cmaxT1)}</span></td>
         <td>${fmt1(r.cmin)}</td>
         <td>${r.ratio!=null?fmt1(r.ratio):'—'}</td>
         <td class="reason">${r.tagText}<span class="tag ${r.tag}">${r.tag==='ok'?'OK':(r.tag==='warn'?'留意':'風險')}</span></td>
