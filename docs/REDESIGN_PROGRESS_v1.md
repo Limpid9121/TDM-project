@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（D1 第三輪 C3 與改寫後的 DESIGN.md 完成，等 Brandon 核可後做 D2）
+最後更新：2026-10-21（Brandon 核可 C3 版面與改寫後的 DESIGN.md；L-G 候選間隔程式完成，等 golden 核可，之後做 D2）
 
 ## 現況
 

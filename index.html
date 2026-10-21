@@ -810,9 +810,10 @@
         <div class="field-row">
           <div class="field"><label>候選給藥間隔（劑量調整方案）</label>
             <div style="display:flex;gap:10px;padding-top:6px;">
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="vancoCand6" checked><label for="vancoCand6">q6h</label></span>
               <span class="checkline" style="margin:0;"><input type="checkbox" id="cand8" checked><label for="cand8">q8h</label></span>
               <span class="checkline" style="margin:0;"><input type="checkbox" id="cand12" checked><label for="cand12">q12h</label></span>
-              <span class="checkline" style="margin:0;"><input type="checkbox" id="cand24" checked><label for="cand24">q24h</label></span>
+              <span class="checkline" style="margin:0;"><input type="checkbox" id="cand24"><label for="cand24">q24h</label></span>
             </div>
           </div>
         </div>
@@ -2690,9 +2691,12 @@
     document.getElementById('mic').value='1';
     document.getElementById('targetAuc').value='500';
     document.getElementById('altTroughStrategy').checked=false;
+    // REDESIGN L-G（Brandon 2026-10-21）：成人腎功能正常多為 q8–12h（2020 共識 A-II），臨床也常用 q6h；
+    // q24h 保留但預設不勾（腎功能差時自行勾選）。不依 CrCl 自動切換（院內未提供切點）。
+    document.getElementById('vancoCand6').checked=true;
     document.getElementById('cand8').checked=true;
     document.getElementById('cand12').checked=true;
-    document.getElementById('cand24').checked=true;
+    document.getElementById('cand24').checked=false;
 
     // 06 併用藥物與備註
     document.getElementById('concomitant').value='';
@@ -2741,7 +2745,7 @@
         date: row.querySelector('.level-date').value, conc: row.querySelector('.level-val').value
       })),
       mic:v('mic'), targetAuc:v('targetAuc'), altTroughStrategy:c('altTroughStrategy'),
-      cand8:c('cand8'), cand12:c('cand12'), cand24:c('cand24'),
+      cand6:c('vancoCand6'), cand8:c('cand8'), cand12:c('cand12'), cand24:c('cand24'),
       concomitant:v('concomitant'), otherNotes:v('otherNotes'),
       customDose:v('customDose'), customInf:v('customInf'), customTau:v('customTau')
     };
@@ -2789,9 +2793,10 @@
     (s.levelRows||[]).forEach(r=>addLevelRow(r.date, r.conc));
 
     setVal('mic', s.mic); setVal('targetAuc', s.targetAuc); setChecked('altTroughStrategy', s.altTroughStrategy);
+    setChecked('vancoCand6', s.cand6===undefined?true:s.cand6); // 舊存檔沒有 cand6 → 視為勾選
     setChecked('cand8', s.cand8===undefined?true:s.cand8);
     setChecked('cand12', s.cand12===undefined?true:s.cand12);
-    setChecked('cand24', s.cand24===undefined?true:s.cand24);
+    setChecked('cand24', s.cand24===undefined?false:s.cand24); // 舊存檔都有 cand24，照原值
 
     setVal('concomitant', s.concomitant); setVal('otherNotes', s.otherNotes);
     setVal('customDose', s.customDose); setVal('customInf', s.customInf); setVal('customTau', s.customTau);
@@ -3948,6 +3953,7 @@
     // to "— mg" even though CL was already known. (External audit finding, verified.)
     const targetDailyDose = dispCL*targetAUC;
     const candTaus=[];
+    if(document.getElementById('vancoCand6').checked) candTaus.push(6);
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
     if(document.getElementById('cand24').checked) candTaus.push(24);
@@ -5142,6 +5148,7 @@ ${flagText || '（無特別旗標）'}
     // to "— mg" even though CL was already known. (External audit finding, verified.)
     const targetDailyDose = dispCL*targetAUC;
     const candTaus=[];
+    if(document.getElementById('vancoCand6').checked) candTaus.push(6);
     if(document.getElementById('cand8').checked) candTaus.push(8);
     if(document.getElementById('cand12').checked) candTaus.push(12);
     if(document.getElementById('cand24').checked) candTaus.push(24);
@@ -8412,7 +8419,7 @@ ${flagText||'（無）'}
     ['age','sex','height','tbw','dryWeight','dialysis','arcSuspect','therapyStart','expandTo',
      'useLoading','loadingDose','loadingInf','maintDose','maintInterval','maintInf',
      'assumeSteadyState','hdFlux','hdMaintDose','hdFixedTime','hdMaintInf',
-     'mic','targetAuc','altTroughStrategy','cand8','cand12','cand24',
+     'mic','targetAuc','altTroughStrategy','vancoCand6','cand8','cand12','cand24',
      'indication','severity','site','organism','deepInfection','sourceControlDone',
      'concomitant','otherNotes','customDose','customInf','customTau'].forEach(id=>{
       const el = document.getElementById(id);
