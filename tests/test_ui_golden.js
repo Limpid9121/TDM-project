@@ -87,13 +87,27 @@ function mk(win) {
 const norm = s => String(s == null ? '' : s).replace(/\s+/g, ' ').trim();
 const hash = s => crypto.createHash('sha1').update(String(s)).digest('hex').slice(0, 16);
 
+// 曲線不比對整段 SVG 的 HTML（改樣式、加底色、換字級都會讓它變），只比對「畫出來的數字」：
+//   · 每條 <path> 的座標字串（記線段數＋座標字串的 hash）
+//   · 實測濃度點（r=5 的圓）的 cx,cy；十字游標的點不算
+// 樣式、文字、輔助線、色帶怎麼改都不影響；曲線形狀或點位置一動就會被抓到。
+function curveSig(svg) {
+  const paths = Array.from(svg.querySelectorAll('path')).map(p => {
+    const d = p.getAttribute('d') || '';
+    return (d.match(/[ML]/g) || []).length + ':' + hash(d);
+  });
+  const pts = Array.from(svg.querySelectorAll('circle:not(.ch-dot-base):not(.ch-dot-whatif)'))
+    .filter(c => c.getAttribute('r') === '5').map(c => c.getAttribute('cx') + ',' + c.getAttribute('cy'));
+  return 'curve|paths=' + paths.join(';') + '|pts=' + pts.join(';');
+}
+
 function snap(h, ids, extra) {
   const out = {};
   ids.forEach(id => {
     const el = h.doc.getElementById(id);
     if (!el) { out[id] = '__MISSING__'; return; }
     if (el.tagName === 'TEXTAREA') out[id] = norm(el.value);
-    else if (el.tagName.toLowerCase() === 'svg') out[id] = 'sha1:' + hash(el.innerHTML);
+    else if (el.tagName.toLowerCase() === 'svg') out[id] = curveSig(el);
     else out[id] = norm(el.textContent);
   });
   return Object.assign(out, extra || {});
