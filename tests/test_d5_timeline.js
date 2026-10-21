@@ -34,8 +34,8 @@ async function main() {
   ['vancoTimeline', 'amgTimeline'].forEach(id => {
     assert(!!$(id) && $(id).tagName.toLowerCase() === 'svg', '有 #' + id);
   });
-  assert($('vancoTimeline').nextElementSibling === $('curveSvg'), '#vancoTimeline 緊貼在曲線上方');
-  assert($('amgTimeline').nextElementSibling === $('amgCurveSvg'), '#amgTimeline 緊貼在曲線上方');
+  assert($('curveSvg').nextElementSibling === $('vancoTimeline'), '#vancoTimeline 緊貼在曲線下方');
+  assert($('amgCurveSvg').nextElementSibling === $('amgTimeline'), '#amgTimeline 緊貼在曲線下方');
   assert($('vancoTimeline').getAttribute('role') === 'group' && !!$('vancoTimeline').getAttribute('aria-label'), '時間軸有 role 與名稱');
 
   // ---------- 2. vancomycin 示範病例 ----------
@@ -52,6 +52,9 @@ async function main() {
   assert(/濃度/.test(lab) && /\d+\.\d/.test(lab), '濃度事件名稱含數值：' + lab);
   assert(/SCr/.test(evs('vancoTimeline', 'scr')[0].getAttribute('aria-label')), 'SCr 事件名稱含 SCr');
   assert(/給藥/.test(evs('vancoTimeline', 'dose')[0].getAttribute('aria-label')) && /mg/.test(evs('vancoTimeline', 'dose')[0].getAttribute('aria-label')), '給藥事件名稱含劑量');
+  // SCr 旁標「日期 數值」
+  assert(Array.from($('vancoTimeline').querySelectorAll('.tl-tag')).some(x => /\d\d\/\d\d.*0\.95/.test(x.textContent)), 'SCr 事件旁標日期與數值：' + Array.from($('vancoTimeline').querySelectorAll('.tl-tag')).map(x => x.textContent).join('｜'));
+  assert(/抽血/.test($('vancoTimeline').textContent) && /輸注時間/.test($('vancoTimeline').textContent), '有圖例');
   // 軌道標籤
   const tlText = $('vancoTimeline').textContent;
   assert(/給藥/.test(tlText) && /濃度/.test(tlText) && /SCr/.test(tlText), '三條軌有標籤');

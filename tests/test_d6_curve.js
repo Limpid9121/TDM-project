@@ -83,7 +83,7 @@ async function main() {
   assert(texts.length > 5 && texts.every(t => parseFloat(t.getAttribute('font-size')) >= 12), '曲線上所有文字 ≥ 12：' + Array.from(new Set(texts.map(t => t.getAttribute('font-size')))).join());
   const tlTexts = Array.from($('vancoTimeline').querySelectorAll('text'));
   assert(tlTexts.length >= 3 && tlTexts.every(t => parseFloat(t.getAttribute('font-size')) >= 12), '時間軸上的文字 ≥ 12');
-  assert(texts.some(t => t.textContent === '現在'), '有「現在」標籤');
+  assert(texts.some(t => /^現在( \d\d:\d\d)?$/.test(t.textContent)), '有「現在 hh:mm」標籤：' + texts.filter(t => /現在/.test(t.textContent)).map(t => t.textContent).join());
   const nowRect = Array.from(svg.querySelectorAll('rect')).find(r => r.getAttribute('fill') === 'var(--accent)');
   assert(!!nowRect, '「現在」標籤用撞色底');
   const dots = Array.from(svg.querySelectorAll('circle')).filter(c => c.getAttribute('r') === '5');

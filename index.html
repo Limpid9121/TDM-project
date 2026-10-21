@@ -830,7 +830,7 @@
   /* =====================================================================
      REDESIGN D5：共用時間軸（曲線正上方；與曲線同一個時間範圍、同一個 x 座標）
      ===================================================================== */
-  .tl{display:block;width:100%;height:auto;margin:0 0 2px;}
+  .tl{display:block;width:100%;height:auto;margin:0 0 4px;}
   .tl[hidden]{display:none;}
   .tl-ev{cursor:pointer;outline:none;}
   .tl-ev .tl-hit{fill:transparent;stroke:transparent;stroke-width:2;rx:3;}
@@ -1245,8 +1245,8 @@
       <div class="demo-banner" id="vancoDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="curve-wrap">
-        <svg class="tl" id="vancoTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <svg class="curve" id="curveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg class="tl" id="vancoTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="vancoPickBar">
           <span>已勾選：<strong class="pick-summary" id="vancoPickSummary"></strong></span>
           <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="vancoPickStart"></span>
@@ -1605,8 +1605,8 @@
       <div class="demo-banner" id="amgDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
 
       <div class="curve-wrap">
-        <svg class="tl" id="amgTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <svg class="curve" id="amgCurveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
+        <svg class="tl" id="amgTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="amgPickBar">
           <span>已勾選：<strong class="pick-summary" id="amgPickSummary"></strong></span>
           <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="amgPickStart"></span>
@@ -3931,6 +3931,12 @@
       svgParts.push(`<text x="${ML+6}" y="${yMic-5}" font-family="var(--sans)" font-size="12" fill="var(--trace-strong)">${micLine.label}</text>`);
     }
 
+    // 已給藥的輸注時段：整個繪圖區高度的淡深藍底（DESIGN.md；D6 設計稿）
+    doses.forEach(d=>{
+      if(d.t_rel+d.infHr < tMin || d.t_rel > tDomainMax) return;
+      const xa = xScale(Math.max(tMin,d.t_rel)), xb = xScale(Math.min(tDomainMax,d.t_rel+d.infHr));
+      svgParts.push(`<rect x="${xa}" y="${MT}" width="${Math.max(3,xb-xa)}" height="${plotH}" fill="var(--navy-tint)" opacity="0.9"/>`);
+    });
     // dose infusion bars (baseline: actual + projected)
     const baseY = MT+plotH;
     dosesForPlot.forEach(d=>{
@@ -4001,9 +4007,11 @@
     if(nowRel<=tDomainMax && nowRel>=tMin){
       const xn = xScale(nowRel);
       svgParts.push(`<line x1="${xn}" y1="${MT}" x2="${xn}" y2="${MT+plotH}" stroke="var(--ink)" stroke-width="1.5" opacity="0.85"/>`);
-      const nlx = Math.max(ML, Math.min(W-MR-36, xn-18));
-      svgParts.push(`<rect x="${nlx}" y="${MT-17}" width="36" height="17" rx="3" fill="var(--accent)"/>`);
-      svgParts.push(`<text x="${nlx+18}" y="${MT-4}" font-family="var(--sans)" font-size="12" font-weight="700" fill="var(--on-accent)" text-anchor="middle">現在</text>`);
+      const nowTxt = t0Ms!==null ? '現在 ' + fmtDateTimeShort(t0Ms + nowRel*3600000).slice(6) : '現在';
+      const nlw = nowTxt.length>2 ? 74 : 36;
+      const nlx = Math.max(ML, Math.min(W-MR-nlw, xn-nlw/2));
+      svgParts.push(`<rect x="${nlx}" y="${MT-17}" width="${nlw}" height="17" rx="3" fill="var(--accent)"/>`);
+      svgParts.push(`<text x="${nlx+nlw/2}" y="${MT-4}" font-family="var(--sans)" font-size="12" font-weight="700" fill="var(--on-accent)" text-anchor="middle">${nowTxt}</text>`);
     }
     // what-if start marker (distinct from "now" when the pharmacist delays/skips doses)
     if(whatIf && Math.abs(whatIf.startRel-nowRel)>0.05 && whatIf.startRel>=tMin && whatIf.startRel<=tDomainMax){
@@ -9530,9 +9538,17 @@ ${flagText||'（無）'}
       const lanes = [{kind:'dose', label:'給藥'}, {kind:'level', label:'濃度'}, {kind:'scr', label:'SCr'}];
       const bands = (info.bands||[]).filter(b=>b.endRel>tMin && b.startRel<tDomainMax);
       if(bands.length) lanes.push({kind:'hd', label:'透析'});
-      const LH = 22, TOP = 4, H = TOP + lanes.length*LH + 4;
+      const LH = 22, TOP = 4, LEG = 24, H = TOP + lanes.length*LH + 4 + LEG;
       const laneY = k=>TOP + lanes.findIndex(l=>l.kind===k)*LH + LH/2;
       const parts = [];
+      // 與曲線同一組日期格線（本地午夜）
+      { let cur = localMidnightMs(t0Ms + tMin*3600000), guard = 0;
+        while(cur <= t0Ms + tDomainMax*3600000 + 1 && guard++ < 400){
+          const tb = (cur - t0Ms)/3600000;
+          if(tb >= tMin-0.01 && tb <= tDomainMax+0.01){ const gx = x0(cur).toFixed(1); parts.push(`<line x1="${gx}" y1="${TOP}" x2="${gx}" y2="${TOP+lanes.length*LH}" stroke="var(--line)" stroke-width="1"/>`); }
+          cur += 24*3600000;
+        }
+      }
       lanes.forEach((l,i)=>{
         const y = TOP + i*LH;
         parts.push(`<line x1="${ML}" y1="${y+LH}" x2="${W-MR}" y2="${y+LH}" stroke="var(--line)" stroke-width="1"/>`);
@@ -9543,7 +9559,8 @@ ${flagText||'（無）'}
         parts.push(`<rect class="tl-band" x="${xa.toFixed(1)}" y="${laneY('hd')-6}" width="${Math.max(2,xb-xa).toFixed(1)}" height="12" rx="2"><title>透析中</title></rect>`);
       });
       const evRows = [];
-      const addEv = (kind, row, ms, label, shapeFn, widthMs)=>{
+      let lastScrLabelX = -1e9;
+      const addEv = (kind, row, ms, label, shapeFn, widthMs, tag)=>{
         const raw = x0(ms);
         const off = raw < ML-0.01 ? 'left' : (raw > W-MR+0.01 ? 'right' : '');
         const x = clampX(raw), y = laneY(kind), i = evRows.length;
@@ -9554,8 +9571,14 @@ ${flagText||'（無）'}
           const dir = off==='left' ? -1 : 1;
           shape = `<polygon points="${(x+dir*5).toFixed(1)},${y} ${(x-dir*3).toFixed(1)},${y-5} ${(x-dir*3).toFixed(1)},${y+5}"/>`;
         } else shape = shapeFn(x, y);
+        let tagSvg = '';
+        if(tag && Math.abs(x - lastScrLabelX) > 84){
+          lastScrLabelX = x;
+          const left = x > W-MR-90;
+          tagSvg = `<text class="tl-tag" x="${(left ? x-10 : x+10).toFixed(1)}" y="${y+4}" font-family="var(--mono)" font-size="12" fill="var(--ink)" text-anchor="${left?'end':'start'}">${escHtml(tag)}</text>`;
+        }
         parts.push(`<g class="tl-ev${off?' tl-off':''}" tabindex="0" role="button" data-tl-kind="${kind}" data-tl-i="${i}" data-tl-x="${x.toFixed(2)}" aria-label="${escHtml(name)}">`
-          + `<rect class="tl-hit" x="${(x-8).toFixed(1)}" y="${y-LH/2+1}" width="16" height="${LH-2}"/>${shape}<title>${escHtml(label)}</title></g>`);
+          + `<rect class="tl-hit" x="${(x-8).toFixed(1)}" y="${y-LH/2+1}" width="16" height="${LH-2}"/>${shape}${tagSvg}<title>${escHtml(label)}</title></g>`);
       };
       rows(v.dose).forEach(r=>{
         const ms = parseLocal(r.querySelector('.dose-date').value), mg = parseFloat(r.querySelector('.dose-mg').value), inf = parseFloat(r.querySelector('.dose-inf').value);
@@ -9572,8 +9595,13 @@ ${flagText||'（無）'}
       rows(v.scr).forEach(r=>{
         const ds = r.querySelector('.scr-date').value, ms = parseLocal(ds), sc = parseFloat(r.querySelector('.scr-val').value);
         if(!isFinite(ms) || !isFinite(sc)) return;
-        addEv('scr', r, ms, `SCr ${sc} mg/dL　${ds}`, (x,y)=>`<polygon class="tl-scr" points="${x.toFixed(1)},${y-6} ${(x+6).toFixed(1)},${y} ${x.toFixed(1)},${y+6} ${(x-6).toFixed(1)},${y}"/>`);
+        addEv('scr', r, ms, `SCr ${sc} mg/dL　${ds}`, (x,y)=>`<polygon class="tl-scr" points="${x.toFixed(1)},${y-6} ${(x+6).toFixed(1)},${y} ${x.toFixed(1)},${y+6} ${(x-6).toFixed(1)},${y}"/>`, undefined, `${ds.slice(5).replace('-','/')}　${sc}`);
       });
+      // 圖例：形狀就是圖例
+      { const ly = TOP + lanes.length*LH + 4 + 16; let lx = ML;
+        parts.push(`<rect x="${lx}" y="${ly-9}" width="14" height="10" rx="1.5" fill="var(--navy)"/><text x="${lx+20}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">給藥（寬＝輸注時間）</text>`); lx += 158;
+        parts.push(`<circle cx="${lx+6}" cy="${ly-4}" r="5" fill="var(--ink)"/><text x="${lx+18}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">抽血</text>`); lx += 64;
+        parts.push(`<polygon points="${lx+6},${ly-10} ${lx+12},${ly-4} ${lx+6},${ly+2} ${lx},${ly-4}" fill="#fff" stroke="var(--navy)" stroke-width="2"/><text x="${lx+18}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">SCr（mg/dL）</text>`); }
       tl.setAttribute('viewBox', `0 0 ${W} ${H}`);
       tl.innerHTML = parts.join('');
       tl.removeAttribute('hidden');   // SVG 元素沒有 .hidden 屬性，要用 attribute
