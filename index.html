@@ -690,6 +690,83 @@
     .param-grid > .param-cell:nth-child(n){border-right:0;margin-right:0;}
     .param-cell .value{font-size:22px;}
   }
+
+  /* =====================================================================
+     REDESIGN D3：右區重排（只用 CSS order／grid 搬位置；DOM 順序與 id 不變）
+     順序：判讀標題列 → 參數（AUC 大字＋兩列）→ 注意事項 → 候選方案 → 曲線 → 監測 → 趨勢 → AI Prompt
+     ===================================================================== */
+  /* 右欄固定在畫面上：頂列 48 px，之下留 12 px */
+  @media (min-width:981px){
+    .drug-module.active > main.grid > .panel{top:60px;max-height:calc(100vh - 72px);}
+  }
+  #resultsPanel, #amgResultsPanel{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;}
+  #resultsPanel > *, #amgResultsPanel > *{grid-column:1/-1;min-width:0;}
+  #resultsPanel > .results-head, #amgResultsPanel > .results-head{order:1;}
+  #resultsPanel > .demo-banner, #amgResultsPanel > .demo-banner{order:2;}
+  #resultsPanel > .pop-model-toggle{order:3;}
+  #resultsPanel > .param-grid, #amgResultsPanel > .param-grid{order:4;}
+  .section-block:has(#flagList), .section-block:has(#amgFlagList){order:5;}
+  .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable){order:6;}
+  #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{order:7;border-top:1px solid var(--line);}
+  .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){order:8;}
+  #resultsPanel > [id$="TrendBlock"], #amgResultsPanel > [id$="TrendBlock"]{order:9;}
+  .section-block:has(textarea[id$="iPromptOut"]){order:10;}   /* aiPromptOut／amgAiPromptOut */
+
+  /* 候選方案表：方案名與「現行」標籤、自訂列的輸入框不換行 */
+  .regimen-table td:nth-child(2), .regimen-table .custom-row td{white-space:nowrap;}
+  .regimen-table td.reason{white-space:normal;}
+  /* 縮短垂直距離，讓 24 吋的首屏容得下更多（參數、注意事項、候選方案） */
+  #resultsPanel .section-block, #amgResultsPanel .section-block{padding-top:10px;padding-bottom:10px;}
+  #resultsPanel .section-block h3, #amgResultsPanel .section-block h3{margin-bottom:6px;}
+  #resultsPanel .section-block > .hint, #amgResultsPanel .section-block > .hint{margin-bottom:6px;}
+  .param-grid:has(.pc-key) > .param-cell{padding-top:8px;padding-bottom:8px;}
+  .results-head{padding-top:10px;padding-bottom:10px;}
+  .curve-wrap{padding-top:8px;}
+  /* 判讀標題列 */
+  .results-head{gap:8px 16px;flex-wrap:wrap;}
+  .results-head .rp-rx{font-size:13px;color:var(--ink);}
+  .results-head .rp-rx:empty{display:none;}
+  .rp-live{font-size:12px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
+  .rp-live i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;}
+
+  /* 參數：key 格（vancomycin 的 AUC₂₄,ss、AMG 的 Cmax,ss）放大跨兩列；其餘 9 格排兩列 */
+  .param-grid:has(.pc-key){grid-template-columns:minmax(150px,1.5fr) repeat(5,minmax(0,1fr));}
+  .param-grid:has(.pc-key) > .pc-key{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);padding-right:16px;margin-right:16px;}
+  .param-grid:has(.pc-key) > .pc-key .value{font-size:40px;letter-spacing:-.01em;line-height:1.1;}
+  .param-grid:has(.pc-key) > .pc-key .value .unit{font-size:12px;}
+  /* 第一列：暴露量（Cmin、Cmax、AUC/MIC、近 24h AUC、CrCl）；第二列：藥動參數（t½、ke、CL、Vd） */
+  .param-grid:has(.pc-key) > .pc-cmin{order:1;} .param-grid:has(.pc-key) > .pc-cmax{order:2;} .param-grid:has(.pc-key) > .pc-ref{order:3;}
+  .param-grid:has(.pc-key) > .pc-aucmic{order:4;} .param-grid:has(.pc-key) > .pc-auc24a{order:5;} .param-grid:has(.pc-key) > .pc-crcl{order:6;}
+  .param-grid:has(.pc-key) > .pc-thalf{order:7;} .param-grid:has(.pc-key) > .pc-ke{order:8;}
+  .param-grid:has(.pc-key) > .pc-cl{order:9;} .param-grid:has(.pc-key) > .pc-vd{order:10;}
+  .param-grid:has(.pc-key) > .param-cell{margin-right:12px;}
+  .param-grid:has(.pc-key) > .param-cell:nth-last-child(1){margin-right:0;}
+  /* key 格的目標與狀態：用 CSS 補在數字下面（不改 render 的文字；golden 不受影響） */
+  #paramGrid .pc-auc::after{content:"目標 400–600";font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  #paramGrid .pc-auc.flag-ok::after{content:"目標 400–600　■ 目標內";color:var(--ok);font-weight:700;}
+  #paramGrid .pc-auc.flag-warn::after{content:"目標 400–600　■ 低於目標";color:var(--amber);font-weight:700;}
+  #paramGrid .pc-auc.flag-danger::after{content:"目標 400–600　■ 超過上限";color:var(--crimson);font-weight:700;}
+
+  /* 曲線與候選方案左右並排留給 D6：現在曲線是固定 920×340 的畫布，並排時縮到 70% 以下，圖上文字會低於 12 px；
+     D6 重畫曲線時依可用寬度畫，再並排。 */
+  @media (min-width:1600px){
+    .param-cell .value{font-size:24px;}
+    .param-grid:has(.pc-key) > .pc-key .value{font-size:40px;}
+  }
+  @media (max-width:1599px) and (min-width:981px){
+    .param-grid:has(.pc-key){grid-template-columns:minmax(130px,1.3fr) repeat(5,minmax(0,1fr));}
+    .param-grid:has(.pc-key) > .param-cell .label{font-size:12px;}
+  }
+  @media (max-width:980px){
+    .param-grid:has(.pc-key){grid-template-columns:repeat(3,minmax(0,1fr));}
+    .param-grid:has(.pc-key) > .pc-key{grid-column:1 / -1;grid-row:auto;border-right:0;margin-right:0;padding-right:0;}
+    .param-grid:has(.pc-key) > .param-cell{margin-right:0;border-right:0;}
+  }
+  @media (max-width:640px){
+    .param-grid:has(.pc-key){grid-template-columns:repeat(2,minmax(0,1fr));}
+    .param-grid:has(.pc-key) > .pc-key .value{font-size:34px;}
+    #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{order:7;}
+  }
 </style>
 </head>
 <body>
@@ -995,9 +1072,11 @@
     <section class="panel" id="resultsPanel">
 
       <div class="results-head">
-        <h2>結果</h2>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <h2>判讀</h2>
+        <span class="rp-rx" id="vancoConclusion"></span>
+        <div style="display:flex;gap:12px;align-items:center;margin-left:auto;">
           <span class="mode-badge" id="fitModeBadge">尚無資料</span>
+          <span class="rp-live" title="左側任何欄位一改，這裡立刻重算"><i></i>即時更新</span>
         </div>
       </div>
       <div class="demo-banner" id="vancoDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
@@ -1375,9 +1454,11 @@
     <section class="panel" id="amgResultsPanel">
 
       <div class="results-head">
-        <h2>結果</h2>
-        <div style="display:flex;gap:8px;align-items:center;">
+        <h2>判讀</h2>
+        <span class="rp-rx" id="amgConclusion"></span>
+        <div style="display:flex;gap:12px;align-items:center;margin-left:auto;">
           <span class="mode-badge" id="amgFitModeBadge">尚無資料</span>
+          <span class="rp-live" title="左側任何欄位一改，這裡立刻重算"><i></i>即時更新</span>
         </div>
       </div>
       <div class="demo-banner" id="amgDemoBannerResults" hidden>⚠ 示範病例（虛構數值，僅供熟悉操作，請勿用於臨床判讀）<button class="btn small" type="button">清空，開始新病人</button></div>
@@ -9003,6 +9084,59 @@ ${flagText||'（無）'}
         m.store.refreshPatientSelect('');
       });
     }));
+
+    // ---------------- D3：右區顯示層（純顯示；不改任何計算與 render 輸出的文字） ----------------
+    // 1) 參數格依標籤加 pc-* class，CSS 才排得出「AUC 大字跨兩列＋其餘兩列」；
+    // 2) 判讀標題列顯示現行處方與濃度點數／相距小時，讀既有輸入欄位，不重算。
+    // 用 MutationObserver 掛在參數格上：render 每次重寫 paramGrid 就跟著更新，完全不碰 render。
+    // 標籤在預測模式會多「預測 」前綴（例：預測 Cmax,ss），所以用 includes／^ 的規則比對，不只 startsWith
+    const PARAM_CLASS_KEYS = [[/AUC₂₄,ss/,'pc-auc'],[/AUC\/MIC/,'pc-aucmic'],[/近 24h 實際 AUC/,'pc-auc24a'],[/Cmax,ss/,'pc-cmax'],
+      [/Cmin,ss/,'pc-cmin'],[/CrCl/,'pc-crcl'],[/^t½/,'pc-thalf'],[/^ke/,'pc-ke'],[/^Vd/,'pc-vd'],[/^CL/,'pc-cl'],[/^參考/,'pc-ref']];
+    function decorateParamGrid(gridId, keyClass){
+      const grid = document.getElementById(gridId);
+      if(!grid) return;
+      grid.querySelectorAll('.param-cell').forEach(cell=>{
+        const lab = cell.querySelector('.label');
+        if(!lab) return;
+        const text = lab.textContent.trim();
+        const hit = PARAM_CLASS_KEYS.find(([re])=>re.test(text));
+        if(!hit) return;
+        cell.classList.add(hit[1]);
+        if(hit[1]===keyClass) cell.classList.add('pc-key');
+      });
+    }
+    function conclusionText(cfg){
+      const grid = document.getElementById(cfg.gridId);
+      if(!grid || grid.querySelector('.empty-state') || !grid.children.length) return '';
+      const dose = parseFloat(document.getElementById(cfg.doseId).value);
+      const tau = parseFloat(document.getElementById(cfg.tauId).value);
+      const inf = parseFloat(document.getElementById(cfg.infId).value);
+      const parts = [];
+      if(isFinite(dose) && isFinite(tau) && tau>0) parts.push(`現行 <b>${dose} mg q${tau}h</b>${isFinite(inf)?`・輸注 ${inf} 分`:''}`);
+      const lv = cfg.readLevels();
+      if(lv.length){
+        const span = lv.length>=2 ? `，相距 ${((lv[lv.length-1].t-lv[0].t)/3600000).toFixed(1)} h` : '';
+        parts.push(`濃度 ${lv.length} 點${span}`);
+      }
+      return parts.join('　');
+    }
+    const RESULT_VIEWS = [
+      {gridId:'paramGrid', keyClass:'pc-auc', outId:'vancoConclusion', doseId:'maintDose', tauId:'maintInterval', infId:'maintInf', readLevels:()=>readLevelRows(),
+        isHD:()=>document.getElementById('dialysis').value==='HD'},
+      {gridId:'amgParamGrid', keyClass:'pc-cmax', outId:'amgConclusion', doseId:'amgMaintDose', tauId:'amgMaintInterval', infId:'amgMaintInf', readLevels:()=>readLevelRowsAmg(),
+        isHD:()=>false}
+    ];
+    RESULT_VIEWS.forEach(cfg=>{
+      const grid = document.getElementById(cfg.gridId);
+      const out = document.getElementById(cfg.outId);
+      if(!grid || !out) return;
+      const refresh = ()=>{
+        decorateParamGrid(cfg.gridId, cfg.keyClass);
+        out.innerHTML = cfg.isHD() ? '' : conclusionText(cfg);
+      };
+      new MutationObserver(refresh).observe(grid, {childList:true});
+      refresh();
+    });
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
