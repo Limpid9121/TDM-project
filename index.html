@@ -699,7 +699,7 @@
      ===================================================================== */
   /* 右欄固定在畫面上：頂列 48 px，之下留 12 px */
   @media (min-width:981px){
-    .drug-module.active > main.grid > .panel{top:60px;max-height:calc(100vh - 72px);}
+    .drug-module.active > main.grid > .panel{top:calc(var(--hdr-h,48px) + 12px);max-height:calc(100vh - var(--hdr-h,48px) - 24px);}   /* --hdr-h 由 JS 量頂列高度（頂列折成兩行時右欄也不會被蓋住） */
   }
   #resultsPanel, #amgResultsPanel{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;}
   #resultsPanel > *, #amgResultsPanel > *{grid-column:1/-1;min-width:0;}
@@ -974,6 +974,7 @@
         <button type="button" data-accent-pick="mustard" aria-pressed="false" aria-label="芥末黃" title="芥末黃"></button>
         <button type="button" data-accent-pick="none" aria-pressed="false" aria-label="不用撞色" title="不用撞色"></button>
       </div>
+      <button class="btn small" id="loadDemoBtn" type="button" title="一鍵填入目前這個藥物的虛構示範病例（方便審閱畫面；不會存檔）">示範病例</button>
       <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始；已儲存的病人存檔不受影響">清空此頁（開始新病人）</button>
     </div>
   </header>
@@ -9350,6 +9351,19 @@ ${flagText||'（無）'}
     let accentSaved = null;
     try{ accentSaved = localStorage.getItem(ACCENT_KEY); }catch(e){}
     applyAccent(accentSaved || 'magenta', false);
+
+    // 1b) 一鍵載入示範病例（目前這個藥物模組）：有未儲存的手動輸入時先問
+    document.getElementById('loadDemoBtn').addEventListener('click', ()=>{
+      const mod = currentDrugModule, key = DRUG_NAME_TO_MODULE_KEY[mod];
+      if(key && uiDirty[key] && !confirm('這會清掉目前這頁已輸入的資料，換成虛構的示範病例。確定嗎？')) return;
+      loadDemo(mod, false);
+      clearDirty(key);
+    });
+
+    // 1c) 頂列高度（窄螢幕頂列會折成兩行）：右欄固定面板的位置依它計算
+    const syncHdrH = ()=>document.documentElement.style.setProperty('--hdr-h', HDR.offsetHeight + 'px');
+    syncHdrH();
+    if(window.ResizeObserver) new ResizeObserver(syncHdrH).observe(HDR); else window.addEventListener('resize', syncHdrH);
 
     // 2) 病人面板開關（點外面或按 Esc 收起）
     const pmToggle = document.getElementById('hdrPmToggle');
