@@ -912,20 +912,17 @@
      R7：段落收合摘要、段落跳轉列、給藥紀錄只顯示最近 3 筆
      ===================================================================== */
   .card h2.card-head{display:flex;align-items:baseline;gap:8px;}
-  .card-sum{display:none;flex:1 1 auto;min-width:0;font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .card-sum{display:none;flex:1 1 0;min-width:0;font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .card.collapsed .card-sum{display:block;}
   .card.collapsed .card-sum:empty{display:none;}
   .card-chev{align-self:center;}
   .card{scroll-margin-top:calc(var(--hdr-h,48px) + 56px);}
-  .card.sec-flash{box-shadow:inset 3px 0 0 var(--navy);background:var(--navy-tint);transition:background-color .4s ease;}
-  .sec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 0;margin:0 0 4px;background:var(--paper);border-bottom:1px solid var(--line);}
+  .card-title{flex:0 0 auto;max-width:calc(100% - 64px);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .sec-bar{display:flex;align-items:center;justify-content:flex-end;padding:8px 0;margin:0 0 4px;background:var(--paper);border-bottom:1px solid var(--line);}
   @media (min-width:981px){ .sec-bar{position:sticky;top:var(--hdr-h,48px);z-index:20;} }
-  .sec-btn{min-width:36px;min-height:32px;padding:4px 8px;font:inherit;font-size:13px;font-weight:700;font-family:var(--mono);background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:4px;cursor:pointer;}
-  .sec-btn[aria-pressed="true"]{background:var(--navy);color:#fff;}
-  .sec-btn[hidden]{display:none;}
-  .sec-btn:hover{background:var(--navy-tint);} .sec-btn[aria-pressed="true"]:hover{background:var(--navy-2);}
-  .sec-bulk{margin-left:auto;}
   @media (max-width:640px){ .sec-bar{position:sticky;top:44px;z-index:28;} }
+  /* 右區舊提示「未勾選深部／難清除感染…」：左邊 03 已有 loading 建議，這句過時。只隱藏、不動 render 輸出（golden 不變） */
+  #loadingSuggestion .empty-note{display:none;}
   .dose-fold{display:block;width:100%;text-align:left;margin:10px 0 0;padding:7px 10px;font:inherit;font-size:13px;color:var(--ink);background:var(--navy-tint);border:1px dashed var(--navy-soft);border-radius:4px;cursor:pointer;}
   .dose-fold:hover{border-color:var(--navy);}
   .dose-fold[hidden]{display:none;}
@@ -1345,7 +1342,7 @@
 
       <div class="curve-wrap">
         <svg class="curve" id="curveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
-        <svg class="tl" id="vancoTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
+        <svg class="tl" id="vancoTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="vancoPickBar">
           <span>已勾選：<strong class="pick-summary" id="vancoPickSummary"></strong></span>
           <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="vancoPickStart" aria-label="新處方起始時間"></span>
@@ -1706,7 +1703,7 @@
 
       <div class="curve-wrap">
         <svg class="curve" id="amgCurveSvg" viewBox="0 0 920 340" preserveAspectRatio="xMidYMid meet"></svg>
-        <svg class="tl" id="amgTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
+        <svg class="tl" id="amgTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="amgPickBar">
           <span>已勾選：<strong class="pick-summary" id="amgPickSummary"></strong></span>
           <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="amgPickStart" aria-label="新處方起始時間"></span>
@@ -3334,6 +3331,14 @@
         card.appendChild(body);
 
         h2.classList.add('card-head');
+        { // 標題文字包進 .card-title：收合時標題不斷行，摘要負責縮短（v3 F1）
+          const idxEl = h2.querySelector('.idx');
+          const tn = idxEl ? idxEl.nextSibling : h2.firstChild;
+          if(tn && tn.nodeType === 3 && tn.textContent.trim()){
+            const t = document.createElement('span'); t.className = 'card-title'; t.textContent = tn.textContent.trim(); t.title = t.textContent;
+            h2.replaceChild(t, tn);
+          }
+        }
         h2.setAttribute('role', 'button');
         h2.setAttribute('tabindex', '0');
         h2.insertAdjacentHTML('beforeend', '<span class="card-sum"></span>' + CHEV_SVG);
@@ -3355,38 +3360,12 @@
         card.dataset.collapsibleReady = '1';
       });
 
-      // 段落跳轉列（R7）：每個可見段落一顆按鈕（01、02…），點了只展開那一段、其餘收合、捲過去並短暫標亮；
-      // 展開中的段落按鈕是實心（aria-pressed）；另有「全部收合／全部展開」。取代舊的「全部收起」小按鈕。
+      // 左欄頂端只放一顆「全部收合／全部展開」切換鈕（v3 F1：01–06 段落按鈕拿掉）。#vancoSecBar 等 id 保留給這顆鈕的容器。
       const BAR_IDS = {vanco:'vancoSecBar', amg:'amgSecBar', azole:'azlSecBar', aed:'aedSecBar'};
       const bar = document.createElement('nav');
       bar.className = 'sec-bar';
       bar.id = BAR_IDS[mod];
-      bar.setAttribute('aria-label', '段落跳轉');
-      const secBtns = cards.map((c, i)=>{
-        const h2 = c.querySelector('h2'); if(!h2) return null;
-        const idx = (h2.querySelector('.idx') || {}).textContent || String(i+1);
-        const title = h2.textContent.replace(idx, '').replace(/\s+/g, ' ').trim();
-        const b = document.createElement('button');
-        b.type = 'button'; b.className = 'sec-btn'; b.dataset.sec = String(i);
-        b.textContent = idx.trim();
-        b.title = title; b.setAttribute('aria-label', '跳到 ' + idx.trim() + ' ' + title);
-        b.addEventListener('click', ()=>{
-          const p = loadCollapsePrefs();
-          cards.forEach((c2, j)=>{
-            const h = c2.querySelector('h2.card-head'); if(!h) return;
-            setCollapsed(c2, h, j !== i);
-            p[keyFor(c2, j)] = (j !== i);
-          });
-          saveCollapsePrefs(p);
-          if(c.scrollIntoView) c.scrollIntoView({block:'start', behavior:'auto'});
-          c.classList.add('sec-flash');
-          clearTimeout(c._flashT);
-          c._flashT = setTimeout(()=>c.classList.remove('sec-flash'), 1600);
-          syncBulk();
-        });
-        bar.appendChild(b);
-        return b;
-      });
+      bar.setAttribute('aria-label', '段落收合');
       const bulkBtn = document.createElement('button');
       bulkBtn.type = 'button'; bulkBtn.className = 'btn small sec-bulk'; bulkBtn.dataset.secBulk = '1';
       bulkBtn.addEventListener('click', ()=>{
@@ -3404,15 +3383,9 @@
       panel.insertBefore(bar, panel.firstChild);
       function cardShown(c){ return !c.hidden && c.style.display !== 'none'; }
       function syncBulk(){
-        const shown = cards.filter(cardShown);
-        const anyOpen = shown.some(c=>!c.classList.contains('collapsed'));
-        bulkBtn.textContent = anyOpen ? '全部收合' : '全部展開';
-        cards.forEach((c, i)=>{
-          const b = secBtns[i]; if(!b) return;
-          const want = !cardShown(c);
-          if(b.hidden !== want) b.hidden = want;   // 值沒變就不寫：寫同一個值也會產生 mutation，觀察器會無限迴圈
-          b.setAttribute('aria-pressed', String(!c.classList.contains('collapsed')));
-        });
+        const anyOpen = cards.filter(cardShown).some(c=>!c.classList.contains('collapsed'));
+        const txt = anyOpen ? '全部收合' : '全部展開';
+        if(bulkBtn.textContent !== txt) bulkBtn.textContent = txt;   // 值沒變就不寫：寫同一個值也會產生 mutation，觀察器會無限迴圈
       }
       // 別處（必填提示、時間軸跳轉）直接改 class、藥物切換改 style 也要讓按鈕跟著
       new MutationObserver(syncBulk).observe(panel, {attributes:true, subtree:true, attributeFilter:['class','style','hidden']});
@@ -3970,6 +3943,8 @@
   }
 
   // 曲線區可用寬度（扣掉 .curve-wrap 的左右 padding）；量不到就回傳舊的 920×340
+  // 圖上 12 px 字的寬度估計（CJK 12、拉丁 7、空白 3.6，外加 2 px 餘裕）：放參考線標籤、時間軸圖例時避免互相壓到
+  function labelTextW(str){ let w = 2; for(const ch of String(str)) w += ch.charCodeAt(0) > 255 ? 12 : (ch === ' ' ? 3.6 : 7); return w; }
   function curveMeasure(svg){
     let w = 0;
     try{
@@ -4098,17 +4073,14 @@
     if(toxLine!==null && toxLine<=cMaxDomain){
       const yTox = yScale(toxLine);
       svgParts.push(`<line x1="${ML}" y1="${yTox}" x2="${W-MR}" y2="${yTox}" stroke="var(--crimson)" stroke-width="1.3" stroke-dasharray="5,4"/>`);
-      svgParts.push(`<text x="${W-MR}" y="${yTox-5}" font-family="var(--sans)" font-size="12" fill="var(--crimson)" text-anchor="end">${toxLabel}</text>`);
     }
     if(band){
       const yLo=yScale(band.lo), yHi=yScale(band.hi);
       svgParts.push(`<rect x="${ML}" y="${yHi}" width="${plotW}" height="${yLo-yHi}" fill="var(--amber-soft)" opacity="0.5"/>`);
-      svgParts.push(`<text x="${ML+6}" y="${yHi-4}" font-family="var(--sans)" font-size="12" fill="var(--amber)">${band.label}</text>`);
     }
     if(micLine && micLine.value!=null && isFinite(micLine.value) && micLine.value<=cMaxDomain){
       const yMic = yScale(micLine.value);
       svgParts.push(`<line x1="${ML}" y1="${yMic}" x2="${W-MR}" y2="${yMic}" stroke="var(--trace-strong)" stroke-width="1.3" stroke-dasharray="2,3"/>`);
-      svgParts.push(`<text x="${ML+6}" y="${yMic-5}" font-family="var(--sans)" font-size="12" fill="var(--trace-strong)">${micLine.label}</text>`);
     }
 
     // 已給藥的輸注時段：整個繪圖區高度的淡深藍底（DESIGN.md；D6 設計稿）
@@ -4160,9 +4132,9 @@
 
     // what-if projected curve (amber), from its own start time forward — before that
     // point it is identical to the baseline, so nothing is lost by not drawing it earlier.
+    let wiPts=[];
     if(whatIf){
       const wiStart = Math.max(tMin, whatIf.startRel);
-      let wiPts=[];
       if(wiStart < tDomainMax){
         for(let i=0;i<=stepsFut;i++){
           const t = wiStart + (tDomainMax-wiStart)*i/stepsFut;
@@ -4218,6 +4190,78 @@
       svgParts.push(`<rect x="${x1}" y="${MT}" width="${x2-x1}" height="${plotH}" fill="${b.color||'var(--line-strong)'}" opacity="${b.opacity!==undefined?b.opacity:0.25}"/>`);
       if(b.label) svgParts.push(`<text x="${(x1+x2)/2}" y="${MT+plotH-6}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">${b.label}</text>`);
     });
+
+    // 參考線／目標帶標籤（v3 F1）：放在曲線與其他圖上文字都碰不到的地方（優先線的上方靠左，再來右端，再沿著線掃描），
+    // 白描邊、畫在輸注淡底與透析帶之上。曲線點、實測點的數值、「現在」線、新處方起始、透析標記與 what-if 圖例框都算障礙。
+    {
+      const obs = [];
+      const addObs = (x0,x1,y0,y1)=>obs.push({x0,x1,y0,y1});
+      levels.forEach(lv=>{
+        const x = xScale(lv.t_rel), y = yScale(Math.min(lv.conc,cMaxDomain*1.3)), w = labelTextW(lv.conc.toFixed(1)) + 3;
+        const right = x > W-MR-44, tx = right ? x-9-w : x+9;
+        addObs(tx, tx+w, y-8-12, y-8+3);
+        addObs(x-6, x+6, y-6, y+6);
+      });
+      if(nowRel<=tDomainMax && nowRel>=tMin){
+        const xn = xScale(nowRel); addObs(xn-2, xn+2, MT, MT+plotH);
+        const nw = (t0Ms!==null ? '現在 ' + fmtDateTimeShort(t0Ms + nowRel*3600000).slice(6) : '現在').length>2 ? 74 : 36;
+        const nx = Math.max(ML, Math.min(W-MR-nw, xn-nw/2)); addObs(nx, nx+nw, MT-17, MT);
+      }
+      if(whatIf && Math.abs(whatIf.startRel-nowRel)>0.05 && whatIf.startRel>=tMin && whatIf.startRel<=tDomainMax){
+        const xs = xScale(whatIf.startRel); addObs(xs-2, xs+labelTextW('新處方起始')+4, MT, MT+14);
+      }
+      (ctx.extraMarkers||[]).forEach(m=>{
+        if(m.rel<tMin || m.rel>tDomainMax) return;
+        const xm = xScale(m.rel); addObs(xm-2, xm+3+(m.label?labelTextW(m.label):0), MT, MT+14);
+      });
+      (ctx.extraBands||[]).forEach(b=>{
+        if(!b.label) return;
+        const lo = Math.max(tMin, b.startRel), hi = Math.min(tDomainMax, b.endRel); if(hi<=lo) return;
+        const mid = (xScale(lo)+xScale(hi))/2, w = labelTextW(b.label); addObs(mid-w/2, mid+w/2, MT+plotH-6-12, MT+plotH-3);
+      });
+      if(whatIf) addObs(ML+8, ML+8+172, MT+8, MT+8+44);
+      const cpts = [];
+      [histPts, futPts, wiPts].forEach(pts=>{
+        for(let i=0;i<pts.length;i++){
+          cpts.push(pts[i]);
+          if(i){ const a = pts[i-1], b = pts[i], n = Math.ceil(Math.hypot(b[0]-a[0], b[1]-a[1])/3); for(let k=1;k<n;k++) cpts.push([a[0]+(b[0]-a[0])*k/n, a[1]+(b[1]-a[1])*k/n]); }
+        }
+      });
+      const overlap = (a,b)=>a.x0<b.x1 && b.x0<a.x1 && a.y0<b.y1 && b.y0<a.y1;
+      const score = box=>{
+        let sc = 0;
+        for(const p of cpts) if(p[0]>=box.x0-2 && p[0]<=box.x1+2 && p[1]>=box.y0-2 && p[1]<=box.y1+2) sc++;
+        for(const o of obs) if(overlap(box,o)) sc += 1000;
+        return sc;
+      };
+      const labelParts = [];
+      // 窄圖放不下完整標籤時，換短版（「腎毒性關切 20」→「關切 20」）；完整文字放進 <title>
+      const shortLabel = t=>t.replace(/^腎毒性關切 /,'關切 ').replace(/^Pre-HD 目標 /,'目標 ').replace(/^Peak 目標 /,'Peak ').replace(/^Trough 目標上限 /,'上限 ').replace(/^MIC×\S+ 效益門檻 /,'門檻 ').replace(/^替代 trough 目標 /,'目標 ');
+      const placeLabel = (text, color, lineY, dys)=>{
+        const sh = shortLabel(text), inPlot = dys.map(dy=>lineY+dy), TOPROW = MT-4;
+        // 順序：完整標籤放線附近 → 短版放線附近 → 短版、完整版放到繪圖區上緣外的空白列（窄圖、曲線來回穿過整條線的最後手段）
+        const tries = []; inPlot.forEach(y=>tries.push([text, y])); if(sh !== text){ inPlot.forEach(y=>tries.push([sh, y])); tries.push([sh, TOPROW]); } tries.push([text, TOPROW]);
+        let best = null;
+        outer: for(const [txt, y] of tries){
+          const w = labelTextW(txt), xl = ML+6, xr = W-MR-6-w;
+          const xs = [xl]; if(xr > xl+4) xs.push(xr);
+          for(let x=xl+6; x<xr-3; x+=6) xs.push(x);
+          for(const x of xs){
+            const box = {x0:x, x1:x+w, y0:y-12, y1:y+3};
+            if(y !== TOPROW && (box.y0 < MT-1 || box.y1 > MT+plotH)) continue;
+            const sc = score(box) + (txt!==text ? 0.5 : 0);
+            if(!best || sc < best.sc){ best = {sc, x, y, box, txt}; if(sc<1) break outer; }
+          }
+        }
+        if(!best){ const y = lineY+dys[0], w = labelTextW(text); best = {x:ML+6, y, box:{x0:ML+6, x1:ML+6+w, y0:y-12, y1:y+3}, txt:text}; }
+        obs.push(best.box);
+        labelParts.push(`<text class="curve-lbl" x="${best.x.toFixed(1)}" y="${best.y.toFixed(1)}" font-family="var(--sans)" font-size="12" fill="${color}" stroke="#fff" stroke-width="3" paint-order="stroke" text-anchor="start">${best.txt}${best.txt!==text?`<title>${text}</title>`:''}</text>`);
+      };
+      if(toxLine!==null && toxLine<=cMaxDomain) placeLabel(toxLabel, 'var(--crimson)', yScale(toxLine), [-5, 15]);
+      if(band) placeLabel(band.label, 'var(--amber)', yScale(band.hi), [-4, 14, yScale(band.lo)-yScale(band.hi)+15]);
+      if(micLine && micLine.value!=null && isFinite(micLine.value) && micLine.value<=cMaxDomain) placeLabel(micLine.label, 'var(--trace-strong)', yScale(micLine.value), [-5, 15]);
+      svgParts.push(...labelParts);
+    }
 
     // legend when what-if is active
     if(whatIf){
@@ -9799,10 +9843,14 @@ ${flagText||'（無）'}
       const rows = id=>Array.from(document.querySelectorAll('#'+id+' .entry-row'));
       const x0 = ms=>ML + ((ms-t0Ms)/3600000 - tMin)/(tDomainMax-tMin)*plotW;
       const clampX = x=>Math.max(ML, Math.min(W-MR, x));
-      const lanes = [{kind:'dose', label:'給藥'}, {kind:'level', label:'濃度'}, {kind:'scr', label:'SCr'}];
+      const lanes = [{kind:'dose', label:'給藥'}, {kind:'scr', label:'SCr'}];   // 抽血點曲線上已經有，不再另開「濃度」軌（v3 F1）
       const bands = (info.bands||[]).filter(b=>b.endRel>tMin && b.startRel<tDomainMax);
       if(bands.length) lanes.push({kind:'hd', label:'透析'});
-      const LH = 22, TOP = 4, LEG = 24, H = TOP + lanes.length*LH + 4 + LEG;
+      const LH = 22, TOP = 4;
+      // 圖例：形狀就是圖例；依寬度換行（窄螢幕不被切）
+      const legItems = [{w:20, text:'給藥（寬＝輸注時間）', kind:'dose'}, {w:20, text:'SCr（mg/dL）', kind:'scr'}].map(it=>Object.assign(it, {full: it.w + labelTextW(it.text) + 18}));
+      const legRows = [[]]; { let lx = ML; legItems.forEach(it=>{ if(lx > ML && lx + it.full > W - 8){ legRows.push([]); lx = ML; } it.x = lx; legRows[legRows.length-1].push(it); lx += it.full; }); }
+      const LEG = 8 + legRows.length*20, H = TOP + lanes.length*LH + 4 + LEG;
       const laneY = k=>TOP + lanes.findIndex(l=>l.kind===k)*LH + LH/2;
       const parts = [];
       // 與曲線同一組日期格線（本地午夜）
@@ -9823,11 +9871,11 @@ ${flagText||'（無）'}
         parts.push(`<rect class="tl-band" x="${xa.toFixed(1)}" y="${laneY('hd')-6}" width="${Math.max(2,xb-xa).toFixed(1)}" height="12" rx="2"><title>透析中</title></rect>`);
       });
       const evRows = [];
-      let lastScrLabelX = -1e9;
       const addEv = (kind, row, ms, label, shapeFn, widthMs, tag)=>{
         const raw = x0(ms);
         const off = raw < ML-0.01 ? 'left' : (raw > W-MR+0.01 ? 'right' : '');
-        const x = clampX(raw), y = laneY(kind), i = evRows.length;
+        // 範圍外的事件夾在繪圖區邊緣，但往內縮 7 px：三角形與軌道標籤之間才有 ≥8 px 的空隙
+        const x = off==='left' ? ML+7 : (off==='right' ? W-MR-7 : clampX(raw)), y = laneY(kind), i = evRows.length;
         evRows.push(row);
         const name = label + (off ? '（在曲線時間範圍之外）' : '') + '；按 Enter 跳到左邊對應的那一列';
         let shape;
@@ -9836,10 +9884,9 @@ ${flagText||'（無）'}
           shape = `<polygon points="${(x+dir*5).toFixed(1)},${y} ${(x-dir*3).toFixed(1)},${y-5} ${(x-dir*3).toFixed(1)},${y+5}"/>`;
         } else shape = shapeFn(x, y);
         let tagSvg = '';
-        if(tag && Math.abs(x - lastScrLabelX) > 84){
-          lastScrLabelX = x;
-          const left = x > W-MR-90;
-          tagSvg = `<text class="tl-tag" x="${(left ? x-10 : x+10).toFixed(1)}" y="${y+4}" font-family="var(--mono)" font-size="12" fill="var(--ink)" text-anchor="${left?'end':'start'}">${escHtml(tag)}</text>`;
+        if(tag){
+          const left = tag.side === 'L';
+          tagSvg = `<text class="tl-tag" x="${(left ? x-10 : x+10).toFixed(1)}" y="${y+4}" font-family="var(--mono)" font-size="12" fill="var(--ink)" text-anchor="${left?'end':'start'}">${escHtml(tag.txt)}</text>`;
         }
         parts.push(`<g class="tl-ev${off?' tl-off':''}" tabindex="0" role="button" data-tl-kind="${kind}" data-tl-i="${i}" data-tl-x="${x.toFixed(2)}" aria-label="${escHtml(name)}">`
           + `<rect class="tl-hit" x="${(x-8).toFixed(1)}" y="${y-LH/2+1}" width="16" height="${LH-2}"/>${shape}${tagSvg}<title>${escHtml(label)}</title></g>`);
@@ -9851,21 +9898,37 @@ ${flagText||'（無）'}
         addEv('dose', r, ms, `給藥 ${fmtDateTimeShort(ms)}　${mg} mg${isFinite(inf)?`，輸注 ${inf} 分`:''}`,
           (x,y)=>`<rect class="tl-dose" x="${x.toFixed(1)}" y="${y-5}" width="${Math.min(wPx, W-MR-x).toFixed(1)}" height="10" rx="1.5"/>`);
       });
-      rows(v.level).forEach(r=>{
-        const ms = parseLocal(r.querySelector('.level-date').value), c = parseFloat(r.querySelector('.level-val').value);
-        if(!isFinite(ms) || !isFinite(c)) return;
-        addEv('level', r, ms, `濃度 ${c} µg/mL　${fmtDateTimeShort(ms)}`, (x,y)=>`<circle class="tl-level" cx="${x.toFixed(1)}" cy="${y}" r="5"/>`);
-      });
-      rows(v.scr).forEach(r=>{
+      // SCr 事件旁標「日期　數值」。空間不夠（下一個事件太近）就只標數值，再不夠就不標（名稱與 title 仍有完整內容）；
+      // 右側放不下時標在左側。範圍外的事件夾在邊緣（addEv 內），位置先在這裡算好，才能算與鄰居的距離。
+      const scrList = rows(v.scr).map(r=>{
         const ds = r.querySelector('.scr-date').value, ms = parseLocal(ds), sc = parseFloat(r.querySelector('.scr-val').value);
-        if(!isFinite(ms) || !isFinite(sc)) return;
-        addEv('scr', r, ms, `SCr ${sc} mg/dL　${ds}`, (x,y)=>`<polygon class="tl-scr" points="${x.toFixed(1)},${y-6} ${(x+6).toFixed(1)},${y} ${x.toFixed(1)},${y+6} ${(x-6).toFixed(1)},${y}"/>`, undefined, `${ds.slice(5).replace('-','/')}　${sc}`);
+        if(!isFinite(ms) || !isFinite(sc)) return null;
+        const raw = x0(ms);
+        return {r, ds, ms, sc, x: raw < ML-0.01 ? ML+7 : (raw > W-MR+0.01 ? W-MR-7 : clampX(raw))};
+      }).filter(Boolean);
+      const scrByX = scrList.slice().sort((a,b)=>a.x-b.x);
+      scrByX.forEach((e,k)=>{
+        const prev = scrByX[k-1], next = scrByX[k+1];
+        const spaceR = (next ? next.x : W-MR+2) - e.x - 18, spaceL = prev ? e.x - prev.x - 18 : -1;
+        e.tag = null;
+        for(const txt of [`${e.ds.slice(5).replace('-','/')}　${e.sc}`, String(e.sc)]){
+          const w = labelTextW(txt);
+          if(w <= spaceR){ e.tag = {txt, side:'R'}; break; }
+          if(w <= spaceL){ e.tag = {txt, side:'L'}; break; }
+        }
       });
-      // 圖例：形狀就是圖例
-      { const ly = TOP + lanes.length*LH + 4 + 16; let lx = ML;
-        parts.push(`<rect x="${lx}" y="${ly-9}" width="14" height="10" rx="1.5" fill="var(--navy)"/><text x="${lx+20}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">給藥（寬＝輸注時間）</text>`); lx += 158;
-        parts.push(`<circle cx="${lx+6}" cy="${ly-4}" r="5" fill="var(--ink)"/><text x="${lx+18}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">抽血</text>`); lx += 64;
-        parts.push(`<polygon points="${lx+6},${ly-10} ${lx+12},${ly-4} ${lx+6},${ly+2} ${lx},${ly-4}" fill="#fff" stroke="var(--navy)" stroke-width="2"/><text x="${lx+18}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">SCr（mg/dL）</text>`); }
+      scrList.forEach(e=>{
+        addEv('scr', e.r, e.ms, `SCr ${e.sc} mg/dL　${e.ds}`, (x,y)=>`<polygon class="tl-scr" points="${x.toFixed(1)},${y-6} ${(x+6).toFixed(1)},${y} ${x.toFixed(1)},${y+6} ${(x-6).toFixed(1)},${y}"/>`, undefined, e.tag);
+      });
+      legRows.forEach((row, ri)=>{
+        const ly = TOP + lanes.length*LH + 4 + 16 + ri*20;
+        row.forEach(it=>{
+          const sw = it.kind==='dose'
+            ? `<rect class="tl-leg-sw" x="${it.x}" y="${ly-9}" width="14" height="10" rx="1.5" fill="var(--navy)"/>`
+            : `<polygon class="tl-leg-sw" points="${it.x+6},${ly-10} ${it.x+12},${ly-4} ${it.x+6},${ly+2} ${it.x},${ly-4}" fill="#fff" stroke="var(--navy)" stroke-width="2"/>`;
+          parts.push(sw + `<text class="tl-leg" x="${it.x+20}" y="${ly}" font-family="var(--sans)" font-size="12" fill="var(--ink-soft)">${it.text}</text>`);
+        });
+      });
       tl.setAttribute('viewBox', `0 0 ${W} ${H}`);
       tl.innerHTML = parts.join('');
       tl.removeAttribute('hidden');   // SVG 元素沒有 .hidden 屬性，要用 attribute
@@ -9989,7 +10052,7 @@ ${flagText||'（無）'}
         ()=>join([sv('azlScr') ? 'SCr '+sv('azlScr') : '', sv('azlAlbumin') ? 'Albumin '+sv('azlAlbumin') : '']),
         ()=>'',
         ()=>join([selText('azlFormulation'), selText('azlFreq'), sv('azlDoseAm') ? sv('azlDoseAm')+' mg' : '']),
-        ()=>sv('azlTroughVal') ? `Trough ${sv('azlTroughVal')}${sv('azlTroughDate') ? '（'+sv('azlTroughDate').slice(5).replace('-','/')+'）' : ''}` : ''
+        ()=>sv('azlTroughVal') ? `Trough ${sv('azlTroughVal')}${isFinite(parseLocal(sv('azlTroughDate'))) ? '（'+fmtDateTimeShort(parseLocal(sv('azlTroughDate')))+'）' : ''}` : ''
       ],
       aed: [
         ()=>join([selText('aedDrug'), selText('aedPurpose')]),

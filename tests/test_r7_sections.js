@@ -1,8 +1,7 @@
 // test_r7_sections.js — R7：左欄段落收合摘要、段落跳轉列、給藥紀錄只顯示最近 3 筆（純顯示）
 //
 //   1. 收合的段落標題列顯示摘要（.card-sum）：讀欄位現值，隨輸入更新；展開時不顯示（CSS）
-//   2. 段落跳轉列（#vancoSecBar／#amgSecBar／#azlSecBar／#aedSecBar）：每個可見段落一顆按鈕（01、02…），
-//      點了只展開那一段、其餘收合、捲過去並短暫標亮；展開中的是實心（aria-pressed）；「全部收合／全部展開」
+//   2. 左欄頂端一顆「全部收合／全部展開」（#vancoSecBar／#amgSecBar／#azlSecBar／#aedSecBar 是它的容器；v3 F1 拿掉了 01–06 段落按鈕）
 //   3. 給藥紀錄只顯示最近 3 筆：較早的收成一行「較早 N 筆（起訖）已收起，點這裡展開」；列仍在 DOM 裡
 //      （readDoseRows 不受影響）；新增的列、時間軸點到的較早劑次會自動顯示
 //
@@ -52,53 +51,39 @@ async function main() {
   assert(sumOf(cards[0]) !== '' && /尚未|未填/.test(sumOf(cards[0])), '清空後摘要寫「尚未填寫」：' + sumOf(cards[0]));
   cards.forEach(c => collapse(c, false));
 
-  // ---------- 2. 跳轉列 ----------
+  // ---------- 2. 收合切換鈕（v3 F1：01–06 段落按鈕拿掉，只留一顆；段落按鈕的細節見 test_f1_polish.js） ----------
   const bar = $('vancoSecBar');
   assert(!!bar && $('inputPanel').contains(bar), '有 #vancoSecBar，在左欄裡');
-  let btns = Array.from(bar.querySelectorAll('button[data-sec]'));
-  assert(btns.map(b => b.textContent.trim()).join() === '01,02,03,04,05,06', '六顆段落按鈕 01–06：' + btns.map(b => b.textContent.trim()).join());
-  assert(btns.every(b => b.getAttribute('aria-pressed') === 'true'), '全部展開時六顆都是實心（aria-pressed）');
+  assert(bar.querySelectorAll('button[data-sec]').length === 0, '沒有 01–06 段落按鈕');
   const bulk = bar.querySelector('button[data-sec-bulk]');
   assert(!!bulk && /全部收合/.test(bulk.textContent), '有「全部收合」');
   bulk.click(); await tick();
-  assert(cards.every(c => c.classList.contains('collapsed')) && btns.every(b => b.getAttribute('aria-pressed') === 'false') && /全部展開/.test(bulk.textContent), '全部收合：六段都收、按鈕變空心、文字變「全部展開」');
-  scrolled.length = 0;
-  btns[3].click(); await tick();
-  assert(!cards[3].classList.contains('collapsed') && cards.filter((c, i) => i !== 3).every(c => c.classList.contains('collapsed')), '點 04：只展開 04，其餘收合');
-  assert(btns[3].getAttribute('aria-pressed') === 'true' && btns.filter((b, i) => i !== 3).every(b => b.getAttribute('aria-pressed') === 'false'), '04 按鈕實心、其餘空心');
-  assert(scrolled.includes(cards[3]), '捲到 04');
-  assert(cards[3].classList.contains('sec-flash'), '04 短暫標亮（sec-flash）');
-  await new Promise(r => setTimeout(r, 1800));
-  assert(!cards[3].classList.contains('sec-flash'), '標亮約 1.6 秒後消失');
-  // 手動展開另一段：按鈕跟著
+  assert(cards.every(c => c.classList.contains('collapsed')) && /全部展開/.test(bulk.textContent), '全部收合：六段都收、文字變「全部展開」');
+  // 手動展開另一段：文字跟著變成「全部收合」
   collapse(cards[0], false);
-  assert(btns[0].getAttribute('aria-pressed') === 'true', '直接點標題展開 01：按鈕跟著變實心');
+  assert(/全部收合/.test(bulk.textContent), '直接點標題展開 01：切換鈕文字跟著變');
   bulk.click(); await tick();   // 有展開的 → 全部收合
   bulk.click(); await tick();   // 全收 → 全部展開
   assert(cards.every(c => !c.classList.contains('collapsed')), '再按一次：全部展開');
-  assert(!$('inputPanel').querySelector('.panel-tools'), '舊的「全部收起」小按鈕併進跳轉列（沒有兩份）');
+  assert(!$('inputPanel').querySelector('.panel-tools'), '舊的「全部收起」小按鈕併進切換鈕（沒有兩份）');
   // 狀態有記住（沿用既有的 tdm_card_collapse_v1）
-  btns[2].click(); await tick();
+  bulk.click(); await tick();
   assert(JSON.parse(win.localStorage.getItem('tdm_card_collapse_v1') || '{}')['vanco:i0'] === true, '收合狀態沿用既有的 tdm_card_collapse_v1 記住');
-  bulk.click(); await tick(); if (bulk.textContent.includes('全部展開')) bulk.click(); await tick();
+  bulk.click(); await tick();
 
-  // AMG / Azole / AED 也有
+  // AMG / Azole / AED 也有切換鈕
   for (const [drug, key, panel, bar2] of [['aminoglycoside', 'vanco', 'amgInputPanel', 'amgSecBar'], ['azole', 'amg', 'azlInputPanel', 'azlSecBar'], ['aed', 'azl', 'aedInputPanel', 'aedSecBar']]) {
     await sw(drug, key);
     const b = $(bar2);
-    assert(!!b && $(panel).contains(b), drug + '：有 #' + bar2);
-    const n = b ? Array.from(b.querySelectorAll('button[data-sec]')).filter(x => !x.hidden).length : 0;
-    const visible = cardsOf(panel).filter(c => c.style.display !== 'none' && !c.hidden).length;
-    assert(n === visible && n >= 5, drug + '：按鈕數＝可見段落數（' + n + '／' + visible + '）');
+    assert(!!b && $(panel).contains(b) && !!b.querySelector('button[data-sec-bulk]'), drug + '：有 #' + bar2 + ' 與切換鈕');
   }
-  // Azole 換藥物後 Voriconazole／Isavuconazole 專屬段落切換 → 按鈕跟著增減
+  // Azole 換藥物後專屬段落顯示／隱藏：切換鈕只看「看得到的段落」
   await sw('azole', 'aed');
-  await set('azlDrug', 'voriconazole');
-  const shown = () => Array.from($('azlSecBar').querySelectorAll('button[data-sec]')).filter(x => !x.hidden).length;
-  const nVori = shown();
-  await set('azlDrug', 'posaconazole');
-  const nPosa = shown();
-  assert(nVori !== nPosa, 'Azole 換藥物：專屬段落的按鈕跟著出現或消失（' + nVori + '→' + nPosa + '）');
+  const azlBulk = $('azlSecBar').querySelector('button[data-sec-bulk]');
+  const azlCards0 = cardsOf('azlInputPanel');
+  azlBulk.click(); await tick();
+  assert(azlCards0.filter(c => c.style.display !== 'none' && !c.hidden).every(c => c.classList.contains('collapsed')), 'Azole：全部收合只動看得到的段落');
+  azlBulk.click(); await tick();
   const azlCards = cardsOf('azlInputPanel');
   assert(azlCards.some(c => !!c.querySelector('h2 .card-sum')), 'Azole 有摘要容器');
 

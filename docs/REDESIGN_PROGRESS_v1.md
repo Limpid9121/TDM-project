@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-22（第 1 輪自驗收不通過；修正施工計畫 v3 已定，下一個對話從 F1 開始）
+最後更新：2026-10-23（v3 的 F1 完成；下一包 F2 參數區重排，順序 F1 → F2 → F7 → F3 → F4 → F5 → F6）
 
 ## 現況
 
@@ -12,6 +12,26 @@
 - 驗收截圖工具：`tools/shoot_review.py` 搭配 `tools/review_frame.html`（先開 `python -m http.server 8765`）。
 - 決議 1、2 照 TPN 調配試算的頂列與存檔模式（v3 第 0.1 節）。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
+
+## v3 修正
+
+| 包 | 狀態 | 備註 |
+|---|---|---|
+| F1 小修 | 完成，等 Brandon 說「繼續」 | 見下方 F1 備註；golden 124/124 0 差異；全部測試過；設計偵測仍是 3 項 |
+| F2、F7、F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md` |
+
+### F1 小修（2026-10-23）
+- **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
+- **B2**：時間軸只剩「給藥」「SCr」（HD 加「透析」）；圖例沒有「抽血」「濃度」。`test_d5_timeline.js`、`test_r7_sections.js` 照改。
+- **C1**：標題文字包進 `.card-title`（nowrap、不縮、過長才省略號），摘要 `.card-sum` 負責縮短。
+- **C2、C3**：曲線上的參考線／目標帶標籤（腎毒性關切、Pre-HD 目標、Peak 目標、Trough 上限、MIC 門檻）改由程式挑位置：優先線的上方靠左，再來右端，再沿著線掃描，避開曲線點、實測點數值、「現在」線、透析標記、what-if 圖例框與彼此；白描邊；畫在輸注淡底與透析帶之上。窄圖（手機）放不下時改短版（「關切 20」，完整字在 `<title>`），再不行放到繪圖區上緣外的空白列。純顯示，曲線座標不動（golden 0 差異）。
+- **C4**：時間軸圖例依寬度換行（手機兩行）；SCr 旁的「日期　數值」標籤空間不夠時只標數值，再不夠不標（先前會壓到下一個菱形，這是驗收報告沒列、手機 AMG 截圖看到的）。
+- **C6**：範圍外事件往內縮 7 px，三角形與「SCr」軌道標籤至少隔 8 px。
+- **E1**：右區舊提示用 CSS 隱藏（`#loadingSuggestion .empty-note`），**沒有**改 render 的文字，所以 golden 不動。render 裡那句過時文字（V1、V3 的 `loadingSuggestion`）還在，要真的刪掉會動 2 筆 golden，等 Brandon 決定。
+- **E2**：Azole 06 摘要日期改成「10/22 22:24」。
+- 新測試：`tests/test_f1_polish.js`（172 項，含 920／760／358／1232 寬的標籤碰撞檢查）。
+- 截圖（未進版控）：`tests/shots/review/f1_*.png`，基準 `b_*.png`。
+- 用到的 skill：`impeccable` craft-floor／typeset、`dataviz`（標籤與圖例規則）、`break-ui`（長標題、窄寬度、標籤互壓）。
 
 ## 工作包狀態
 

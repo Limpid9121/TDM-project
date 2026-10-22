@@ -1,6 +1,6 @@
 // test_d5_timeline.js — REDESIGN D5：共用時間軸（純顯示）
 //
-//   · 曲線正上方一條時間軸（#vancoTimeline／#amgTimeline），三條軌：給藥、濃度、SCr（HD 時再加「透析」軌）
+//   · 曲線正下方一條時間軸（#vancoTimeline／#amgTimeline），兩條軌：給藥、SCr（HD 時再加「透析」軌）；抽血點曲線上已有，不另開「濃度」軌（v3 F1）
 //   · 與曲線共用同一個時間範圍與 x 座標（曲線 drawCurve 把 t0Ms、範圍記在 svg._tl；不改曲線 SVG 的任何內容）
 //   · 事件＝左邊工作底稿的列：點一下（或 Tab 到事件按 Enter／空白鍵）→ 展開所在段落、捲到那一列、短暫標亮（ws-flash）
 //   · 超出曲線範圍的事件夾在邊緣、畫成三角形（仍可跳轉）
@@ -45,19 +45,17 @@ async function main() {
   const nDose = rowsIn('doseTable').length, nLevel = rowsIn('levelTable').length, nScr = rowsIn('scrTable').length;
   assert(nDose >= 2 && nLevel === 2 && nScr === 2, `前提：示範病例 ${nDose} 筆給藥、${nLevel} 筆濃度、${nScr} 筆 SCr`);
   assert(evs('vancoTimeline', 'dose').length === nDose, '每一筆給藥一個事件');
-  assert(evs('vancoTimeline', 'level').length === nLevel, '每一筆濃度一個事件');
+  assert(evs('vancoTimeline', 'level').length === 0, '沒有濃度事件（抽血點曲線上已經有）');
   assert(evs('vancoTimeline', 'scr').length === nScr, '每一筆 SCr 一個事件');
   assert(evs('vancoTimeline').every(e => e.getAttribute('tabindex') === '0' && e.getAttribute('role') === 'button' && /Enter/.test(e.getAttribute('aria-label') || '')), '每個事件可 Tab、是按鈕、名稱說明 Enter 會跳去哪');
-  const lab = evs('vancoTimeline', 'level')[0].getAttribute('aria-label');
-  assert(/濃度/.test(lab) && /\d+\.\d/.test(lab), '濃度事件名稱含數值：' + lab);
   assert(/SCr/.test(evs('vancoTimeline', 'scr')[0].getAttribute('aria-label')), 'SCr 事件名稱含 SCr');
   assert(/給藥/.test(evs('vancoTimeline', 'dose')[0].getAttribute('aria-label')) && /mg/.test(evs('vancoTimeline', 'dose')[0].getAttribute('aria-label')), '給藥事件名稱含劑量');
   // SCr 旁標「日期 數值」
   assert(Array.from($('vancoTimeline').querySelectorAll('.tl-tag')).some(x => /\d\d\/\d\d.*0\.95/.test(x.textContent)), 'SCr 事件旁標日期與數值：' + Array.from($('vancoTimeline').querySelectorAll('.tl-tag')).map(x => x.textContent).join('｜'));
-  assert(/抽血/.test($('vancoTimeline').textContent) && /輸注時間/.test($('vancoTimeline').textContent), '有圖例');
+  assert(!/抽血/.test($('vancoTimeline').textContent) && /輸注時間/.test($('vancoTimeline').textContent), '有圖例（給藥、SCr），沒有「抽血」');
   // 軌道標籤
   const tlText = $('vancoTimeline').textContent;
-  assert(/給藥/.test(tlText) && /濃度/.test(tlText) && /SCr/.test(tlText), '三條軌有標籤');
+  assert(/給藥/.test(tlText) && !/濃度/.test(tlText) && /SCr/.test(tlText), '兩條軌有標籤（給藥、SCr），沒有「濃度」軌');
 
   // 座標與曲線共用：每一筆給藥的 x 都對得上曲線上的輸注條
   const ML = info.ML, plotW = info.W - info.ML - info.MR;
@@ -72,20 +70,16 @@ async function main() {
     if (Math.abs(x - xOf(ms)) < 0.2 && curveBarX.some(cx => Math.abs(cx - x) < 0.2)) aligned++;
   });
   assert(aligned === doseEvs.length, `給藥事件的 x 與曲線輸注條對齊（${aligned}/${doseEvs.length}）`);
-  // 濃度：x 對得上曲線上的實測點
-  const curveDots = Array.from($('curveSvg').querySelectorAll('circle')).map(c => parseFloat(c.getAttribute('cx')));
-  const lvEvs = evs('vancoTimeline', 'level');
-  assert(lvEvs.every(e => curveDots.some(cx => Math.abs(cx - parseFloat(e.dataset.tlX)) < 0.2)), '濃度事件的 x 與曲線上的實測點對齊');
 
   // ---------- 3. 點擊／鍵盤 → 跳到左邊那一列 ----------
-  const lvRows = rowsIn('levelTable');
+  const doseRows0 = rowsIn('doseTable'), doseEvs0 = evs('vancoTimeline', 'dose');
   scrolled.length = 0;
-  lvEvs[1].dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  doseEvs0[1].dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
   await tick();
-  assert(scrolled.includes(lvRows[1]), '點濃度事件：捲到對應那一列');
-  assert(lvRows[1].classList.contains('ws-flash'), '那一列短暫標亮（ws-flash）');
+  assert(scrolled.includes(doseRows0[1]), '點給藥事件：捲到對應那一列');
+  assert(doseRows0[1].classList.contains('ws-flash'), '那一列短暫標亮（ws-flash）');
   await new Promise(r => setTimeout(r, 1800));
-  assert(!lvRows[1].classList.contains('ws-flash'), '標亮約 1.6 秒後消失');
+  assert(!doseRows0[1].classList.contains('ws-flash'), '標亮約 1.6 秒後消失');
   // 鍵盤
   scrolled.length = 0;
   const scrEvs = evs('vancoTimeline', 'scr');
@@ -122,11 +116,11 @@ async function main() {
   const base = new Date(info.t0Ms + 30 * 3600000);
   const lvStr = `${base.getFullYear()}-${p(base.getMonth() + 1)}-${p(base.getDate())}T${p(base.getHours())}:${p(base.getMinutes())}`;
   await addRow('addLevelRow', 'levelTable', { 'level-date': lvStr, 'level-val': '19.5' });
-  assert(evs('vancoTimeline', 'level').length === nLevel + 1, '新增一筆濃度：時間軸多一個事件');
+  assert(evs('vancoTimeline', 'level').length === 0, '新增一筆濃度：時間軸不多事件（濃度軌已拿掉）');
   // 刪除
   const delBtn = rowsIn('levelTable').pop().querySelector('.row-del');
   delBtn.click(); await tick();
-  assert(evs('vancoTimeline', 'level').length === nLevel, '刪除那一列：事件跟著消失');
+  assert(evs('vancoTimeline', 'level').length === 0 && rowsIn('levelTable').length === nLevel, '刪除那一列：濃度表回到原筆數');
   // 範圍外的 SCr 夾在邊緣、畫成三角形、仍可跳轉
   const offs = Array.from($('vancoTimeline').querySelectorAll('.tl-ev.tl-off'));
   assert(offs.length >= 1 && offs.every(e => e.querySelector('polygon') && /範圍/.test(e.getAttribute('aria-label'))), '曲線範圍之外的事件夾在邊緣畫成三角形，名稱註明在範圍外（' + offs.length + '）');
@@ -149,12 +143,13 @@ async function main() {
   const amgInfo = $('amgCurveSvg')._tl;
   if ($('amgCurveSvg').children.length) {
     assert(!$('amgTimeline').hasAttribute('hidden') && !!amgInfo, 'AMG 有曲線時顯示時間軸並有 _tl');
-    const r1 = await addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T10:30', 'level-val': '6.2' });
-    assert(evs('amgTimeline', 'level').length === 1, 'AMG 濃度事件 1 個');
+    await addRow('amgAddLevelRow', 'amgLevelTable', { 'level-date': '2026-09-19T10:30', 'level-val': '6.2' });
+    assert(evs('amgTimeline', 'level').length === 0, 'AMG 沒有濃度事件（濃度軌已拿掉）');
+    const amgScrRow = rowsIn('amgScrTable')[0];
     scrolled.length = 0;
-    evs('amgTimeline', 'level')[0].dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+    evs('amgTimeline', 'scr')[0].dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
     await tick();
-    assert(scrolled.includes(r1) && r1.classList.contains('ws-flash'), 'AMG：點事件跳到 AMG 自己的濃度列並標亮');
+    assert(scrolled.includes(amgScrRow) && amgScrRow.classList.contains('ws-flash'), 'AMG：點 SCr 事件跳到 AMG 自己的 SCr 列並標亮');
     assert(evs('amgTimeline', 'scr').length === 1, 'AMG SCr 事件 1 個（範圍外也有）');
   } else {
     assert(false, '前提：AMG 補齊必填後有曲線');
