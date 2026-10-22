@@ -10,7 +10,7 @@
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
 - v2 的工作包（L-A…L-G、D0–D8、R7）都完成了，但**第 1 輪自驗收（`docs/REDESIGN_ACCEPTANCE_v1.md`）不通過**：右區排版跟 C3 不同，有好幾處字被切、對不齊。修正計畫是 `docs/REDESIGN_PLAN_v3.md`（F1–F6，含 Brandon 2026-10-22 的決議與設計 skill 盤點），下一個對話從 F1 開始。
 - 驗收截圖工具：`tools/shoot_review.py` 搭配 `tools/review_frame.html`（先開 `python -m http.server 8765`）。
-- 待 Brandon 提供：「存為新收案」與「計算／病人資料」分頁要照的附檔模式（v3 決議 1、2）。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
+- 決議 1、2 照 TPN 調配試算的頂列與存檔模式（v3 第 0.1 節）。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
