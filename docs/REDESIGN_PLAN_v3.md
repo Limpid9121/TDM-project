@@ -16,6 +16,7 @@
 | 4 | 全部收合／全部展開 | **一顆切換鈕**（維持現狀） |
 | 5 | 候選方案的評語 | **只顯示狀態字**（目標內／留意／超標），滑過（`title`／tooltip）看完整說明；照 C3 |
 | — | 01–06 段落按鈕 | **拿掉**（只留那一顆收合切換鈕） |
+| 6 | 撞色太少、整體不夠大膽 | 照**撞色方向 B**：撞色有固定角色（主要動作、目前所在、你的選擇、現在、判讀板的邊、瀏覽器表面），右上判讀區做成深藍板。方向板截圖：`tests/shots/review/acc_now_magenta.png`（現況）、`acc_a_magenta.png`（方向 A）、`acc_b_magenta.png`、`acc_b_mustard.png`、`acc_b_amg.png`（方向 B）。試做樣式在 `tools/exp_accent_a.css`、`tools/exp_accent_b.css`，截圖時加參數 `exp=accent_b&accent=mustard`。規則寫進 `DESIGN.md`「撞色角色規則」 |
 | — | 曲線下時間軸的「濃度」軌 | **拿掉**（曲線上已經有抽血點）；圖例的「● 抽血」一起拿掉 |
 
 ### 0.1 附檔（TPN 調配試算）的模式
@@ -100,6 +101,24 @@ C3 的身分條（病歷號、年齡／性別／體重、CrCl、透析）放在*
 - 驗收：同一列的數字底線要對齊（看截圖），四種寬度都沒有溢出。
 - 要用的 skill：`impeccable` 的 layout、typeset 與 craft-floor，`emil-design-eng`（數字對齊、tabular-nums、細節），`dataviz`（stat tile 的規則）。
 
+### F7　撞色角色＋深藍判讀板（決議 6，接在 F2 後面做）
+- 依 `DESIGN.md` 的「撞色角色規則」，以及 `tools/exp_accent_a.css`、`exp_accent_b.css` 的試做，正式寫進 `index.html`。不要直接引用 exp 檔，把規則併進樣式表，並清掉試做時用的 `!important`。
+- token：加 `--accent-ink`、`--accent-tint`（四個撞色各一組），加 `--ok-on-dark`、`--caution-on-dark`、`--danger-on-dark`。
+- 判讀板：判讀標題列＋參數區變成深藍板，上下緣各一條撞色線。板上：
+  - 數字用白字，標籤與說明用 `navy-soft`。
+  - 狀態色一律用深底版（試做時 AUC 457、Cmin 11.7 的綠，以及 AMG Cmax 的琥珀在深藍上只有 2.6:1，正式版必須換掉）。
+  - 「目標 400–600 ■ 目標內」用深底版綠。
+- 撞色角色：
+  - 主要動作：頂列主按鈕（F5）、展開給藥紀錄。
+  - 目前所在：藥物分頁、計算／病人資料分頁、展開中段落的編號、手機切換。
+  - 你的選擇：勾選的候選方案列、what-if 曲線／輸注條／起始線、提示列。
+  - 現在：曲線上的「現在」標籤。
+  - 瀏覽器表面：選取、游標、焦點、勾選框。
+- 拿掉與 craft-floor 衝突的寬彩色左邊框：`.regimen-pick-bar`、`.demo-banner`、`.flag-item` 的 3 px 左線。試做檔裡勾選列的 3 px 左線也不要做。
+- 四個撞色（洋紅、朱紅、芥末黃、不用撞色）× 四個模組 × 四種寬度都要拍圖看。重點看芥末黃在白底上沒有被當字或線用，以及深藍板上所有字的對比。
+- 會改到曲線 SVG 裡的顏色屬性（what-if 從 `var(--amber)` 改成 `var(--accent-ink)`）。golden 只比座標，應該 0 差異；如果有差異，先停下來回報。
+- 要用的 skill：`impeccable` 的 colorize、bolder、craft-floor 與 audit（對比），`emil-design-eng`，`dataviz`（what-if 線與圖例）。
+
 ### F3　候選方案表照 C3 改，跟曲線並排
 - 欄位改成：方案（q12h 加「現行」標籤）、劑量／輸注、AUC₂₄、Cmin、Cmax、判讀。
   - 「間隔」欄併進方案欄。
@@ -134,7 +153,7 @@ C3 的身分條（病歷號、年齡／性別／體重、CrCl、透析）放在*
 - 截圖：照第 1 節列的情境重拍，跟 C3 並排，寫第 2 輪驗收報告（`docs/REDESIGN_ACCEPTANCE_v2.md`）。
 - 通過後才進行 v2 計畫第 5 節的整體驗收（計時、Brandon 目視核可、merge）。
 
-建議順序：F1 → F2 → F3 → F4 → F5 → F6。
+建議順序：F1 → F2 → F7 → F3 → F4 → F5 → F6。
 
 ---
 
@@ -165,6 +184,7 @@ C3 的身分條（病歷號、年齡／性別／體重、CrCl、透析）放在*
 | F3 | `impeccable/reference/layout.md`、`adapt.md`；`emil-design-eng/SKILL.md`；`break-ui` |
 | F4 | `impeccable/reference/distill.md`、`clarify.md` |
 | F5 | `impeccable/reference/layout.md`；`emil-design-eng/SKILL.md`；`mobile-native/SKILL.md`；對照 `../TPN calculator/TPN調配試算.html` 的頂列與另存視窗（`header.top`、`#addRecordOverlay`、`guardUnsaved`） |
+| F7 | `impeccable/reference/colorize.md`、`bolder.md`、`audit.md`（對比）；`emil-design-eng/SKILL.md`；全域 `dataviz` |
 | F6 | `break-ui`（完整流程）、`review-animations/SKILL.md` 與 `STANDARDS.md`、`impeccable/reference/audit.md`、`critique.md`、`polish.md` |
 
 ---
@@ -176,6 +196,6 @@ C3 的身分條（病歷號、年齡／性別／體重、CrCl、透析）放在*
 再看 docs/direction/shots/C3_24in_allcollapsed.png 與 C3_24in_fold.png（設計目標）。
 分支 redesign，master 不動。照 v3 第 1 節的規則：每包先寫失敗測試、動 UI 前讀 craft-floor 與該包列的 skill、
 用 tools/shoot_review.py 在 1920／1440／1024／390 拍圖逐張目視（重點：對齊、字被切）、跟 C3 並排比對。
-golden 有差異先停下來回報。從 F1 開始，每包完成用白話回報並停下來等我說「繼續」。
+golden 有差異先停下來回報。從 F1 開始（順序 F1 → F2 → F7 → F3 → F4 → F5 → F6），每包完成用白話回報並停下來等我說「繼續」。
 頂列與存檔照 v3 第 0.1 節（TPN 調配試算的模式，附檔路徑 ../TPN calculator/TPN調配試算.html）。
 ```

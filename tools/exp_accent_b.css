@@ -1,0 +1,27 @@
+/* 撞色提案 B（方向板）：在 A 之上，讓「判讀」擁有一塊深藍區域，撞色在深底上最亮。
+   依 impeccable bolder（把系統已有的元素——深藍頂列、撞色線——用到滿，不另發明新元素）
+   與 colorize（讓最強的顏色擁有一個刻意的區域）。 */
+@import url("exp_accent_a.css");
+
+/* 判讀標題列＋參數區變成深藍板（跟頂列同一個深藍，像 TPN 右上的抽取單深色板） */
+#resultsPanel > .results-head, #amgResultsPanel > .results-head{ background:var(--navy); color:#fff; border-bottom:0; box-shadow:inset 0 3px 0 var(--accent); }
+#resultsPanel > .results-head h2, #amgResultsPanel > .results-head h2{ color:#fff; }
+.results-head .rp-rx{ color:#fff !important; }
+.results-head .rp-rx b{ color:#fff; }
+.results-head .mode-badge, .results-head .rp-live{ color:var(--navy-soft) !important; }
+#resultsPanel > .param-grid, #amgResultsPanel > .param-grid{ background:var(--navy); color:#fff; margin:0 !important; padding:4px 20px 18px; }
+.param-grid:has(.pc-key) .param-cell{ border-color:rgba(255,255,255,.18) !important; }
+.param-grid:has(.pc-key) .param-cell .label, .param-grid:has(.pc-key) .param-cell .sub, .param-grid:has(.pc-key) .param-cell .unit{ color:var(--navy-soft) !important; }
+.param-grid:has(.pc-key) .param-cell .value{ color:#fff !important; }
+/* key 數字：白字，狀態字用深底版的狀態色 */
+.param-grid:has(.pc-key) > .pc-key .value{ color:#fff !important; }
+#paramGrid .pc-auc.flag-ok::after{ color:#7EE2A8 !important; }
+#paramGrid .pc-auc.flag-warn::after{ color:#FFD9A0 !important; }
+#paramGrid .pc-auc.flag-danger::after{ color:#FFB4A8 !important; }
+#paramGrid .pc-auc::after{ color:var(--navy-soft); }
+.param-grid:has(.pc-key) .flag-ok .value{ color:#7EE2A8 !important; }
+.param-grid:has(.pc-key) .flag-warn .value{ color:#FFD9A0 !important; }
+.param-grid:has(.pc-key) .flag-danger .value{ color:#FFB4A8 !important; }
+/* 深藍板下緣一條撞色線，跟頂列呼應 */
+#resultsPanel > .param-grid, #amgResultsPanel > .param-grid{ box-shadow:inset 0 -3px 0 var(--accent); }
+#resultsPanel > .param-grid .param-cell, #amgResultsPanel > .param-grid .param-cell{ background:transparent !important; }

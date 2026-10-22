@@ -1,0 +1,41 @@
+/* 撞色提案 A（方向板，不是正式樣式）：撞色＝「你的動作、你的選擇、現在」
+   依 impeccable colorize（Operate 模式：顏色編碼動作、選取、導覽；讓最強的顏色擁有一個角色，不撒小點）
+   與 craft-floor（瀏覽器表面也要上色：選取、游標、焦點、捲軸）。
+   狀態色（目標內／留意／超標）完全不用撞色。 */
+
+/* 1. 每個撞色多一個「在白底上可讀」的深版（芥末黃本色在白底只有 1.8:1，不能當字或線） */
+:root{ --accent-ink:#C2185B; --accent-tint:#FBE4EE; }
+:root[data-accent="vermilion"]{ --accent-ink:#B23A12; --accent-tint:#FCE6DE; }
+:root[data-accent="mustard"]{ --accent-ink:#7A5800; --accent-tint:#FFF3C4; }
+:root[data-accent="none"]{ --accent-ink:#1B2A4A; --accent-tint:#EEF1F6; }
+
+/* 2. 瀏覽器表面 */
+::selection{ background:var(--accent-tint); color:var(--ink); }
+input, textarea{ caret-color:var(--accent-ink); }
+:focus-visible{ outline-color:var(--accent-ink) !important; }
+header.top :focus-visible, #mSummary :focus-visible{ outline-color:var(--accent) !important; }
+*{ scrollbar-color:var(--line-strong) transparent; }
+
+/* 3. 主要動作：實心撞色（全頁只有主要動作是實心撞色） */
+.btn.primary, header.top .hdr-pm-slot .btn.primary{ background:var(--accent) !important; border-color:var(--accent) !important; color:var(--on-accent) !important; }
+.btn.primary:hover{ filter:brightness(.92); }
+
+/* 4. 導覽：目前所在 */
+.mod-tab.active{ border-bottom-color:var(--accent-ink) !important; }
+.card:not(.collapsed) > h2 .idx{ background:var(--accent-ink); border-color:var(--accent-ink); color:#fff; }
+.sec-btn[aria-pressed="true"]{ background:var(--accent-ink) !important; border-color:var(--accent-ink) !important; }
+.m-switch button[aria-pressed="true"]{ border-bottom-color:var(--accent-ink) !important; }
+
+/* 5. 你的選擇：勾選的候選方案＝撞色（原本是琥珀色，跟「留意」撞色） */
+tr:has(> td > input.regimen-pick:checked){ background:var(--accent-tint) !important; }
+tr:has(> td > input.regimen-pick:checked) td:first-child{ box-shadow:inset 3px 0 0 var(--accent-ink); }
+input.regimen-pick{ accent-color:var(--accent-ink); }
+svg.curve path[stroke="var(--amber)"]{ stroke:var(--accent-ink); }
+svg.curve rect[fill="var(--amber)"]{ fill:var(--accent); }
+svg.curve line[stroke="var(--amber)"]{ stroke:var(--accent-ink); }
+svg.curve text[fill="var(--amber)"]{ fill:var(--accent-ink); }
+.regimen-pick-bar{ background:var(--accent-tint) !important; border-left-color:var(--accent-ink) !important; }
+.whatif-readout{ color:var(--accent-ink) !important; font-weight:700; }
+
+/* 6. 勾選框、單選鈕 */
+input[type="checkbox"], input[type="radio"]{ accent-color:var(--accent-ink); }
