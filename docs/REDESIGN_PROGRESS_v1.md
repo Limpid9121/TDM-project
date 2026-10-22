@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-22（D8 收尾完成；剩 R7 獨立包與 Brandon 的最終驗收）
+最後更新：2026-10-22（R7 完成；全部工作包做完，等 Brandon 最終驗收、才 merge）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：R7 獨立包（段落收合摘要、段落跳轉列、給藥紀錄只顯示最近 3 筆）；之後 Brandon 最終驗收、才 merge。D2–D8 完成，等 Brandon 看畫面。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
+- 全部工作包（L-A…L-G、D0–D8、R7）完成。等 Brandon 最終驗收（整體驗收清單見計畫第 5 節），通過才把 `redesign` merge 回 `master`。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -67,6 +67,13 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### R7 段落收合摘要、跳轉列、最近 3 筆給藥紀錄（2026-10-22）
+- **收合摘要**：每個段落標題列多一個 `.card-sum`；收合時顯示、展開時隱藏（CSS）。內容讀欄位現值、隨輸入即時更新（`refreshSectionSums`，掛在 `input`／`change`、參數格、各表格列增減）。Vancomycin 六段：01「55 歲／男／65 kg・SCr 0.95（10/22）」、02 適應症・嚴重度・感染部位、03「1000 mg q12h（輸注 120 分）・7 筆紀錄」（有 loading 多一段；HD 顯示透析後劑量）、04「2 筆濃度（最近 11.8 µg/mL，時間）」、05「MIC 1・AUC 目標 500」、06 併用藥前 30 字。AMG 六段同型（05 顯示勾選的候選間隔）。Azole、AED：藥物／適應症、人口學、lab、給藥、濃度（只做了容易取到欄位的幾段，其餘段落沒有摘要）。沒有資料寫「尚未填寫」。
+- **段落跳轉列**（`#vancoSecBar／#amgSecBar／#azlSecBar／#aedSecBar`，桌機固定在頂列下方）：每個可見段落一顆按鈕（01、02…，Azole／AED 依藥物顯示的段落增減）；點了**只展開那一段、其餘收合**、捲過去、左側深藍細條標亮 1.6 秒；展開中的是實心（`aria-pressed`）；另有「全部收合／全部展開」。取代舊的「全部收起」小按鈕。展開狀態沿用既有的 `tdm_card_collapse_v1` 記住。別處（必填提示、時間軸跳轉）直接改段落 class、換藥物改 style，按鈕靠 `MutationObserver` 跟著。
+- **給藥紀錄只顯示最近 3 筆**（Vancomycin、AMG）：較早的列加 `row-older`（`display:none`），表上方一行「較早 4 筆（10/19 22:09 – 10/21 10:09）已收起，點這裡展開」（`#vancoDoseFold／#amgDoseFold`，`aria-expanded`），點開變「收起較早 N 筆」。列仍在 DOM，`readDoseRows` 與所有計算不受影響。只在加列／刪列／展開時重算（打字改時間時不重算，不然編輯中的列會消失）；新增的空白列一律顯示；3 筆以內不顯示提示；時間軸點到被收起的劑次會先展開（`unfoldDoseRow`）。
+- **坑**：段落按鈕的 `hidden` 每次同步都重寫同一個值，`MutationObserver` 把「寫同值」也算一次變動，Azole／AED（有隱藏段落）載入時無限迴圈、整頁卡死；改成值有變才寫。
+- 測試：`tests/test_r7_sections.js`（46 項）；全部測試過、golden 124/124 0 差異。內建瀏覽器看過 vancomycin（收合摘要、跳轉列實心、最近 3 筆）；Azole／AED／AMG 的畫面只用測試驗證、沒有逐一截圖。
 
 ### D8 收尾（2026-10-22）
 - **alert 改行內提示**：新增 `notify(anchor,msg,level)`（照 UIUX_IMPL_SPEC Phase 7）：提示出現在按鈕那一列之後（病人面板裡的出現在面板內），同位置換掉舊的、8 秒後消失、再按同一鈕先移除，`role="alert"`。替換 29 處驗證型 `alert`（展開給藥、清除較早紀錄、產生透析時程、病人存檔／載入／更新／刪除／匯出入、清除全部本機資料）。**保留**所有 `confirm` 與「存檔失敗」的 `alert`（必須打斷）；`notify` 找不到錨點時才退回 `alert`。測試 `tests/test_inline_notes.js`（20 項）。

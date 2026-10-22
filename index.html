@@ -907,6 +907,29 @@
 
   .inline-note{margin:8px 0 0;}
   .pm-bar .inline-note{flex-basis:100%;order:100;}
+
+  /* =====================================================================
+     R7：段落收合摘要、段落跳轉列、給藥紀錄只顯示最近 3 筆
+     ===================================================================== */
+  .card h2.card-head{display:flex;align-items:baseline;gap:8px;}
+  .card-sum{display:none;flex:1 1 auto;min-width:0;font-size:13px;font-weight:400;color:var(--ink-soft);margin-left:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .card.collapsed .card-sum{display:block;}
+  .card.collapsed .card-sum:empty{display:none;}
+  .card-chev{align-self:center;}
+  .card{scroll-margin-top:calc(var(--hdr-h,48px) + 56px);}
+  .card.sec-flash{box-shadow:inset 3px 0 0 var(--navy);background:var(--navy-tint);transition:background-color .4s ease;}
+  .sec-bar{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:8px 0;margin:0 0 4px;background:var(--paper);border-bottom:1px solid var(--line);}
+  @media (min-width:981px){ .sec-bar{position:sticky;top:var(--hdr-h,48px);z-index:20;} }
+  .sec-btn{min-width:36px;min-height:32px;padding:4px 8px;font:inherit;font-size:13px;font-weight:700;font-family:var(--mono);background:#fff;color:var(--navy);border:1.5px solid var(--navy);border-radius:4px;cursor:pointer;}
+  .sec-btn[aria-pressed="true"]{background:var(--navy);color:#fff;}
+  .sec-btn[hidden]{display:none;}
+  .sec-btn:hover{background:var(--navy-tint);} .sec-btn[aria-pressed="true"]:hover{background:var(--navy-2);}
+  .sec-bulk{margin-left:auto;}
+  @media (max-width:640px){ .sec-bar{position:sticky;top:44px;z-index:28;} }
+  .dose-fold{display:block;width:100%;text-align:left;margin:10px 0 0;padding:7px 10px;font:inherit;font-size:13px;color:var(--ink);background:var(--navy-tint);border:1px dashed var(--navy-soft);border-radius:4px;cursor:pointer;}
+  .dose-fold:hover{border-color:var(--navy);}
+  .dose-fold[hidden]{display:none;}
+  .entry-row.row-older{display:none;}
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -1248,6 +1271,7 @@
 
         <h3>實際給藥紀錄（計算只採用這張表）</h3>
         <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
+        <button type="button" class="dose-fold" id="vancoDoseFold" aria-expanded="false" hidden></button>
         <div class="entry-rows" id="doseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="addDoseRow" type="button">+ 手動新增一劑</button>
@@ -1608,6 +1632,7 @@
 
         <h3>實際給藥紀錄（計算只採用這張表）</h3>
         <div class="entry-head entry-head--dose" aria-hidden="true"><span>#</span><span>給藥開始時間</span><span>劑量 mg</span><span>輸注 分</span><span></span></div>
+        <button type="button" class="dose-fold" id="amgDoseFold" aria-expanded="false" hidden></button>
         <div class="entry-rows" id="amgDoseTable" style="margin-top:14px;"></div>
         <div class="btn-row" style="align-items:center;">
           <button class="btn small" id="amgAddDoseRow" type="button">+ 手動新增一劑</button>
@@ -3311,7 +3336,7 @@
         h2.classList.add('card-head');
         h2.setAttribute('role', 'button');
         h2.setAttribute('tabindex', '0');
-        h2.insertAdjacentHTML('beforeend', CHEV_SVG);
+        h2.insertAdjacentHTML('beforeend', '<span class="card-sum"></span>' + CHEV_SVG);
 
         const toggle = ()=>{
           const next = !card.classList.contains('collapsed');
@@ -3330,34 +3355,67 @@
         card.dataset.collapsibleReady = '1';
       });
 
-      // bulk control — the point of the feature is fast navigation, which only really
-      // works when every card can be folded away in one action
-      let bulkBtn = null;
-      function syncBulk(){
-        if(!bulkBtn) return;
-        const anyOpen = cards.some(c=>!c.classList.contains('collapsed'));
-        bulkBtn.textContent = anyOpen ? '全部收起' : '全部展開';
-      }
-      if(!panel.querySelector('.panel-tools')){
-        const tools = document.createElement('div');
-        tools.className = 'panel-tools';
-        bulkBtn = document.createElement('button');
-        bulkBtn.type = 'button';
-        bulkBtn.className = 'btn small';
-        bulkBtn.addEventListener('click', ()=>{
-          const collapseAll = cards.some(c=>!c.classList.contains('collapsed'));
+      // 段落跳轉列（R7）：每個可見段落一顆按鈕（01、02…），點了只展開那一段、其餘收合、捲過去並短暫標亮；
+      // 展開中的段落按鈕是實心（aria-pressed）；另有「全部收合／全部展開」。取代舊的「全部收起」小按鈕。
+      const BAR_IDS = {vanco:'vancoSecBar', amg:'amgSecBar', azole:'azlSecBar', aed:'aedSecBar'};
+      const bar = document.createElement('nav');
+      bar.className = 'sec-bar';
+      bar.id = BAR_IDS[mod];
+      bar.setAttribute('aria-label', '段落跳轉');
+      const secBtns = cards.map((c, i)=>{
+        const h2 = c.querySelector('h2'); if(!h2) return null;
+        const idx = (h2.querySelector('.idx') || {}).textContent || String(i+1);
+        const title = h2.textContent.replace(idx, '').replace(/\s+/g, ' ').trim();
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'sec-btn'; b.dataset.sec = String(i);
+        b.textContent = idx.trim();
+        b.title = title; b.setAttribute('aria-label', '跳到 ' + idx.trim() + ' ' + title);
+        b.addEventListener('click', ()=>{
           const p = loadCollapsePrefs();
-          cards.forEach((c, i)=>{
-            const h = c.querySelector('h2.card-head');
-            if(h) setCollapsed(c, h, collapseAll);
-            p[keyFor(c, i)] = collapseAll;
+          cards.forEach((c2, j)=>{
+            const h = c2.querySelector('h2.card-head'); if(!h) return;
+            setCollapsed(c2, h, j !== i);
+            p[keyFor(c2, j)] = (j !== i);
           });
           saveCollapsePrefs(p);
+          if(c.scrollIntoView) c.scrollIntoView({block:'start', behavior:'auto'});
+          c.classList.add('sec-flash');
+          clearTimeout(c._flashT);
+          c._flashT = setTimeout(()=>c.classList.remove('sec-flash'), 1600);
           syncBulk();
         });
-        tools.appendChild(bulkBtn);
-        panel.insertBefore(tools, panel.firstChild);
+        bar.appendChild(b);
+        return b;
+      });
+      const bulkBtn = document.createElement('button');
+      bulkBtn.type = 'button'; bulkBtn.className = 'btn small sec-bulk'; bulkBtn.dataset.secBulk = '1';
+      bulkBtn.addEventListener('click', ()=>{
+        const collapseAll = cards.some(c=>!c.classList.contains('collapsed'));
+        const p = loadCollapsePrefs();
+        cards.forEach((c, i)=>{
+          const h = c.querySelector('h2.card-head');
+          if(h) setCollapsed(c, h, collapseAll);
+          p[keyFor(c, i)] = collapseAll;
+        });
+        saveCollapsePrefs(p);
+        syncBulk();
+      });
+      bar.appendChild(bulkBtn);
+      panel.insertBefore(bar, panel.firstChild);
+      function cardShown(c){ return !c.hidden && c.style.display !== 'none'; }
+      function syncBulk(){
+        const shown = cards.filter(cardShown);
+        const anyOpen = shown.some(c=>!c.classList.contains('collapsed'));
+        bulkBtn.textContent = anyOpen ? '全部收合' : '全部展開';
+        cards.forEach((c, i)=>{
+          const b = secBtns[i]; if(!b) return;
+          const want = !cardShown(c);
+          if(b.hidden !== want) b.hidden = want;   // 值沒變就不寫：寫同一個值也會產生 mutation，觀察器會無限迴圈
+          b.setAttribute('aria-pressed', String(!c.classList.contains('collapsed')));
+        });
       }
+      // 別處（必填提示、時間軸跳轉）直接改 class、藥物切換改 style 也要讓按鈕跟著
+      new MutationObserver(syncBulk).observe(panel, {attributes:true, subtree:true, attributeFilter:['class','style','hidden']});
       syncBulk();
     });
   }
@@ -9713,6 +9771,7 @@ ${flagText||'（無）'}
       {svgId:'amgCurveSvg', tlId:'amgTimeline',   dose:'amgDoseTable', level:'amgLevelTable', scr:'amgScrTable'}
     ];
     function jumpToWorksheetRow(row){
+      unfoldDoseRow(row);
       const card = row.closest('.card');
       if(card && card.classList.contains('collapsed')){
         card.classList.remove('collapsed');
@@ -9877,6 +9936,120 @@ ${flagText||'（無）'}
     });
     document.querySelectorAll('.drug-module').forEach(m=>new MutationObserver(refreshSummary).observe(m, {attributes:true, attributeFilter:['class']}));
     refreshSummary();
+
+    // ---------------- R7：段落摘要與給藥紀錄只顯示最近 3 筆（純顯示；只讀欄位現值） ----------------
+    const sv = id=>{ const e = document.getElementById(id); return e ? String(e.value).trim() : ''; };
+    const selText = id=>{ const e = document.getElementById(id); return e && e.selectedOptions && e.selectedOptions[0] && e.value!=='' ? e.selectedOptions[0].textContent.trim() : ''; };
+    const nRowsOf = id=>document.querySelectorAll('#'+id+' .entry-row').length;
+    const sexTxt = v=>({M:'男', F:'女'}[v] || '性別未填');
+    const demogTxt = (a,s,t)=>[a ? a+' 歲' : '年齡未填', sexTxt(sv(s)), sv(t) ? sv(t)+' kg' : '體重未填'].map((x,i)=>i===0?x:x).join('／').replace(/^([^／]*)／/, a0=>a0);
+    const demogOf = (age,sex,tbw)=>[sv(age) ? sv(age)+' 歲' : '年齡未填', sexTxt(sv(sex)), sv(tbw) ? sv(tbw)+' kg' : '體重未填'].join('／');
+    const scrLatestTxt = tableId=>{
+      const rows = Array.from(document.querySelectorAll('#'+tableId+' .entry-row')).map(r=>({d:r.querySelector('.scr-date').value, v:r.querySelector('.scr-val').value})).filter(r=>r.d && r.v!=='');
+      if(!rows.length) return '';
+      rows.sort((a,b)=>a.d<b.d?-1:1);
+      const l = rows[rows.length-1];
+      return `SCr ${l.v}（${l.d.slice(5).replace('-','/')}）`;
+    };
+    const levelTxt = (tableId, unit)=>{
+      const rows = Array.from(document.querySelectorAll('#'+tableId+' .entry-row')).map(r=>({d:r.querySelector('.level-date').value, v:r.querySelector('.level-val').value})).filter(r=>r.d && r.v!=='');
+      if(!rows.length) return '';
+      rows.sort((a,b)=>a.d<b.d?-1:1);
+      const l = rows[rows.length-1];
+      return `${rows.length} 筆濃度（最近 ${l.v} ${unit}，${fmtDateTimeShort(parseLocal(l.d))}）`;
+    };
+    const join = parts=>parts.filter(Boolean).join('・');
+    const EMPTY = '尚未填寫';
+    const SECTION_SUMS = {
+      vanco: [
+        ()=>join([demogOf('age','sex','tbw'), scrLatestTxt('scrTable'), sv('dialysis')!=='none' ? '透析：'+sv('dialysis') : '']),
+        ()=>join([selText('indication'), sv('severity'), sv('site')]),
+        ()=>{
+          const hd = sv('dialysis')==='HD';
+          const dose = hd ? (sv('hdMaintDose') ? `透析後 ${sv('hdMaintDose')} mg` : '') : (sv('maintDose') ? `${sv('maintDose')} mg q${sv('maintInterval')||'?'}h（輸注 ${sv('maintInf')||'?'} 分）` : '');
+          const load = !hd && document.getElementById('useLoading').checked && sv('loadingDose') ? `Loading ${sv('loadingDose')} mg` : '';
+          const n = nRowsOf('doseTable');
+          return join([load, dose, n ? `${n} 筆紀錄` : '']);
+        },
+        ()=>levelTxt('levelTable','µg/mL') ,
+        ()=>join([sv('mic') ? 'MIC '+sv('mic') : 'MIC 未填', 'AUC 目標 '+(selText('targetAuc')||sv('targetAuc')||'400–600')]),
+        ()=>sv('concomitant').slice(0,30)
+      ],
+      amg: [
+        ()=>join([demogOf('amgAge','amgSex','amgTbw'), scrLatestTxt('amgScrTable'), sv('amgDialysis')!=='none' ? '透析：'+sv('amgDialysis') : '']),
+        ()=>join([selText('amgDrug'), selText('amgStrategy'), selText('amgIndication')]),
+        ()=>{ const dose = sv('amgMaintDose') ? `${sv('amgMaintDose')} mg q${sv('amgMaintInterval')||'?'}h（輸注 ${sv('amgMaintInf')||'?'} 分）` : ''; const n = nRowsOf('amgDoseTable'); return join([dose, n ? `${n} 筆紀錄` : '']); },
+        ()=>levelTxt('amgLevelTable','µg/mL'),
+        ()=>{ const cs = [['amgCand8','8'],['amgCand12','12'],['amgCand24','24'],['amgCand36','36'],['amgCand48','48']].filter(([id])=>{ const e = document.getElementById(id); return e && e.checked; }).map(([,h])=>'q'+h+'h'); return cs.length ? '候選 '+cs.join('、') : ''; },
+        ()=>sv('amgConcomitant').slice(0,30)
+      ],
+      azole: [
+        ()=>join([selText('azlDrug'), selText('azlIndication')]),
+        ()=>demogOf('azlAge','azlSex','azlTbw'),
+        ()=>join([sv('azlScr') ? 'SCr '+sv('azlScr') : '', sv('azlAlbumin') ? 'Albumin '+sv('azlAlbumin') : '']),
+        ()=>'',
+        ()=>join([selText('azlFormulation'), selText('azlFreq'), sv('azlDoseAm') ? sv('azlDoseAm')+' mg' : '']),
+        ()=>sv('azlTroughVal') ? `Trough ${sv('azlTroughVal')}${sv('azlTroughDate') ? '（'+sv('azlTroughDate').slice(5).replace('-','/')+'）' : ''}` : ''
+      ],
+      aed: [
+        ()=>join([selText('aedDrug'), selText('aedPurpose')]),
+        ()=>demogOf('aedAge','aedSex','aedTbw'),
+        ()=>join([sv('aedScr') ? 'SCr '+sv('aedScr') : '', sv('aedAlbumin') ? 'Albumin '+sv('aedAlbumin') : '']),
+        ()=>join([selText('aedForm'), sv('aedDose') ? sv('aedDose')+' mg' : '', sv('aedTauH') ? 'q'+sv('aedTauH')+'h' : '']),
+        ()=>sv('aedLevelValue') ? `${selText('aedLevelType')||'濃度'} ${sv('aedLevelValue')}` : ''
+      ]
+    };
+    const SUM_PANELS = {vanco:'inputPanel', amg:'amgInputPanel', azole:'azlInputPanel', aed:'aedInputPanel'};
+    function refreshSectionSums(){
+      Object.entries(SECTION_SUMS).forEach(([mod, fns])=>{
+        const panel = document.getElementById(SUM_PANELS[mod]);
+        if(!panel) return;
+        const cards = Array.from(panel.children).filter(el=>el.classList && el.classList.contains('card'));
+        cards.forEach((c, i)=>{
+          const el = c.querySelector('h2 .card-sum');
+          if(!el) return;
+          let t = '';
+          if(fns[i]){ try{ t = fns[i](); }catch(e){ t = ''; } }
+          el.textContent = fns[i] ? (t || EMPTY) : '';
+        });
+      });
+    }
+    ['input','change'].forEach(ev=>document.addEventListener(ev, refreshSectionSums));
+    ['paramGrid','amgParamGrid','azlParamGrid','aedParamGrid'].forEach(id=>{ const g = document.getElementById(id); if(g) new MutationObserver(refreshSectionSums).observe(g, {childList:true}); });
+    ['doseTable','amgDoseTable','levelTable','amgLevelTable','scrTable','amgScrTable'].forEach(id=>{ const t = document.getElementById(id); if(t) new MutationObserver(refreshSectionSums).observe(t, {childList:true}); });
+    refreshSectionSums();
+
+    // 給藥紀錄只顯示最近 3 筆：較早的收成一行提示（列仍在 DOM，readDoseRows 不受影響）。只在加列／刪列／展開時重算，
+    // 打字改時間時不重算（不然正在編輯的列會突然消失）。
+    const DOSE_FOLDS = [{table:'doseTable', btn:'vancoDoseFold'}, {table:'amgDoseTable', btn:'amgDoseFold'}];
+    function refreshDoseFold(f){
+      const table = document.getElementById(f.table), btn = document.getElementById(f.btn);
+      if(!table || !btn) return;
+      const rows = Array.from(table.querySelectorAll('.entry-row'));
+      const dated = rows.map(r=>({r, t:parseLocal(r.querySelector('.dose-date').value)})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
+      const older = dated.slice(0, Math.max(0, dated.length-3));
+      const open = table.dataset.foldOpen==='1';
+      if(!older.length){ delete table.dataset.foldOpen; rows.forEach(r=>r.classList.remove('row-older')); btn.hidden = true; return; }
+      const olderSet = new Set(older.map(x=>x.r));
+      rows.forEach(r=>r.classList.toggle('row-older', !open && olderSet.has(r)));
+      btn.hidden = false;
+      btn.setAttribute('aria-expanded', String(open));
+      btn.textContent = open ? `收起較早 ${older.length} 筆` : `較早 ${older.length} 筆（${fmtDateTimeShort(older[0].t)} – ${fmtDateTimeShort(older[older.length-1].t)}）已收起，點這裡展開`;
+    }
+    DOSE_FOLDS.forEach(f=>{
+      const table = document.getElementById(f.table), btn = document.getElementById(f.btn);
+      if(!table || !btn) return;
+      btn.addEventListener('click', ()=>{ table.dataset.foldOpen = table.dataset.foldOpen==='1' ? '0' : '1'; refreshDoseFold(f); });
+      new MutationObserver(()=>refreshDoseFold(f)).observe(table, {childList:true});
+      refreshDoseFold(f);
+    });
+    // 時間軸點到被收起的列：先展開再跳（jumpToWorksheetRow 會呼叫）
+    function unfoldDoseRow(row){
+      DOSE_FOLDS.forEach(f=>{
+        const table = document.getElementById(f.table);
+        if(table && table.contains(row) && row.classList.contains('row-older')){ table.dataset.foldOpen = '1'; refreshDoseFold(f); }
+      });
+    }
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
