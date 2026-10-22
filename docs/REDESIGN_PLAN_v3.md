@@ -4,6 +4,9 @@
 
 前一份計畫是 `docs/REDESIGN_PLAN_v2.md`（L-A…L-G、D0–D8、R7 都已完成）。這份 v3 只處理第 1 輪自驗收（`docs/REDESIGN_ACCEPTANCE_v1.md`）找出的問題，以及 Brandon 在 2026-10-22 的決議。進度記在 `docs/REDESIGN_PROGRESS_v1.md`，新的一節叫「v3 修正」。
 
+> **2026-10-23 決議：手機版開發與設計全面暫緩，專注電腦版。** F3 的手機卡片、F5 的手機頂列、F6 的 390 寬複驗、各包 390 截圖都先不做（既有手機程式碼保留不動，也不主動改）。驗收寬度改為 1920、1440、1024。恢復手機要等 Brandon 明說。下文提到手機的條目都視為暫緩。
+> 同日核可：刪除右區舊 loading 提示（E1，golden 2 筆 V1、V3 `loadingSuggestion` 更新為空字串）。
+
 ---
 
 ## 0. Brandon 的決議（2026-10-22）

@@ -921,8 +921,6 @@
   .sec-bar{display:flex;align-items:center;justify-content:flex-end;padding:8px 0;margin:0 0 4px;background:var(--paper);border-bottom:1px solid var(--line);}
   @media (min-width:981px){ .sec-bar{position:sticky;top:var(--hdr-h,48px);z-index:20;} }
   @media (max-width:640px){ .sec-bar{position:sticky;top:44px;z-index:28;} }
-  /* 右區舊提示「未勾選深部／難清除感染…」：左邊 03 已有 loading 建議，這句過時。只隱藏、不動 render 輸出（golden 不變） */
-  #loadingSuggestion .empty-note{display:none;}
   .dose-fold{display:block;width:100%;text-align:left;margin:10px 0 0;padding:7px 10px;font:inherit;font-size:13px;color:var(--ink);background:var(--navy-tint);border:1px dashed var(--navy-soft);border-radius:4px;cursor:pointer;}
   .dose-fold:hover{border-color:var(--navy);}
   .dose-fold[hidden]{display:none;}
@@ -4578,7 +4576,7 @@
     if(deepInfection){
       loadingBox.innerHTML = `<div class="flag-item warn" style="margin-bottom:12px;"><span class="dot"></span><span>深部／難清除感染，建議評估 loading dose：<strong>${fmt0(loadSuggest)} mg</strong>（以 ${lf} mg/kg TBW 估算，上限 3000 mg），輸注 ${loadInfMin} 分鐘以上以降低 infusion reaction 風險。</span></div>`;
     } else {
-      loadingBox.innerHTML = `<div class="empty-note">未勾選「深部／難清除感染」。若需評估 loading dose，於左側區塊 02 勾選後將顯示建議。</div>`;
+      loadingBox.innerHTML = '';   // 左側 03 已有 loading 建議，不再顯示「未勾選…」舊提示（v3 F1／E1，Brandon 2026-10-23 核可）
     }
 
     // monitoring guidance tailored to the pre-dose scenario
@@ -5775,7 +5773,7 @@ ${flagText || '（無特別旗標）'}
     if(deepInfection){
       loadingBox.innerHTML = `<div class="flag-item warn" style="margin-bottom:12px;"><span class="dot"></span><span>深部／難清除感染，建議評估 loading dose：<strong>${fmt0(loadSuggest)} mg</strong>（以 ${lf} mg/kg TBW 估算，上限 3000 mg），輸注 ${loadInfMin} 分鐘以上以降低 infusion reaction 風險。</span></div>`;
     } else {
-      loadingBox.innerHTML = `<div class="empty-note">未勾選「深部／難清除感染」。若需評估 loading dose，於左側區塊 02 勾選後將顯示建議。</div>`;
+      loadingBox.innerHTML = '';   // 左側 03 已有 loading 建議，不再顯示「未勾選…」舊提示（v3 F1／E1，Brandon 2026-10-23 核可）
     }
 
     // --- 9. monitoring text ---

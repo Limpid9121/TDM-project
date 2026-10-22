@@ -6,7 +6,7 @@
 //   4. 曲線上的參考線／目標帶標籤：不壓曲線、彼此不重疊、畫在輸注淡底之上、有白描邊（C2、C3）
 //   5. 時間軸圖例依寬度換行、不超出右緣（C4）
 //   6. 時間軸「SCr」標籤與範圍外三角形至少隔 8 px（C6）
-//   7. 右區舊的「未勾選深部／難清除感染」提示不再顯示（E1，只用 CSS 隱藏，textContent 不動）
+//   7. 右區舊的「未勾選深部／難清除感染」提示從 render 拿掉（E1；golden 2 筆已核可更新）
 //   8. Azole 06 摘要日期「10/22 22:24」（E2）
 //
 // Run: node test_f1_polish.js
@@ -62,8 +62,13 @@ async function main() {
   assert(/\.card-sum\{[^}]*min-width:\s*0[^}]*text-overflow:\s*ellipsis/.test(html), '摘要 min-width:0 加省略號');
   assert(cards[3].querySelector('h2 .card-title').textContent.replace(/\s+/g, '') === '血中濃度量測（自由時點）', '標題文字沒被改：' + cards[3].querySelector('h2 .card-title').textContent);
 
-  // ---------- 7. E1 ----------
-  assert(/#loadingSuggestion\s+\.empty-note\s*\{\s*display:\s*none/.test(html), '舊的「未勾選深部／難清除感染」提示用 CSS 隱藏');
+  // ---------- 7. E1：舊提示從 render 裡拿掉（未勾選深部感染時右區 #loadingSuggestion 是空的；勾選時仍有建議） ----------
+  assert(!/未勾選「深部／難清除感染」。若需評估/.test(html), '程式裡沒有「未勾選深部／難清除感染」舊提示');
+  $('loadDemoBtn').click(); await tick(200);
+  assert($('loadingSuggestion').textContent.trim() === '', '未勾選深部感染：右區 loading 區是空的');
+  $('deepInfection').checked = true; fire($('deepInfection')); await tick(100);
+  assert(/loading dose/.test($('loadingSuggestion').textContent), '勾選深部感染：仍有 loading 建議');
+  $('deepInfection').checked = false; fire($('deepInfection')); await tick(100);
 
   // ---------- 8. E2 ----------
   await sw('azole', 'amg');
