@@ -892,6 +892,9 @@
   #vancoLoadingBlock{margin:0 0 6px;}
   .loading-rec{font-size:13px;color:var(--ink-soft);margin:2px 0 10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;}
   .loading-rec[hidden]{display:none;}
+
+  .inline-note{margin:8px 0 0;}
+  .pm-bar .inline-note{flex-basis:100%;order:100;}
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -2407,6 +2410,30 @@
     }
   }
 
+
+  // ---------------- 行內提示（取代驗證型 alert；UIUX_IMPL_SPEC Phase 7） ----------------
+  // notify(anchor, msg, level)：在 anchor（元素或 id）所在的 .btn-row 之後插入一則 .inline-note；
+  // anchor 在病人管理列（.pm-bar）裡就插在 anchor 之後。同位置再次提示會換掉舊的，8 秒後自動消失，
+  // 再按一次同一個按鈕也會先移除舊提示。role="alert"，讀屏會唸出來。保留 confirm 與「存檔失敗」的 alert（必須打斷）。
+  function notify(anchor, msg, level){
+    const el = typeof anchor==='string' ? document.getElementById(anchor) : anchor;
+    if(!el){ alert(msg); return; }
+    const bar = el.closest('.pm-bar');
+    const host = bar ? el : (el.closest('.btn-row') || el.parentElement);
+    const old = bar ? bar.querySelector('.inline-note') : (host.nextElementSibling && host.nextElementSibling.classList.contains('inline-note') ? host.nextElementSibling : null);
+    if(old){ clearTimeout(old._t); old.remove(); }
+    const note = document.createElement('div');
+    note.className = 'inline-note flag-item ' + (level||'warn');
+    note.setAttribute('role', 'alert');
+    const dot = document.createElement('span'); dot.className = 'dot';
+    const txt = document.createElement('span'); txt.textContent = msg;
+    note.appendChild(dot); note.appendChild(txt);
+    host.insertAdjacentElement('afterend', note);
+    const gone = ()=>{ clearTimeout(note._t); note.remove(); };
+    note._t = setTimeout(gone, 8000);
+    if(el.addEventListener && el.tagName==='BUTTON') el.addEventListener('click', gone, {once:true});
+  }
+
   function toLocalInputValue(date){
     const p = n=>String(n).padStart(2,'0');
     return `${date.getFullYear()}-${p(date.getMonth()+1)}-${p(date.getDate())}T${p(date.getHours())}:${p(date.getMinutes())}`;
@@ -2857,10 +2884,10 @@
     }
     return sessions;
   }
-  // cfg: {getDaysFn, slotTimeId, durationId, rangeStartId, rangeEndId, tableId, addFn, renderFn}
+  // cfg: {getDaysFn, slotTimeId, durationId, rangeStartId, rangeEndId, btnId, tableId, addFn, renderFn}
   function generateHdSessionsFn(cfg){
     const checkedDays = cfg.getDaysFn();
-    if(!checkedDays.length){ alert('請至少勾選一個透析星期。'); return; }
+    if(!checkedDays.length){ notify(cfg.btnId, '請至少勾選一個透析星期。'); return; }
     const timeStr = document.getElementById(cfg.slotTimeId).value || '08:00';
     const timeParts = timeStr.split(':').map(Number);
     const hh = timeParts[0], mm = timeParts[1]||0;
@@ -2868,16 +2895,16 @@
     const rangeStart = parseLocal(document.getElementById(cfg.rangeStartId).value);
     const rangeEnd = parseLocal(document.getElementById(cfg.rangeEndId).value);
     if(!isFinite(rangeStart) || !isFinite(rangeEnd) || rangeEnd <= rangeStart){
-      alert('請先確認「分析起點」與「展開至」已正確填寫，且展開至須晚於分析起點——批次產生會依此範圍展開透析時程。');
+      notify(cfg.btnId, '請先確認「分析起點」與「展開至」已正確填寫，且展開至須晚於分析起點——批次產生會依此範圍展開透析時程。');
       return;
     }
     if(!isFinite(durationHr) || durationHr<=0){
-      alert('請填寫透析時長（小時），需大於 0。');
+      notify(cfg.btnId, '請填寫透析時長（小時），需大於 0。');
       return;
     }
     const sessions = buildHdSessionsFromPattern(checkedDays, hh, mm, durationHr, rangeStart, rangeEnd);
     if(!sessions.length){
-      alert('依目前設定的星期與「分析起點／展開至」範圍，沒有產生任何透析時程，請確認範圍是否涵蓋所選星期。');
+      notify(cfg.btnId, '依目前設定的星期與「分析起點／展開至」範圍，沒有產生任何透析時程，請確認範圍是否涵蓋所選星期。');
       return;
     }
     clearTbody('#'+cfg.tableId);
@@ -2926,14 +2953,14 @@
     const maintInf = parseFloat(document.getElementById('maintInf').value);
     const useLoading = document.getElementById('useLoading').checked;
     if(!isFinite(startMs)||!isFinite(toMs)||!isFinite(maintDose)||!isFinite(tauHr)||!isFinite(maintInf)||tauHr<=0){
-      alert('請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
+      notify('expandDoses', '請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
       return;
     }
     let firstMaintMs = startMs;
     if(useLoading){
       firstMaintMs = parseLocal(document.getElementById('firstMaintDoseTime').value);
       if(!isFinite(firstMaintMs)){
-        alert('已勾選獨立 loading 劑量，請另外填寫「第一劑維持劑量時間」。');
+        notify('expandDoses', '已勾選獨立 loading 劑量，請另外填寫「第一劑維持劑量時間」。');
         return;
       }
     }
@@ -2962,7 +2989,7 @@
   function expandDosesFnHD(){
     const hdSessions = readHdSessionRows();
     if(!hdSessions.length){
-      alert('請先在上方新增至少一次透析時程（開始／結束時間），才能依時程展開給藥紀錄。');
+      notify('expandDosesHD', '請先在上方新增至少一次透析時程（開始／結束時間），才能依時程展開給藥紀錄。');
       return;
     }
     const maintDose = parseFloat(document.getElementById('hdMaintDose').value);
@@ -2971,7 +2998,7 @@
     const fixedTimeParts = fixedTimeStr.split(':').map(Number);
     const fh = fixedTimeParts[0], fm = fixedTimeParts[1]||0;
     if(!isFinite(maintDose)||!isFinite(maintInf)||maintDose<=0||maintInf<=0){
-      alert('請先完整填寫透析後維持劑量與輸注時間。');
+      notify('expandDosesHD', '請先完整填寫透析後維持劑量與輸注時間。');
       return;
     }
     const startMs = parseLocal(document.getElementById('therapyStart').value);
@@ -3000,7 +3027,7 @@
   function pruneDosesBeforeFn(){
     const cutoff = parseLocal(document.getElementById('pruneBeforeInput').value);
     if(!isFinite(cutoff)){
-      alert('請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
+      notify('pruneBeforeBtn', '請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
       return;
     }
     const rows = Array.from(document.querySelectorAll('#doseTable .entry-row'));
@@ -3011,7 +3038,7 @@
     });
     renumberDoseRows();
     render();
-    if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
+    if(removed===0) notify('pruneBeforeBtn', '沒有找到早於此時間點的給藥紀錄，未移除任何列。');
   }
 
   const REGIMEN_TABLE_HEAD_NORMAL = '<tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr>';
@@ -3383,7 +3410,7 @@
 
     function saveAsNewVisit(){
       const label = $(cfg.labelId).value.trim();
-      if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+      if(!label){ notify($(cfg.metaId), '請先輸入病歷號再儲存。'); return; }
       const list = loadList();
       const now = Date.now();
       const visit = { visitId: genId('v'), savedAt: now, asOf: resolveAsOf(), data: cfg.collectState(), derived: (cfg.getDerived?cfg.getDerived():null) };
@@ -3403,18 +3430,18 @@
     }
 
     function updateCurrentVisit(){
-      if(!(currentPatientId && currentVisitId)){ alert('目前沒有載入中的收案版本可更新。請先「載入」某一筆，或改用「存為新收案」。'); return; }
+      if(!(currentPatientId && currentVisitId)){ notify($(cfg.metaId), '目前沒有載入中的收案版本可更新。請先「載入」某一筆，或改用「存為新收案」。'); return; }
       const label = $(cfg.labelId).value.trim();
-      if(!label){ alert('請先輸入病歷號再儲存。'); return; }
+      if(!label){ notify($(cfg.metaId), '請先輸入病歷號再儲存。'); return; }
       const list = loadList();
       const p = list.find(x=>x.id===currentPatientId);
-      if(!p){ alert('找不到目前病人，可能已被刪除。'); refreshPatientSelect(''); return; }
+      if(!p){ notify($(cfg.metaId), '找不到目前病人，可能已被刪除。'); refreshPatientSelect(''); return; }
       const vst = (p.visits||[]).find(v=>v.visitId===currentVisitId);
-      if(!vst){ alert('找不到目前收案版本，可能已被刪除。'); refreshVisitSelect(); return; }
+      if(!vst){ notify($(cfg.metaId), '找不到目前收案版本，可能已被刪除。'); refreshVisitSelect(); return; }
       // Renaming the MRN here is legitimate (fixing a typo), but it must not silently merge
       // this patient into a different, already-existing MRN.
       if(label!==p.label && list.some(x=>x.id!==p.id && x.label===label)){
-        alert(`已有另一位病人使用病歷號「${label}」。請改用該病人的存檔，或先確認病歷號是否輸入錯誤。`);
+        notify($(cfg.metaId), `已有另一位病人使用病歷號「${label}」。請改用該病人的存檔，或先確認病歷號是否輸入錯誤。`);
         return;
       }
       const now = Date.now();
@@ -3428,13 +3455,13 @@
 
     function loadSelected(){
       const pid = $(cfg.patientSelectId).value;
-      if(!pid){ alert('請先在「已儲存的病人」選單選擇一位病人。'); return; }
+      if(!pid){ notify($(cfg.metaId), '請先在「已儲存的病人」選單選擇一位病人。'); return; }
       const p = patientById(pid);
-      if(!p){ alert('找不到這位病人，可能已被刪除。'); refreshPatientSelect(''); return; }
+      if(!p){ notify($(cfg.metaId), '找不到這位病人，可能已被刪除。'); refreshPatientSelect(''); return; }
       const vSel = cfg.visitSelectId ? $(cfg.visitSelectId) : null;
       let vst = (vSel && vSel.value) ? (p.visits||[]).find(v=>v.visitId===vSel.value) : null;
       if(!vst) vst = latestVisit(p);
-      if(!vst){ alert('這位病人沒有任何收案版本。'); return; }
+      if(!vst){ notify($(cfg.metaId), '這位病人沒有任何收案版本。'); return; }
       const ok = confirm('載入將覆蓋目前畫面上尚未儲存的輸入內容，確定要載入嗎？');
       if(!ok) return;
       $(cfg.labelId).value = p.label;
@@ -3450,7 +3477,7 @@
 
     function deleteSelectedPatient(){
       const pid = $(cfg.patientSelectId).value;
-      if(!pid){ alert('請先在選單選擇要刪除的病人。'); return; }
+      if(!pid){ notify($(cfg.metaId), '請先在選單選擇要刪除的病人。'); return; }
       const p = patientById(pid);
       if(!p) return;
       const ok = confirm(`確定要刪除「${p.label}」的全部 ${(p.visits||[]).length} 筆收案存檔嗎？此動作無法復原（目前畫面上顯示的內容不會被清除）。`);
@@ -3481,7 +3508,7 @@
 
     function exportAll(){
       const list = loadList();
-      if(!list.length){ alert('目前沒有已儲存的病人資料可以匯出。'); return; }
+      if(!list.length){ notify($(cfg.metaId), '目前沒有已儲存的病人資料可以匯出。'); return; }
       const blob = new Blob([JSON.stringify(list, null, 2)], {type:'application/json'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -3504,8 +3531,8 @@
       reader.onload = function(){
         let imported;
         try{ imported = JSON.parse(reader.result); }
-        catch(e){ alert('這個檔案不是有效的 JSON，無法匯入。'); return; }
-        if(!Array.isArray(imported)){ alert('檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
+        catch(e){ notify($(cfg.metaId), '這個檔案不是有效的 JSON，無法匯入。'); return; }
+        if(!Array.isArray(imported)){ notify($(cfg.metaId), '檔案格式不符（需為病人資料陣列），無法匯入。'); return; }
         const existing = loadList();
         const map = new Map(existing.map(p=>[p.id,p]));
         let pCount=0, vCount=0;
@@ -6110,12 +6137,12 @@ ${flagText || '（無特別旗標）'}
     const maintDose = parseFloat(document.getElementById('amgMaintDose').value);
     const maintInf = parseFloat(document.getElementById('amgMaintInf').value);
     if(!isFinite(startMs)||!isFinite(toMs)||!isFinite(maintDose)||!isFinite(maintInf)){
-      alert('請先完整填寫分析起點時間、展開至時間、維持劑量與輸注時間。');
+      notify('amgExpandDoses', '請先完整填寫分析起點時間、展開至時間、維持劑量與輸注時間。');
       return;
     }
     if(scheduleType==='tiw'){
       const checkedDays = getAminoTiwCheckedDays();
-      if(!checkedDays.length){ alert('請至少勾選一個給藥星期。'); return; }
+      if(!checkedDays.length){ notify('amgExpandDoses', '請至少勾選一個給藥星期。'); return; }
       const timeStr = document.getElementById('amgTiwTime').value || '09:00';
       const [hh,mm] = timeStr.split(':').map(Number);
       clearTbody('#amgDoseTable');
@@ -6132,7 +6159,7 @@ ${flagText || '（無特別旗標）'}
     } else {
       const tauHr = parseFloat(document.getElementById('amgMaintInterval').value);
       if(!isFinite(tauHr) || tauHr<=0){
-        alert('請先填寫給藥間隔（小時）。');
+        notify('amgExpandDoses', '請先填寫給藥間隔（小時）。');
         return;
       }
       clearTbody('#amgDoseTable');
@@ -6148,7 +6175,7 @@ ${flagText || '（無特別旗標）'}
   function pruneDosesBeforeFnAmg(){
     const cutoff = parseLocal(document.getElementById('amgPruneBeforeInput').value);
     if(!isFinite(cutoff)){
-      alert('請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
+      notify('amgPruneBeforeBtn', '請先在旁邊選一個時間點，作為要保留的最早給藥時間。');
       return;
     }
     const rows = Array.from(document.querySelectorAll('#amgDoseTable .entry-row'));
@@ -6159,7 +6186,7 @@ ${flagText || '（無特別旗標）'}
     });
     renumberDoseRowsAmg();
     renderAmino();
-    if(removed===0) alert('沒有找到早於此時間點的給藥紀錄，未移除任何列。');
+    if(removed===0) notify('amgPruneBeforeBtn', '沒有找到早於此時間點的給藥紀錄，未移除任何列。');
   }
 
   function resetModuleAmg(){
@@ -8973,7 +9000,7 @@ ${flagText||'（無）'}
       generateHdSessionsFn({
         getDaysFn: ()=>getCheckedWeekdays('hdDay'),
         slotTimeId:'hdSlotStart', durationId:'hdDurationHr',
-        rangeStartId:'therapyStart', rangeEndId:'expandTo',
+        rangeStartId:'therapyStart', rangeEndId:'expandTo', btnId:'hdGenerateSessionsBtn',
         tableId:'hdSessionTable', addFn:addHdSessionRow, renderFn:render
       });
     });
@@ -9099,7 +9126,7 @@ ${flagText||'（無）'}
       generateHdSessionsFn({
         getDaysFn: ()=>getCheckedWeekdays('amgTiwDay'),
         slotTimeId:'amgHdSlotStart', durationId:'amgHdDurationHr',
-        rangeStartId:'amgTherapyStart', rangeEndId:'amgExpandTo',
+        rangeStartId:'amgTherapyStart', rangeEndId:'amgExpandTo', btnId:'amgHdGenerateSessionsBtn',
         tableId:'amgHdSessionTable', addFn:addHdSessionRowAmg, renderFn:renderAmino
       });
     });
@@ -9357,7 +9384,7 @@ ${flagText||'（無）'}
         {label:'抗癲癇藥物', key:'aed_tdm_patients_v2', store:aedStore}
       ];
       const counts = mods.map(m=>({label:m.label, n:m.store.getList().length}));
-      if(!counts.some(c=>c.n>0)){ alert('這台電腦的瀏覽器裡沒有任何已儲存的病人資料。'); return; }
+      if(!counts.some(c=>c.n>0)){ notify(btn, '這台電腦的瀏覽器裡沒有任何已儲存的病人資料。'); return; }
       const lines = counts.map(c=>`${c.label}：${c.n} 位`).join('\n');
       if(!confirm(`這會刪除這台電腦瀏覽器裡全部的病人紀錄，無法復原：\n${lines}\n\n建議先用各模組「更多」裡的「匯出全部」備份。畫面上目前填的內容不受影響。確定清除嗎？`)) return;
       mods.forEach(m=>{
