@@ -885,6 +885,11 @@
     #mSummary .ms-go{margin-left:auto;font-size:13px;color:var(--navy-soft);white-space:nowrap;}
     body[data-mview="result"] #mSummary .ms-go{display:none;}
   }
+
+  /* 給藥處方的順序：第一筆給藥是不是療程第一劑 → loading → 維持處方 → 產生範圍。
+     選「之前已規則給藥（穩態）」時 loading 不適用，整個區塊收起 */
+  .ui-radio-group:has(#vancoFirstDoseSteady:checked) ~ #vancoLoadingBlock{display:none;}
+  #vancoLoadingBlock{margin:0 0 6px;}
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -1122,7 +1127,26 @@
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
         <div class="hint">先填目前處方 → 產生給藥紀錄 → 再手動修正實際延遲／漏給。<details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</details></div>
 
-        <h3>處方</h3>
+        <h3>第一筆給藥</h3>
+        <div class="ui-radio-group"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
+          <div class="ui-radio-title">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
+          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseFirst" value="first"><span>第一筆紀錄就是本療程第一劑</span></label>
+          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseSteady" value="steady"><span>之前已規則給藥（已達穩態），第一筆只是我登錄的起點<small>工具會往前補入虛擬劑次，讓濃度不從零開始累積</small></span></label>
+          <input type="checkbox" id="assumeSteadyState" hidden>
+        </div></div>
+          <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請選「第一筆紀錄就是本療程第一劑」。</p>
+          <div class="hint" id="vancoSsBasis"></div>
+        <div id="vancoLoadingBlock">
+        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
+        <div class="field-row" id="loadingFields" style="display:none;">
+          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
+          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
+          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
+        </div>
+          <p class="hint" style="margin-top:-2px;">第一筆紀錄是療程第一劑時，多數會先給 loading；這次沒有的話請取消勾選。</p>
+        </div>
+
+        <h3>維持處方</h3>
         <div id="fixedRegimenFields">
           <div class="field-row three">
             <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
@@ -1137,20 +1161,6 @@
           <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
         </div>
 
-        <div class="ui-radio-group"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
-          <div class="ui-radio-title">第一筆給藥是不是本療程第一劑？<span>有給藥紀錄時必選</span></div>
-          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseFirst" value="first"><span>第一筆紀錄就是本療程第一劑</span></label>
-          <label class="ui-radio"><input type="radio" name="vancoFirstDoseKind" id="vancoFirstDoseSteady" value="steady"><span>之前已規則給藥（已達穩態），第一筆只是我登錄的起點<small>工具會往前補入虛擬劑次，讓濃度不從零開始累積</small></span></label>
-          <input type="checkbox" id="assumeSteadyState" hidden>
-        </div></div>
-          <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請選「第一筆紀錄就是本療程第一劑」。</p>
-          <div class="hint" id="vancoSsBasis"></div>
-        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
-        <div class="field-row" id="loadingFields" style="display:none;">
-          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
-          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
-          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
-        </div>
         <!-- 驗收後修正：首劑 loading 已移出，vancoAdv 沒有內容；保留元素與 id（R3）但隱藏 -->
         <details class="adv" id="vancoAdv" hidden>
           <summary>進階：首劑 loading</summary>
@@ -3045,6 +3055,7 @@
     document.getElementById('therapyStartLabel').textContent='分析起點（本次採用的第一筆給藥時間）';
     document.getElementById('expandTo').value='';
     document.getElementById('useLoading').checked=false;
+    delete document.getElementById('useLoading').dataset.touched;
     document.getElementById('loadingFields').style.display='none';
     document.getElementById('loadingDose').value='2000';
     document.getElementById('loadingInf').value='120';
@@ -8860,6 +8871,25 @@ ${flagText||'（無）'}
     document.getElementById('assumeSteadyState').addEventListener('change', function(){
       document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
     });
+    // 先 loading、再維持：使用者選「第一筆紀錄就是療程第一劑」→ 預設勾「首劑為獨立 loading」（大部分療程都會 loading），
+    // 順手把「第一劑維持劑量時間」帶成「分析起點＋間隔」；選「穩態」→ 取消勾選（loading 不適用）。
+    // 只有使用者操作（change 事件）才會自動勾；使用者自己動過勾選框之後就不再替他勾（dataset.touched），清空時重置。
+    (function(){
+      const cb = document.getElementById('useLoading');
+      let auto = false;
+      const setLoading = on=>{ if(cb.checked===on) return; cb.checked = on; auto = true; cb.dispatchEvent(new Event('change', {bubbles:true})); auto = false; };
+      cb.addEventListener('change', ()=>{ if(!auto) cb.dataset.touched = '1'; });
+      document.querySelectorAll('input[name="vancoFirstDoseKind"]').forEach(r=>r.addEventListener('change', function(){
+        if(this.value==='steady'){ setLoading(false); return; }
+        if(cb.dataset.touched) return;
+        if(document.querySelectorAll('#doseTable .entry-row').length) return;   // 已經有給藥紀錄（loading 只影響「自動展開」）就不替他勾，避免勾了卻跟紀錄對不上
+        setLoading(true);
+        const fm = document.getElementById('firstMaintDoseTime');
+        const startMs = parseLocal(document.getElementById('therapyStart').value), tau = parseFloat(document.getElementById('maintInterval').value);
+        if(!fm.value && isFinite(startMs) && tau>0){ fm.value = toLocalInputValue(new Date(startMs + tau*3600000)); fireEvent(fm); }
+      }));
+      function fireEvent(el){ el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); }
+    })();
     document.getElementById('dialysis').addEventListener('change', toggleDialysisUI);
     document.getElementById('addHdSessionRow').addEventListener('click', ()=>{ addHdSessionRow('', ''); render(); });
     document.getElementById('expandDosesHD').addEventListener('click', ()=>{ if(confirmOverwrite('doseTable','給藥紀錄')) expandDosesFnHD(); });
