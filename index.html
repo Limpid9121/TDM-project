@@ -551,6 +551,10 @@
   body{font-variant-numeric:tabular-nums;line-height:1.5;}
   ::selection{background:var(--navy-tint);color:var(--ink);}
   :focus-visible{outline:2px solid var(--navy);outline-offset:2px;}
+  /* 深藍底（頂列、手機底部摘要）上，深藍的焦點外框看不到，改白色 */
+  header.top :focus-visible{outline-color:#fff;}
+  .hdr-pm-slot :focus-visible{outline-color:var(--navy);}   /* 面板是白底 */
+  #mSummary :focus-visible{outline-color:#fff;}
 
   /* 24 吋（1920×1080）為主要目標：版面用滿寬度 */
   .app{max-width:1920px;padding:0 24px 64px;}
@@ -763,6 +767,14 @@
   @media (max-width:1599px) and (min-width:981px){
     .param-grid:has(.pc-key){grid-template-columns:minmax(130px,1.3fr) repeat(5,minmax(0,1fr));}
     .param-grid:has(.pc-key) > .param-cell .label{font-size:12px;}
+  }
+  /* 右欄只剩約 560 px（1024 寬螢幕）：6 欄擠得數字溢出格子，改 key 格＋3 欄（key 格跨 3 列） */
+  @media (max-width:1279px) and (min-width:981px){
+    .param-grid:has(.pc-key){grid-template-columns:minmax(120px,1.2fr) repeat(3,minmax(0,1fr));}
+    .param-grid:has(.pc-key) > .pc-key{grid-row:1 / span 3;}
+    .param-cell .value{font-size:20px;}
+    .param-grid:has(.pc-key) > .pc-key .value{font-size:32px;}
+    .param-cell .value .unit{font-size:12px;display:block;margin-left:0;}   /* 單位換到數字下面，格子窄時才不會溢出 */
   }
   @media (max-width:980px){
     .param-grid:has(.pc-key){grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -1245,7 +1257,7 @@
           <summary>批次操作</summary>
           <span class="prune-tool">
             移除此時間之前的紀錄
-            <input type="datetime-local" id="pruneBeforeInput">
+            <input type="datetime-local" id="pruneBeforeInput" aria-label="要保留的最早給藥時間">
             <button class="btn small" id="pruneBeforeBtn" type="button">套用</button>
           </span>
         </details>
@@ -1312,7 +1324,7 @@
         <svg class="tl" id="vancoTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="vancoPickBar">
           <span>已勾選：<strong class="pick-summary" id="vancoPickSummary"></strong></span>
-          <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="vancoPickStart"></span>
+          <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="vancoPickStart" aria-label="新處方起始時間"></span>
           <button type="button" class="btn small" id="vancoPickClear">取消勾選</button>
           <span class="whatif-readout" id="vancoWhatIfReadout"></span>
         </div>
@@ -1352,7 +1364,7 @@
           <tbody></tbody>
           <tfoot id="regimenTableFoot">
             <tr class="custom-row">
-              <td class="pick-col"><input type="radio" name="vancoRegimenPick" class="regimen-pick" value="custom"></td>
+              <td class="pick-col"><input type="radio" name="vancoRegimenPick" class="regimen-pick" aria-label="勾選自訂方案（在曲線上疊畫）" value="custom"></td>
               <td><span class="tag" style="background:var(--trace-soft);color:var(--trace-strong);">自訂</span></td>
               <td>
                 <input type="number" id="customDose" class="custom-input dose" placeholder="劑量" step="50" title="劑量 mg">&nbsp;mg／
@@ -1376,7 +1388,7 @@
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="vancoCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
-        <textarea id="aiPromptOut" readonly></textarea>
+        <textarea id="aiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="copyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="copyStatus"></span>
@@ -1605,7 +1617,7 @@
           <summary>批次操作</summary>
           <span class="prune-tool">
             移除此時間之前的紀錄
-            <input type="datetime-local" id="amgPruneBeforeInput">
+            <input type="datetime-local" id="amgPruneBeforeInput" aria-label="要保留的最早給藥時間">
             <button class="btn small" id="amgPruneBeforeBtn" type="button">套用</button>
           </span>
         </details>
@@ -1672,7 +1684,7 @@
         <svg class="tl" id="amgTimeline" viewBox="0 0 920 72" preserveAspectRatio="xMidYMid meet" role="group" aria-label="時間軸：給藥、濃度、SCr；Tab 到事件按 Enter 跳到左邊對應的那一列" hidden></svg>
         <div class="regimen-pick-bar" id="amgPickBar">
           <span>已勾選：<strong class="pick-summary" id="amgPickSummary"></strong></span>
-          <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="amgPickStart"></span>
+          <span class="pick-start-field">新處方起始時間 <input type="datetime-local" id="amgPickStart" aria-label="新處方起始時間"></span>
           <button type="button" class="btn small" id="amgPickClear">取消勾選</button>
           <span class="whatif-readout" id="amgWhatIfReadout"></span>
         </div>
@@ -1693,7 +1705,7 @@
           <tbody></tbody>
           <tfoot>
             <tr class="custom-row">
-              <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" value="custom"></td>
+              <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" aria-label="勾選自訂方案（在曲線上疊畫）" value="custom"></td>
               <td><span class="tag" style="background:var(--trace-soft);color:var(--trace-strong);">自訂</span></td>
               <td>
                 <input type="number" id="amgCustomDose" class="custom-input dose" placeholder="劑量" step="10" title="劑量 mg">&nbsp;mg／
@@ -1717,7 +1729,7 @@
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="amgCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
-        <textarea id="amgAiPromptOut" readonly></textarea>
+        <textarea id="amgAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="amgCopyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="amgCopyStatus"></span>
@@ -1981,7 +1993,7 @@
         <h2><span class="idx">10</span>治療目標與限制</h2>
         <div class="field">
           <label>治療目標</label>
-          <textarea id="azlTreatmentGoal" placeholder=""></textarea>
+          <textarea id="azlTreatmentGoal" aria-label="治療目標" placeholder=""></textarea>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field"><label>預計療程長度</label><input type="text" id="azlExpectedDuration"></div>
@@ -1996,7 +2008,7 @@
       <!-- 11. 備註 -->
       <div class="card">
         <h2><span class="idx">11</span>其他備註</h2>
-        <textarea id="azlOtherNotes"></textarea>
+        <textarea id="azlOtherNotes" aria-label="其他備註"></textarea>
       </div>
 
     </section>
@@ -2032,7 +2044,7 @@
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="azlCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
-        <textarea id="azlAiPromptOut" readonly></textarea>
+        <textarea id="azlAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="azlCopyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="azlCopyStatus"></span>
@@ -2269,7 +2281,7 @@
         <h2><span class="idx">10</span>治療目標與限制</h2>
         <div class="field">
           <label>治療目標</label>
-          <textarea id="aedGoal" placeholder=""></textarea>
+          <textarea id="aedGoal" aria-label="治療目標" placeholder=""></textarea>
         </div>
         <div class="field-row" style="margin-top:10px;">
           <div class="field"><label>預計療程長度</label><input type="text" id="aedDuration"></div>
@@ -2284,7 +2296,7 @@
       <!-- 11. 備註 -->
       <div class="card">
         <h2><span class="idx">11</span>其他備註</h2>
-        <textarea id="aedOtherNotes"></textarea>
+        <textarea id="aedOtherNotes" aria-label="其他備註"></textarea>
       </div>
 
     </section>
@@ -2330,7 +2342,7 @@
       <div class="section-block">
         <h3><span class="idx">E</span>AI 諮詢 Prompt<button class="btn small" id="aedCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</p>
-        <textarea id="aedAiPromptOut" readonly></textarea>
+        <textarea id="aedAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="aedCopyPromptBtn" type="button">複製 Prompt</button>
           <span class="copy-status" id="aedCopyStatus"></span>
@@ -2770,7 +2782,7 @@
       const checked = vancoPickedKey===key ? 'checked' : '';
       return `
       <tr class="${vancoPickedKey===key?'picked':''}">
-        <td class="pick-col"><input type="radio" name="vancoRegimenPick" class="regimen-pick" value="${key}" ${checked}></td>
+        <td class="pick-col"><input type="radio" name="vancoRegimenPick" class="regimen-pick" aria-label="勾選這個候選方案（在曲線上疊畫）" value="${key}" ${checked}></td>
         <td>q${r.candTau}h${r.isCurrent?` <span class="tag" style="background:var(--line);color:var(--ink-soft);">${currentLabel}</span>`:''}</td>
         <td>${fmt0(r.roundedDose)} mg／${r.infMinC} min輸注</td>
         <td>q${r.candTau}h</td>
@@ -2792,9 +2804,9 @@
     const container = document.getElementById('scrTable');
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--scr';
-    row.innerHTML = `<input type="date" class="scr-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
-      <button class="row-del" type="button">×</button>`;
+    row.innerHTML = `<input type="date" class="scr-date" aria-label="SCr 日期" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.01" class="scr-val" aria-label="SCr 數值（mg/dL）" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
     wireDelete(row.querySelector('.row-del'), row, render);
@@ -2804,10 +2816,10 @@
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--dose';
     row.innerHTML = `<span class="idx-badge dose-idx">—</span>
-      <input type="datetime-local" class="dose-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
-      <div class="num-field"><input type="number" step="5" class="dose-inf" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
-      <button class="row-del" type="button">×</button>`;
+      <input type="datetime-local" class="dose-date" aria-label="給藥時間" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="dose-mg" aria-label="給藥劑量（mg）" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
+      <div class="num-field"><input type="number" step="5" class="dose-inf" aria-label="輸注時間（分鐘）" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
     wireDelete(row.querySelector('.row-del'), row, render);
@@ -2816,9 +2828,9 @@
     const container = document.getElementById('levelTable');
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--level';
-    row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
-      <button class="row-del" type="button">×</button>
+    row.innerHTML = `<input type="datetime-local" class="level-date" aria-label="抽血時間" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.1" class="level-val" aria-label="血中濃度（µg/mL）" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>
       <span class="level-timing"></span>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', render));
@@ -2828,9 +2840,9 @@
     const container = document.getElementById(tableId);
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--hd';
-    row.innerHTML = `<div class="num-field"><span class="unit">開始</span><input type="datetime-local" class="hd-start" value="${startVal||''}"></div>
-      <div class="num-field"><span class="unit">結束</span><input type="datetime-local" class="hd-end" value="${endVal||''}"></div>
-      <button class="row-del" type="button">×</button>`;
+    row.innerHTML = `<div class="num-field"><span class="unit">開始</span><input type="datetime-local" class="hd-start" aria-label="透析開始時間" value="${startVal||''}"></div>
+      <div class="num-field"><span class="unit">結束</span><input type="datetime-local" class="hd-end" aria-label="透析結束時間" value="${endVal||''}"></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderFn));
     wireDelete(row.querySelector('.row-del'), row, renderFn);
@@ -6053,9 +6065,9 @@ ${flagText || '（無特別旗標）'}
     const container = document.getElementById('amgScrTable');
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--scr';
-    row.innerHTML = `<input type="date" class="scr-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="0.01" class="scr-val" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
-      <button class="row-del" type="button">×</button>`;
+    row.innerHTML = `<input type="date" class="scr-date" aria-label="SCr 日期" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.01" class="scr-val" aria-label="SCr 數值（mg/dL）" value="${val!=null?val:''}"><span class="unit">mg/dL</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
     wireDelete(row.querySelector('.row-del'), row, renderAmino);
@@ -6065,10 +6077,10 @@ ${flagText || '（無特別旗標）'}
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--dose';
     row.innerHTML = `<span class="idx-badge dose-idx">—</span>
-      <input type="datetime-local" class="dose-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="10" class="dose-mg" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
-      <div class="num-field"><input type="number" step="5" class="dose-inf" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
-      <button class="row-del" type="button">×</button>`;
+      <input type="datetime-local" class="dose-date" aria-label="給藥時間" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="dose-mg" aria-label="給藥劑量（mg）" value="${doseMg!=null?doseMg:''}"><span class="unit">mg</span></div>
+      <div class="num-field"><input type="number" step="5" class="dose-inf" aria-label="輸注時間（分鐘）" value="${infMin!=null?infMin:''}"><span class="unit">min</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
     wireDelete(row.querySelector('.row-del'), row, renderAmino);
@@ -6077,9 +6089,9 @@ ${flagText || '（無特別旗標）'}
     const container = document.getElementById('amgLevelTable');
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--level';
-    row.innerHTML = `<input type="datetime-local" class="level-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="0.1" class="level-val" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
-      <button class="row-del" type="button">×</button>
+    row.innerHTML = `<input type="datetime-local" class="level-date" aria-label="抽血時間" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="0.1" class="level-val" aria-label="血中濃度（µg/mL）" value="${conc!=null?conc:''}"><span class="unit">µg/mL</span></div>
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>
       <span class="level-timing"></span>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>i.addEventListener('input', renderAmino));
@@ -6461,7 +6473,7 @@ ${flagText || '（無特別旗標）'}
       const doseText = r.doseMl!=null ? `${fmt0(r.roundedDose)} mg（${fmtMl(r.doseMl)} mL）` : `${fmt0(r.roundedDose)} mg`;
       return `
       <tr class="${amgPickedKey===key?'picked':''}">
-        <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" value="${key}" ${checked}></td>
+        <td class="pick-col"><input type="radio" name="amgRegimenPick" class="regimen-pick" aria-label="勾選這個候選方案（在曲線上疊畫）" value="${key}" ${checked}></td>
         <td>q${r.candTau}h${r.candTau===currentTau?' <span class="tag" style="background:var(--line);color:var(--ink-soft);">現行間隔</span>':''}${suggestedTau!=null && r.candTau===suggestedTau?' <span class="tag ok">建議</span>':''}</td>
         <td>${doseText}／${r.infMinC} min輸注</td>
         <td>q${r.candTau}h</td>
@@ -8085,12 +8097,12 @@ ${flagText||'（無）'}
     const container = document.getElementById('aedSsPairsTable');
     const row = document.createElement('div');
     row.className = 'entry-row entry-row--sspair';
-    row.innerHTML = `<input type="date" class="ssp-date" value="${dateVal||''}">
-      <div class="num-field"><input type="number" step="10" class="ssp-dose" value="${doseVal!=null?doseVal:''}"><span class="unit">mg/day</span></div>
-      <div class="num-field"><input type="number" step="0.1" class="ssp-level" value="${levelVal!=null?levelVal:''}"><span class="unit">mcg/mL total</span></div>
-      <div class="num-field"><input type="number" step="0.1" class="ssp-albumin" value="${albVal!=null?albVal:''}"><span class="unit">Alb(選填)</span></div>
+    row.innerHTML = `<input type="date" class="ssp-date" aria-label="抽血日期" value="${dateVal||''}">
+      <div class="num-field"><input type="number" step="10" class="ssp-dose" aria-label="每日劑量（mg/day）" value="${doseVal!=null?doseVal:''}"><span class="unit">mg/day</span></div>
+      <div class="num-field"><input type="number" step="0.1" class="ssp-level" aria-label="總濃度（mcg/mL）" value="${levelVal!=null?levelVal:''}"><span class="unit">mcg/mL total</span></div>
+      <div class="num-field"><input type="number" step="0.1" class="ssp-albumin" aria-label="Albumin（g/dL）" value="${albVal!=null?albVal:''}"><span class="unit">Alb(選填)</span></div>
       <label class="checkline" style="margin:0;"><input type="checkbox" class="ssp-confirmed" ${confirmed?'checked':''}> 已達穩態</label>
-      <button class="row-del" type="button">×</button>`;
+      <button class="row-del" type="button" aria-label="刪除這一列" title="刪除這一列">×</button>`;
     container.appendChild(row);
     row.querySelectorAll('input').forEach(i=>{ i.addEventListener('input', renderAed); i.addEventListener('change', renderAed); });
     wireDelete(row.querySelector('.row-del'), row, renderAed);
@@ -8395,7 +8407,7 @@ ${flagText||'（無）'}
           const pred = phtPredictCss({ vmax:primaryVmax, km:primaryKm, R:S*d });
           const checked = aedPickedCandidate===key ? 'checked' : '';
           return `<tr class="${aedPickedCandidate===key?'picked':''}">
-            <td class="pick-col"><input type="radio" name="aedCandPick" class="aed-cand-radio" value="${key}" ${checked}></td>
+            <td class="pick-col"><input type="radio" name="aedCandPick" class="aed-cand-radio" aria-label="勾選這個候選方案" value="${key}" ${checked}></td>
             <td>${d.toFixed(0)} mg/day</td>
             <td>${pred.unattainable?'<strong style="color:var(--crimson,#c0392b);">無法達穩態（R≥Vmax）</strong>':`${pred.css.toFixed(2)} mcg/mL`}</td>
           </tr>`;

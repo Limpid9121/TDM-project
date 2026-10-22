@@ -22,6 +22,8 @@ colors:
   accent-mustard: "#F2B705"
   accent-none: "#C9D2E3"
   shadow: "rgba(0,0,0,.08)"
+  header-warn: "#FFD9A0"
+  header-alert: "#FFB4A8"
 typography:
   page-title:
     fontFamily: "Microsoft JhengHei, PingFang TC, Noto Sans TC, system-ui, sans-serif"
@@ -67,6 +69,30 @@ typography:
   value-key:
     fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
     fontSize: "40px"
+    fontWeight: 700
+    lineHeight: 1.1
+    fontFeature: "tabular-nums"
+  value-narrow:
+    fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
+    fontSize: "20px"
+    fontWeight: 700
+    lineHeight: 1.2
+    fontFeature: "tabular-nums"
+  value-wide:
+    fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
+    fontSize: "24px"
+    fontWeight: 700
+    lineHeight: 1.2
+    fontFeature: "tabular-nums"
+  value-key-narrow:
+    fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
+    fontSize: "32px"
+    fontWeight: 700
+    lineHeight: 1.1
+    fontFeature: "tabular-nums"
+  value-key-phone:
+    fontFamily: "Segoe UI, system-ui, Microsoft JhengHei, PingFang TC, sans-serif"
+    fontSize: "34px"
     fontWeight: 700
     lineHeight: 1.1
     fontFeature: "tabular-nums"
@@ -193,6 +219,7 @@ components:
 - **Caption**（400、12 px，`ink-soft`）：單位、目標範圍、來源。
 - **Value**（700、22 px，24 吋上 24 px）：參數值。
 - **Value key**（700、40 px）：AUC₂₄ 這種最關鍵的一個數字，全頁只有一個。
+- **數字的寬度階**：參數值 20 px（右欄 981–1279 px，單位換到數字下面）、22 px（預設）、24 px（≥1600 px）；key 數字 32 px（981–1279 px）、34 px（手機）、40 px（桌機）。
 
 ### Named Rules
 **最小 12 px 規則。** 包括表頭、單位、圖表上的字。圖表在並排版面縮小時，要用對應寬度的畫布重畫，不可整張縮放到字小於 12 px。
