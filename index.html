@@ -1140,7 +1140,7 @@
         <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
         <div class="field-row" id="loadingFields" style="display:none;">
           <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
-          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="120" step="5"></div>
+          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="240" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分（500 mg＝60 分、2000 mg＝240 分）；可自行修改"></div>
           <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
         </div>
           <p class="hint" style="margin-top:-2px;">第一筆紀錄是療程第一劑時，多數會先給 loading；這次沒有的話請取消勾選。</p>
@@ -1151,7 +1151,7 @@
           <div class="field-row three">
             <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
             <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
-            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="120" step="5"></div>
+            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="120" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分；可自行修改"></div>
           </div>
         </div>
 
@@ -1220,7 +1220,7 @@
           <div class="field-row three" style="margin-top:0;">
             <div class="field"><label>透析後維持劑量（mg）</label><input type="number" id="hdMaintDose" step="50" placeholder="如：700"></div>
             <div class="field"><label>固定給藥時刻</label><input type="time" id="hdFixedTime" value="21:00"></div>
-            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="hdMaintInf" value="60" step="5"></div>
+            <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="hdMaintInf" value="60" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分；可自行修改"></div>
           </div>
           <div class="hint" style="margin-top:-6px;">院內慣例 TIWQN：透析當日固定時刻給藥（預設 21:00，確保透析後給予），不依當次實際透析結束時間往後推算。<details class="hint-more"><summary>ⓘ 詳細說明</summary>個別病人如需不同給藥時間，展開後直接修改該筆給藥紀錄即可，不影響其他劑次。</details></div>
           <div class="btn-row">
@@ -2696,6 +2696,18 @@
   // 向上取整、最少 60 分。用整數除法避免 1250 這類劑量的浮點誤差把 150 分算成 180 分。
   // 參考：仿單寫「不超過 10 mg/min 或至少 60 分鐘，取較長者」，院內規則比仿單保守（約 8.3 mg/min）。
   function inferInfusionMinutes(mg){ return Math.max(60, Math.ceil(mg/250 - 1e-9)*30); }
+  // 劑量欄位 → 輸注時間欄位的自動帶入（Brandon 2026-10-22）：使用者沒自己改過輸注時間，就隨劑量依規則帶入。
+  // 「自己改過」＝輸注欄位的 dataset.manual；清空與讀回存檔後依目前的值重新判斷（與規則不同＝自己填的）。
+  const INFUSION_PAIRS = [['loadingDose','loadingInf'], ['maintDose','maintInf'], ['hdMaintDose','hdMaintInf']];
+  function syncInfusionManualFlags(){
+    INFUSION_PAIRS.forEach(([d,i])=>{
+      const de = document.getElementById(d), ie = document.getElementById(i);
+      if(!de || !ie) return;
+      const mg = parseFloat(de.value), inf = parseFloat(ie.value);
+      if(isFinite(mg) && mg>0 && isFinite(inf) && inf!==inferInfusionMinutes(mg)) ie.dataset.manual = '1';
+      else delete ie.dataset.manual;
+    });
+  }
   // 純顯示：實際給藥紀錄裡輸注比院內規則快的劑次，相同劑量與輸注分鐘的合併成一則；計算不受影響。
   function infusionRuleFlags(){
     const groups = new Map();
@@ -3058,7 +3070,7 @@
     delete document.getElementById('useLoading').dataset.touched;
     document.getElementById('loadingFields').style.display='none';
     document.getElementById('loadingDose').value='2000';
-    document.getElementById('loadingInf').value='120';
+    document.getElementById('loadingInf').value='240';
     document.getElementById('firstMaintDoseTime').value='';
     document.getElementById('assumeSteadyState').checked=false;
     clearFirstDoseRadio('vanco');
@@ -3075,6 +3087,7 @@
     document.getElementById('hdMaintDose').value='';
     document.getElementById('hdFixedTime').value='21:00';
     document.getElementById('hdMaintInf').value='60';
+    syncInfusionManualFlags();
     [1,3,5].forEach(d=>{ document.getElementById('hdDay'+d).checked=true; });
     [0,2,4,6].forEach(d=>{ document.getElementById('hdDay'+d).checked=false; });
     document.getElementById('hdSlot').value='am';
@@ -3178,6 +3191,7 @@
     setVal('loadingDose', s.loadingDose); setVal('loadingInf', s.loadingInf);
     setVal('maintDose', s.maintDose); setVal('maintInterval', s.maintInterval); setVal('maintInf', s.maintInf);
     setVal('hdMaintDose', s.hdMaintDose); setVal('hdFixedTime', s.hdFixedTime||'21:00'); setVal('hdMaintInf', s.hdMaintInf||'60');
+    syncInfusionManualFlags();
     const hdDayPattern = s.hdDayPattern===undefined ? [1,3,5] : s.hdDayPattern;
     [0,1,2,3,4,5,6].forEach(d=>setChecked('hdDay'+d, hdDayPattern.includes(d)));
     setVal('hdSlot', s.hdSlot||'am'); setVal('hdSlotStart', s.hdSlotStart||'08:00'); setVal('hdDurationHr', s.hdDurationHr||'4');
@@ -8871,6 +8885,24 @@ ${flagText||'（無）'}
     document.getElementById('assumeSteadyState').addEventListener('change', function(){
       document.getElementById('steadyStateHint').style.display = this.checked ? 'block' : 'none';
     });
+    // 劑量一填，輸注時間依院內規則帶入（沒被使用者自己改過才帶；見 syncInfusionManualFlags）
+    (function(){
+      let auto = false;
+      INFUSION_PAIRS.forEach(([d,i])=>{
+        const de = document.getElementById(d), ie = document.getElementById(i);
+        ie.addEventListener('input', ()=>{ if(!auto) ie.dataset.manual = '1'; });
+        de.addEventListener('input', ()=>{
+          if(ie.dataset.manual) return;
+          const mg = parseFloat(de.value);
+          if(!(mg>0)) return;
+          const m = String(inferInfusionMinutes(mg));
+          if(ie.value===m) return;
+          ie.value = m; auto = true;
+          ie.dispatchEvent(new Event('input', {bubbles:true})); ie.dispatchEvent(new Event('change', {bubbles:true}));
+          auto = false;
+        });
+      });
+    })();
     // 先 loading、再維持：使用者選「第一筆紀錄就是療程第一劑」→ 預設勾「首劑為獨立 loading」（大部分療程都會 loading），
     // 順手把「第一劑維持劑量時間」帶成「分析起點＋間隔」；選「穩態」→ 取消勾選（loading 不適用）。
     // 只有使用者操作（change 事件）才會自動勾；使用者自己動過勾選框之後就不再替他勾（dataset.touched），清空時重置。
