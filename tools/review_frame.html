@@ -1,0 +1,37 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>review frame</title>
+<style>html,body{margin:0;padding:0;background:#ddd;overflow:hidden}iframe{border:0;display:block}</style>
+<iframe id="f"></iframe>
+<script>
+// 驗收截圖用（tools/shoot_review.py 會開這頁）：?mod=vancomycin&w=1920&h=940&demo=1&collapse=all|none|only:3&view=result&scroll=0&hd=1&blank=1&pm=1
+const q = new URLSearchParams(location.search);
+const W = +(q.get('w')||innerWidth), H = +(q.get('h')||innerHeight);
+const f = document.getElementById('f');
+f.style.width = W+'px'; f.style.height = H+'px';
+try{ localStorage.removeItem('tdm_card_collapse_v1'); }catch(e){}
+f.src = "../index.html";
+f.onload = ()=>{
+  const w = f.contentWindow, d = w.document;
+  w.confirm = ()=>true; w.alert = ()=>{};
+  const step = (fn, ms)=>new Promise(r=>setTimeout(()=>{ try{ fn(); }catch(e){ console.log(e); } r(); }, ms));
+  (async ()=>{
+    await step(()=>{}, 300);
+    const mod = q.get('mod')||'vancomycin';
+    await step(()=>{ d.querySelector('.drug-switch-btn[data-drug="'+mod+'"]').click(); }, 100);
+    await step(()=>{ d.querySelectorAll('.guard-modal:not(.hide) [id$="GuardDiscard"]').forEach(b=>b.click()); }, 200);
+    if(q.get('blank')) await step(()=>{ d.getElementById('clearAllBtn').click(); }, 200);
+    else await step(()=>{ d.getElementById('loadDemoBtn').click(); }, 200);
+    if(q.get('hd')) await step(()=>{ const s = d.getElementById('dialysis'); s.value='HD'; s.dispatchEvent(new w.Event('change',{bubbles:true})); }, 300);
+    const c = q.get('collapse');
+    const panel = d.querySelector('.drug-module.active .stack');
+    const bar = panel && panel.querySelector('.sec-bar');
+    if(c==='all' && bar){ await step(()=>{ const b = bar.querySelector('[data-sec-bulk]'); if(/全部收合/.test(b.textContent)) b.click(); }, 300); }
+    if(c && c.startsWith('only:') && bar){ await step(()=>{ bar.querySelector('[data-sec="'+(+c.slice(5)-1)+'"]').click(); }, 300); }
+    if(q.get('view')) await step(()=>{ const b = d.querySelector('#mSwitch [data-mview="'+q.get('view')+'"]'); if(b) b.click(); }, 200);
+    if(q.get('pm')) await step(()=>{ d.getElementById('hdrPmToggle').click(); }, 200);
+    await step(()=>{ w.scrollTo(0, +(q.get('scroll')||0)); const rp = d.querySelector('.drug-module.active main.grid > .panel'); if(rp && q.get('rscroll')) rp.scrollTop = +q.get('rscroll'); }, 1200);
+    document.title = 'ready';
+  })();
+};
+</script>
