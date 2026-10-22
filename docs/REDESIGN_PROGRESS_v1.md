@@ -3,12 +3,12 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-21（D6 完成：golden 曲線改比座標、曲線依寬度重畫與換樣式；Brandon 指示 D6 前不必等核可，一路做下去）
+最後更新：2026-10-22（D7 手機完成；下一包 D8）
 
 ## 現況
 
 - 分支：`redesign`（從 `master` 的 `e2712d6` 分出）。`master` 不動。
-- 下一包：**D7**（手機）。D2–D6 完成，等 Brandon 看畫面。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
+- 下一包：**D8**（收尾：alert 改行內提示、break-ui、無障礙、polish）。D2–D7 完成，等 Brandon 看畫面。**Brandon 2026-10-21 指示：做到 D6 不必等核可，直到這個 session 的用量用完**（所以 D6 的 golden 改法照規格單獨 commit，但沒有等他核可，請他事後檢查）。L 系列（含 L-G）全部完成；D0、D1 已核可。
 - 測試基準：15 支既有測試＋`test_pk_reference.js` 全過；golden 124/124 0 差異；設計偵測 69 項。
 
 ## 工作包狀態
@@ -29,7 +29,7 @@
 | D4 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 頂列一行、病人面板收進「病人 ▾」、身分條、撞色四色塊、從其他模組帶入 |
 | D5 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 曲線上方三軌時間軸（給藥、濃度、SCr；HD 加透析軌），點事件跳到左邊那一列並標亮 |
 | D6 | 完成，等 Brandon 看畫面 | D6a `4eb15df`（golden）、D6b 見 git log | D6a 沒等核可（Brandon 指示一路做到 D6）：只有曲線 7 筆的記錄格式改變；D6b 座標 0 差異 | golden 改法請 Brandon 事後看一眼 |
-| D7 | 未開始 | | | |
+| D7 | 完成，等 Brandon 看畫面 | 見 git log | 不需要（golden 124/124 0 差異） | 輸入／結果切換、底部結論摘要、頂列縮成三列 |
 | D8 | 未開始 | | | |
 
 ## L 系列驗收（Opus 5.5，2026-10-20）
@@ -67,6 +67,13 @@
 ## 施工中發現、新 session 要知道的事
 
 （每包完成後在這裡補：跟規格不同的地方、Brandon 當場的決定、踩到的坑）
+
+### D7 手機（2026-10-22）
+- ≤640 px：頂端「輸入／結果」兩段切換（`#mSwitch`，`body[data-mview]`，只用 CSS 決定顯示左欄或右欄，資料不動；切換後捲到頁面上方）。底部固定一條結論摘要（`#mSummary`，深藍底加撞色上緣）：vancomycin＝AUC₂₄,ss（附「目標 400–600」與狀態字）、AMG＝Cmax,ss、Azole／AED＝參數格第一格；沒有數字（例如 AED 還沒填濃度）就隱藏；點了切到結果。讀的是右邊參數格已算好的內容，不重算。
+- 頂列縮成：標題＋「示範病例／清空」一列、藥物分頁一列（可橫向捲動）、身分條＋「病人 ▾」一列，共約 141 px。**手機上撞色挑選隱藏**（放不下；桌機設定仍會套用到手機）。
+- 觸控細節（mobile-native）：輸入 16 px（避免 iOS 聚焦放大）、`touch-action:manipulation`（去點擊延遲）、關掉點擊高亮、底部摘要避開安全區（`env(safe-area-inset-bottom)`）、`min-height:100dvh`。
+- 驗證（內建瀏覽器 390×844）：載入示範病例後第一屏底部看得到「AUC₂₄,ss 目標 400–600 457 mg·hr/L ■ 目標內」；四個模組輸入／結果兩個畫面都沒有水平捲軸。測試：`tests/test_d7_mobile.js`（29 項）；全部測試過、golden 124/124。
+- 沒做／留給 D8：實機（真 iOS／Android）沒測，只用內建瀏覽器的手機尺寸模擬；結果畫面的曲線圖、時間軸在 333 px 寬的可讀性只看過 D6 的重畫數字（W=333），沒逐項截圖檢查。
 
 ### 頂列「示範病例」按鈕（2026-10-21，Brandon 要求）
 - Brandon 想在主檔自己審閱、不想每次手動輸入：頂列加常駐按鈕 `#loadDemoBtn`「示範病例」，按一下填入目前這個藥物模組的虛構示範病例（呼叫既有的 `loadDemo(module,false)`，四個模組都有）；頁面有未儲存的手動輸入時先 `confirm`，不新增 localStorage 鍵。測試：`tests/test_demo_button.js`（25 項）。

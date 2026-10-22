@@ -844,6 +844,42 @@
   /* 時間軸點到的那一列（左邊工作底稿）短暫標亮 */
   .entry-row.ws-flash{background:var(--navy-tint);outline:2px solid var(--navy);outline-offset:1px;border-radius:4px;}
   .entry-row{transition:background-color .4s ease, outline-color .4s ease;}
+
+  /* =====================================================================
+     REDESIGN D7：手機（≤640 px）
+     頂端「輸入／結果」切換（只切換顯示哪一塊）；底部固定一條結論摘要（最重要的一格＋狀態字，點了跳到結果）；
+     頂列縮成：標題＋按鈕一列、藥物分頁一列、身分條一列；觸控細節（16 px 輸入、去點擊延遲、安全區、dvh）。
+     ===================================================================== */
+  .m-switch, .m-summary{display:none;}
+  @media (max-width:640px){
+    /* D7 手機 */
+    html{-webkit-text-size-adjust:100%;}
+    body{min-height:100dvh;padding-bottom:calc(64px + env(safe-area-inset-bottom));}
+    button, .btn, select, input, textarea, summary, [role="button"]{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+    input, select, textarea{font-size:16px;}
+    header.top{flex-direction:row;flex-wrap:wrap;align-items:center;gap:0 12px;padding:0 14px;margin-bottom:0;}
+    header.top > div:first-child{display:contents;}
+    header.top .brand-mark{order:1;padding:8px 0;}
+    header.top .header-right{order:2;width:auto;margin-left:auto;gap:8px;flex-wrap:nowrap;}
+    header.top .header-right .btn{padding:6px 9px;}
+    header.top .accent-picker{display:none;}
+    header.top .drug-switch{order:3;flex:1 0 100%;}
+    header.top .hdr-mid{order:4;flex:1 0 100%;padding:6px 0 8px;}
+    .m-switch{display:flex;position:sticky;top:0;z-index:29;background:var(--paper);border-bottom:1px solid var(--line);margin:0 -14px;}
+    .m-switch button{flex:1;min-height:44px;font-size:15px;font-weight:700;background:transparent;border:0;border-bottom:3px solid transparent;color:var(--ink-soft);}
+    .m-switch button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--navy);}
+    body[data-mview="input"] .drug-module.active > main.grid > .panel{display:none;}
+    body[data-mview="result"] .drug-module.active > main.grid > .stack{display:none;}
+    #mSummary:not([hidden]){display:block;position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--navy);color:#fff;
+      box-shadow:inset 0 3px 0 var(--accent), 0 -4px 14px rgba(20,23,28,.25);padding-bottom:env(safe-area-inset-bottom);}
+    #mSummary .ms-btn{display:flex;align-items:baseline;gap:8px;width:100%;min-height:56px;padding:10px 14px 8px;background:transparent;border:0;color:#fff;font:inherit;text-align:left;cursor:pointer;}
+    #mSummary .ms-label{font-size:12px;color:var(--navy-soft);flex:0 1 auto;min-width:0;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    #mSummary .ms-val{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:22px;line-height:1.1;}
+    #mSummary .ms-val small{font-family:var(--sans);font-size:12px;font-weight:400;color:var(--navy-soft);margin-left:3px;}
+    #mSummary .ms-status{font-size:13px;font-weight:700;white-space:nowrap;}
+    #mSummary .ms-go{margin-left:auto;font-size:13px;color:var(--navy-soft);white-space:nowrap;}
+    body[data-mview="result"] #mSummary .ms-go{display:none;}
+  }
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -978,6 +1014,11 @@
       <button class="btn small" id="clearAllBtn" type="button" title="清空目前藥物模組已輸入的病人與給藥資料，重新開始；已儲存的病人存檔不受影響">清空此頁（開始新病人）</button>
     </div>
   </header>
+
+  <nav class="m-switch" id="mSwitch" aria-label="手機版：看輸入或看結果">
+    <button type="button" data-mview="input" aria-pressed="true">輸入</button>
+    <button type="button" data-mview="result" aria-pressed="false">結果</button>
+  </nav>
 
   <div id="drug-vancomycin" class="drug-module active">
   <div class="guard-modal hide" id="vancoGuardModal" role="alertdialog" aria-modal="true">
@@ -2295,6 +2336,12 @@
     </div>
   </section>
 
+  </div>
+
+  <div class="m-summary" id="mSummary" hidden>
+    <button type="button" class="ms-btn" aria-label="查看完整結果">
+      <span class="ms-label"></span><b class="ms-val"></b><span class="ms-status"></span><span class="ms-go">結果 ›</span>
+    </button>
   </div>
 
   <footer class="disclaimer" id="footerDisclaimer">
@@ -9647,6 +9694,45 @@ ${flagText||'（無）'}
       });
       ['curveSvg','amgCurveSvg'].forEach(id=>{ const el = document.getElementById(id); if(el && el.parentElement) ro.observe(el.parentElement); });
     }
+
+    // ---------------- D7：手機的「輸入／結果」切換與底部結論摘要（純顯示） ----------------
+    function setMview(v){
+      document.body.dataset.mview = v;
+      document.querySelectorAll('#mSwitch [data-mview]').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.mview===v)));
+      try{ window.scrollTo({top:0, behavior:'auto'}); }catch(e){ window.scrollTo(0,0); }
+    }
+    document.body.dataset.mview = 'input';
+    document.querySelectorAll('#mSwitch [data-mview]').forEach(b=>b.addEventListener('click', ()=>setMview(b.dataset.mview)));
+    const SUM_VIEWS = {
+      vancomycin:     {grid:'paramGrid',    key:'.pc-key', target:'目標 400–600'},
+      aminoglycoside: {grid:'amgParamGrid', key:'.pc-key'},
+      azole:          {grid:'azlParamGrid'},
+      aed:            {grid:'aedParamGrid'}
+    };
+    function refreshSummary(){
+      const box = document.getElementById('mSummary');
+      const v = SUM_VIEWS[currentDrugModule];
+      const grid = v && document.getElementById(v.grid);
+      const cell = grid && !grid.querySelector('.empty-state') && ((v.key && grid.querySelector(v.key)) || grid.querySelector('.param-cell'));
+      if(!cell){ box.hidden = true; return; }
+      const lab = cell.querySelector('.label'), val = cell.querySelector('.value');
+      if(!lab || !val || !/\d/.test(val.textContent)){ box.hidden = true; return; }   // 沒有數字（例如 AED 還沒填濃度）就不顯示摘要
+      const status = cell.classList.contains('flag-danger') ? '超標' : cell.classList.contains('flag-warn') ? '留意' : cell.classList.contains('flag-ok') ? '目標內' : '';
+      box.querySelector('.ms-label').textContent = lab.textContent.replace(/\s+/g,' ').trim().split('（')[0] + (v.target && v.key && cell.matches(v.key) ? '　' + v.target : '');
+      { const vt = val.textContent.replace(/\s+/g,' ').trim(), mm = vt.match(/^([\d.,]+)(.*)$/), mv = box.querySelector('.ms-val');
+        if(mm){ mv.textContent = mm[1]; const u = document.createElement('small'); u.textContent = mm[2]; mv.appendChild(u); } else mv.textContent = vt; }
+      const st = box.querySelector('.ms-status');
+      st.textContent = status ? '■ ' + status : '';
+      st.style.color = status==='超標' ? '#FFB4A8' : status==='留意' ? '#FFD9A0' : '#fff';
+      box.hidden = false;
+    }
+    document.querySelector('#mSummary .ms-btn').addEventListener('click', ()=>setMview('result'));
+    Object.values(SUM_VIEWS).forEach(v=>{
+      const g = document.getElementById(v.grid);
+      if(g) new MutationObserver(refreshSummary).observe(g, {childList:true, subtree:true});
+    });
+    document.querySelectorAll('.drug-module').forEach(m=>new MutationObserver(refreshSummary).observe(m, {attributes:true, attributeFilter:['class']}));
+    refreshSummary();
 
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
