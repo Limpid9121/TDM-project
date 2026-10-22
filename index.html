@@ -677,7 +677,12 @@
   .copy-status{color:var(--ok);}
   footer.disclaimer{border:0;border-top:1px solid var(--line);border-radius:0;padding:14px 0;font-size:12px;}
   .empty-state .req-missing-list li{color:var(--navy);}
-  .is-missing{outline:2px solid var(--crimson);outline-offset:1px;border-color:var(--crimson);}
+  /* 必填缺漏：不用 outline（外圈會被收合段落的 overflow:hidden 切掉左右邊，又會跟邊框疊成雙線）；
+     改成紅邊框加內縮 1 px 紅線，完全在欄位自己的方框內 */
+  .is-missing{outline:0;border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson);}
+  /* 空的必填表格（SCr／給藥／濃度）：一個紅色虛線框，裡面寫明要做什麼；有列之後框就消失 */
+  .entry-rows.is-missing{box-shadow:none;border:1px dashed var(--crimson);border-radius:4px;padding:10px 12px;min-height:40px;}
+  .entry-rows.is-missing:empty::before{content:"請至少新增一筆";color:var(--crimson);font-size:13px;}
   .trend-picker{background:#fff;border-radius:4px;}
   .explorer-list{border-radius:4px;}
   @media (max-width:640px){
