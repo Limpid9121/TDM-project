@@ -113,7 +113,7 @@ async function main() {
   assert($('expandDoses').classList.contains('needs-run'), '左邊展開鈕加框提醒');
   plus.click(); await tick(150);
   assert(!stale.hidden, '微調給藥紀錄不會讓尚未更新消失（處方仍跟紀錄不一致）');
-  stale.click(); await tick(300);
+  stale.querySelector('button').click(); await tick(300);
   assert(stale.hidden && !$('drug-vancomycin').classList.contains('is-stale') && !$('expandDoses').classList.contains('needs-run'), '按「展開給藥紀錄並更新」後恢復');
   assert(doc.querySelector('#doseTable .entry-row:last-of-type .dose-mg').value === '1250', '重新展開用新劑量');
 

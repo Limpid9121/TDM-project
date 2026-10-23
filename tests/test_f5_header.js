@@ -37,7 +37,7 @@ async function main() {
   // ---------- 1. 結構 ----------
   assert(!$('hdrPmToggle') && !hdr.classList.contains('pm-open'), '舊的「病人 ▾」面板開關拿掉了');
   assert(!!hdr.querySelector('.hdr-left .brand-mark') && !!hdr.querySelector('.hdr-left #drugSwitch') && !!hdr.querySelector('.hdr-left #hdrDemoTag'), '左邊：品名、藥物分頁、示範病例小標');
-  assert(!!hdr.querySelector('#accentPicker'), '撞色挑選還在頂列');
+  assert(!hdr.querySelector('#accentPicker') && !!doc.querySelector('.page-prefs #accentPicker'), '撞色挑選移到頁面最下方（2026-10-23）');
   const MODS = [['vancomycin', 'azl', 'vanco', 'pmBarVanco', 'patient', ''], ['aminoglycoside', 'vanco', 'amg', 'pmBarAmg', 'amgPatient', 'amg'], ['azole', 'amg', 'azl', 'pmBarAzole', 'azlPatient', 'azl'], ['aed', 'azl', 'aed', 'pmBarAed', 'aedPatient', 'aed']];
   const ENGINE = p => p === '' ? ['patientLabel', 'patientSelect', 'patientVisitSelect', 'loadPatientBtn', 'savePatientBtn', 'updateVisitBtn', 'patientAsOf', 'exportPatientsBtn', 'importPatientsBtn', 'deletePatientBtn', 'importFileInput', 'tdmClearAllLocal', 'patientMeta', 'vancoDirtyDot']
     : [p + 'PatientLabel', p + 'PatientSelect', p + 'PatientVisitSelect', p + 'LoadPatientBtn', p + 'SavePatientBtn', p + 'UpdateVisitBtn', p + 'PatientAsOf', p + 'ExportPatientsBtn', p + 'ImportPatientsBtn', p + 'DeletePatientBtn', p + 'ImportFileInput', 'tdmClearAllLocal' + { amg: 'Amg', azl: 'Azl', aed: 'Aed' }[p], p + 'PatientMeta', p + 'DirtyDot'];
@@ -147,7 +147,7 @@ async function main() {
   back.querySelector('.hdr-menu-btn').click();
   assert(!back.querySelector('.hdr-menu-pop').hidden && rx.querySelector('.hdr-menu-pop').hidden, '同時只開一個選單');
   const bItems = Array.from(back.querySelectorAll('[role="menuitem"]')).map(b => b.dataset.act);
-  assert(['export', 'import', 'delete', 'clearlocal'].every(a => bItems.includes(a)), '傳送與備份 ▾ 有：匯出、匯入、刪除所選病人、清除本機所有資料（' + bItems.join() + '）');
+  assert(['export', 'import', 'clearlocal'].every(a => bItems.includes(a)) && !bItems.includes('delete'), '備份 ▾ 有：匯出、匯入、清除本機所有資料；刪除所選病人移到病人 ▾（' + bItems.join() + '）');
   let exported = 0, imported = 0;
   $('exportPatientsBtn').addEventListener('click', () => exported++);
   $('importFileInput').addEventListener('click', () => imported++);

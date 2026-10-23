@@ -95,7 +95,7 @@ async function main() {
 
   // ---------- 3. 撞色挑選 ----------
   const picker = $('accentPicker');
-  assert(!!picker && hdr.contains(picker), '頂列有撞色挑選 #accentPicker');
+  assert(!!picker && !hdr.contains(picker) && !!picker.closest('.page-prefs'), '撞色挑選 #accentPicker 在頁面最下方（2026-10-23 從頂列移出）');
   const swatches = picker ? Array.from(picker.querySelectorAll('[data-accent-pick]')) : [];
   assert(swatches.map(b => b.dataset.accentPick).join() === 'magenta,vermilion,mustard,none', '4 個色票：洋紅、朱紅、芥末黃、不用撞色');
   assert(swatches.every(b => b.tagName === 'BUTTON' && !!b.getAttribute('aria-label')), '色票是按鈕且有名稱（鍵盤、讀屏可用）');

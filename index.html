@@ -1182,12 +1182,13 @@
   .draw-sep::before, .draw-sep::after{content:"";flex:1 1 auto;border-top:1px dashed var(--accent);}
   .field:has(> input[data-auto]) > label::after, .field:has(> input[data-auto]) > label .auto-tag{content:"自動";display:inline-block;margin-left:6px;padding:0 5px;border-radius:3px;background:var(--navy-tint);color:var(--ink-soft);font-size:11px;font-weight:700;vertical-align:1px;}
   /* 右邊「尚未更新」：深藍判讀頂端的琥珀色按鈕；參數格、曲線、候選處方變淡，避免把舊數字當成新的 */
-  .rp-stale{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #FFD9A0;border-radius:6px;background:rgba(255,217,160,.14);color:#FFD9A0;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;}
-  .rp-stale b{font-weight:700;}
-  .rp-stale em{font-style:normal;font-weight:700;background:#FFD9A0;color:var(--navy);padding:2px 8px;border-radius:4px;}
-  .rp-stale:hover em{background:#fff;}
+  .rp-stale{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:14px;padding:8px 16px;background:#FFF4DC;border-bottom:1px solid #E8B44C;color:var(--ink);font-size:13px;}
+  #resultsPanel > .rp-stale, #amgResultsPanel > .rp-stale{order:1;}
+  .rp-stale b{font-weight:700;color:#8A5300;}
+  .rp-stale .btn{margin-left:auto;background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;}
+  .rp-stale .btn:hover{background:var(--navy-2);border-color:var(--navy-2);color:#fff;}
   .rp-stale[hidden], .rp-live[hidden]{display:none;}
-  .drug-module.is-stale .panel > .param-grid, .drug-module.is-stale .panel .curve-wrap, .drug-module.is-stale .panel .regimen-table{opacity:.35;filter:grayscale(.6);transition:opacity 160ms ease;}
+  .drug-module.is-stale .panel > .param-grid > .param-cell, .drug-module.is-stale .panel .curve-wrap, .drug-module.is-stale .panel .regimen-table{opacity:.5;transition:opacity 160ms ease;}   /* 只變淡、保留顏色（整片變灰像壞掉） */
   .btn.needs-run{box-shadow:0 0 0 3px #FFD9A0, 0 0 0 4px var(--navy);}
   /* 判讀板緊湊版（格子 9 格以上，例如模型 B）：字小、間距小、重複的「模型 B」不顯示 */
   .param-grid.pg-dense > .param-cell{padding:6px 12px;}
@@ -1205,6 +1206,11 @@
   .fl-toggle[hidden]{display:none;}
   details.hint-more.f8-block{display:block;margin:0 0 6px;}
   details.hint-more.f8-block > summary{display:inline;}
+  .page-prefs{display:flex;align-items:center;gap:10px;padding:6px 0 28px;font-size:12px;color:var(--ink-soft);}
+  .page-prefs .accent-picker button{box-shadow:0 0 0 1px var(--line-strong);}
+  .page-prefs .accent-picker button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink);}
+  .page-prefs .accent-picker button:focus-visible{outline:2px solid var(--ink);}
+  .pop-model-note{margin-top:4px;font-size:12px;color:var(--ink-soft);}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -1252,20 +1258,20 @@
         </div>
         <button class="btn small hdr-main" type="button" id="vancoSaveMain"><span class="hm-label">儲存為新紀錄…</span><span class="pm-dirty-dot" id="vancoDirtyDot" hidden>●</span></button>
         <div class="hdr-menu" data-menu="rx">
-          <button class="btn small hdr-menu-btn" type="button" id="vancoRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="vancoRxMenu">處方 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="vancoRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="vancoRxMenu">病人 ▾</button>
           <div class="hdr-menu-pop" id="vancoRxMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="clear">開始新病人（清空此頁）</button>
             <button type="button" role="menuitem" data-act="saveas">另存為新紀錄…</button>
-            <button type="button" role="menuitem" data-act="demo">示範病例</button>
-            <button type="button" role="menuitem" data-act="clear">清空此頁（開始新病人）</button>
             <button type="button" role="menuitem" data-act="carry">從其他模組帶入基本資料…</button>
+            <button type="button" role="menuitem" data-act="demo">示範病例</button>
+            <button type="button" role="menuitem" data-act="delete" class="hdr-menu-danger">刪除所選病人</button>
           </div>
         </div>
         <div class="hdr-menu" data-menu="backup">
-          <button class="btn small hdr-menu-btn" type="button" id="vancoBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="vancoBackupMenu">傳送與備份 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="vancoBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="vancoBackupMenu">備份 ▾</button>
           <div class="hdr-menu-pop" id="vancoBackupMenu" role="menu" hidden>
             <button type="button" role="menuitem" data-act="export">匯出全部（JSON 備份）</button>
             <button type="button" role="menuitem" data-act="import">匯入 JSON…</button>
-            <button type="button" role="menuitem" data-act="delete">刪除所選病人</button>
             <button type="button" role="menuitem" data-act="clearlocal" class="hdr-menu-danger">清除本機所有病人資料</button>
             <div class="hdr-menu-note">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
           </div>
@@ -1292,20 +1298,20 @@
         </div>
         <button class="btn small hdr-main" type="button" id="amgSaveMain"><span class="hm-label">儲存為新紀錄…</span><span class="pm-dirty-dot" id="amgDirtyDot" hidden>●</span></button>
         <div class="hdr-menu" data-menu="rx">
-          <button class="btn small hdr-menu-btn" type="button" id="amgRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="amgRxMenu">處方 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="amgRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="amgRxMenu">病人 ▾</button>
           <div class="hdr-menu-pop" id="amgRxMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="clear">開始新病人（清空此頁）</button>
             <button type="button" role="menuitem" data-act="saveas">另存為新紀錄…</button>
-            <button type="button" role="menuitem" data-act="demo">示範病例</button>
-            <button type="button" role="menuitem" data-act="clear">清空此頁（開始新病人）</button>
             <button type="button" role="menuitem" data-act="carry">從其他模組帶入基本資料…</button>
+            <button type="button" role="menuitem" data-act="demo">示範病例</button>
+            <button type="button" role="menuitem" data-act="delete" class="hdr-menu-danger">刪除所選病人</button>
           </div>
         </div>
         <div class="hdr-menu" data-menu="backup">
-          <button class="btn small hdr-menu-btn" type="button" id="amgBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="amgBackupMenu">傳送與備份 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="amgBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="amgBackupMenu">備份 ▾</button>
           <div class="hdr-menu-pop" id="amgBackupMenu" role="menu" hidden>
             <button type="button" role="menuitem" data-act="export">匯出全部（JSON 備份）</button>
             <button type="button" role="menuitem" data-act="import">匯入 JSON…</button>
-            <button type="button" role="menuitem" data-act="delete">刪除所選病人</button>
             <button type="button" role="menuitem" data-act="clearlocal" class="hdr-menu-danger">清除本機所有病人資料</button>
             <div class="hdr-menu-note">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
           </div>
@@ -1332,20 +1338,20 @@
         </div>
         <button class="btn small hdr-main" type="button" id="azlSaveMain"><span class="hm-label">儲存為新紀錄…</span><span class="pm-dirty-dot" id="azlDirtyDot" hidden>●</span></button>
         <div class="hdr-menu" data-menu="rx">
-          <button class="btn small hdr-menu-btn" type="button" id="azlRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="azlRxMenu">處方 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="azlRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="azlRxMenu">病人 ▾</button>
           <div class="hdr-menu-pop" id="azlRxMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="clear">開始新病人（清空此頁）</button>
             <button type="button" role="menuitem" data-act="saveas">另存為新紀錄…</button>
-            <button type="button" role="menuitem" data-act="demo">示範病例</button>
-            <button type="button" role="menuitem" data-act="clear">清空此頁（開始新病人）</button>
             <button type="button" role="menuitem" data-act="carry">從其他模組帶入基本資料…</button>
+            <button type="button" role="menuitem" data-act="demo">示範病例</button>
+            <button type="button" role="menuitem" data-act="delete" class="hdr-menu-danger">刪除所選病人</button>
           </div>
         </div>
         <div class="hdr-menu" data-menu="backup">
-          <button class="btn small hdr-menu-btn" type="button" id="azlBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="azlBackupMenu">傳送與備份 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="azlBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="azlBackupMenu">備份 ▾</button>
           <div class="hdr-menu-pop" id="azlBackupMenu" role="menu" hidden>
             <button type="button" role="menuitem" data-act="export">匯出全部（JSON 備份）</button>
             <button type="button" role="menuitem" data-act="import">匯入 JSON…</button>
-            <button type="button" role="menuitem" data-act="delete">刪除所選病人</button>
             <button type="button" role="menuitem" data-act="clearlocal" class="hdr-menu-danger">清除本機所有病人資料</button>
             <div class="hdr-menu-note">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
           </div>
@@ -1372,20 +1378,20 @@
         </div>
         <button class="btn small hdr-main" type="button" id="aedSaveMain"><span class="hm-label">儲存為新紀錄…</span><span class="pm-dirty-dot" id="aedDirtyDot" hidden>●</span></button>
         <div class="hdr-menu" data-menu="rx">
-          <button class="btn small hdr-menu-btn" type="button" id="aedRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="aedRxMenu">處方 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="aedRxMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="aedRxMenu">病人 ▾</button>
           <div class="hdr-menu-pop" id="aedRxMenu" role="menu" hidden>
+            <button type="button" role="menuitem" data-act="clear">開始新病人（清空此頁）</button>
             <button type="button" role="menuitem" data-act="saveas">另存為新紀錄…</button>
-            <button type="button" role="menuitem" data-act="demo">示範病例</button>
-            <button type="button" role="menuitem" data-act="clear">清空此頁（開始新病人）</button>
             <button type="button" role="menuitem" data-act="carry">從其他模組帶入基本資料…</button>
+            <button type="button" role="menuitem" data-act="demo">示範病例</button>
+            <button type="button" role="menuitem" data-act="delete" class="hdr-menu-danger">刪除所選病人</button>
           </div>
         </div>
         <div class="hdr-menu" data-menu="backup">
-          <button class="btn small hdr-menu-btn" type="button" id="aedBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="aedBackupMenu">傳送與備份 ▾</button>
+          <button class="btn small hdr-menu-btn" type="button" id="aedBackupMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="aedBackupMenu">備份 ▾</button>
           <div class="hdr-menu-pop" id="aedBackupMenu" role="menu" hidden>
             <button type="button" role="menuitem" data-act="export">匯出全部（JSON 備份）</button>
             <button type="button" role="menuitem" data-act="import">匯入 JSON…</button>
-            <button type="button" role="menuitem" data-act="delete">刪除所選病人</button>
             <button type="button" role="menuitem" data-act="clearlocal" class="hdr-menu-danger">清除本機所有病人資料</button>
             <div class="hdr-menu-note">病人資料以病歷號存在這台電腦的瀏覽器裡。共用電腦請用完清除。</div>
           </div>
@@ -1408,12 +1414,6 @@
     </div>
     <div class="header-right">
       <div class="meta-line" id="headerMeta">尚未輸入資料</div>
-      <div class="accent-picker" id="accentPicker" role="group" aria-label="撞色（介面強調色）">
-        <button type="button" data-accent-pick="magenta" aria-pressed="true" aria-label="洋紅" title="洋紅"></button>
-        <button type="button" data-accent-pick="vermilion" aria-pressed="false" aria-label="朱紅" title="朱紅"></button>
-        <button type="button" data-accent-pick="mustard" aria-pressed="false" aria-label="芥末黃" title="芥末黃"></button>
-        <button type="button" data-accent-pick="none" aria-pressed="false" aria-label="不用撞色" title="不用撞色"></button>
-      </div>
     </div>
     <div class="pm-engine" id="hdrEngine" hidden>
       <div class="hdr-identity" id="hdrIdentity" aria-live="polite"></div>
@@ -1737,14 +1737,15 @@
 
       <div class="pop-model-toggle" id="vancoPopModelToggle" style="display:none;">
         <div class="pop-model-toggle-row">
-          <span class="pop-model-toggle-label">族群 PK 參數來源（僅用於尚無濃度資料可校正時的族群估算，比較用途）：</span>
-          <button type="button" class="btn small primary" id="vancoPopModelBtnA">模型 A（現行・CG-linear）</button>
-          <button type="button" class="btn small" id="vancoPopModelBtnB">模型 B（Oda 2024 兩室）</button>
+          <span class="pop-model-toggle-label">還沒有濃度時，用哪個族群模型估算：</span>
+          <button type="button" class="btn small primary" id="vancoPopModelBtnA" title="國際通用：Cockcroft-Gault 線性 CL／0.7 L/kg Vd（Matzke 1984）">模型 A（國際通用・預設）</button>
+          <button type="button" class="btn small" id="vancoPopModelBtnB" title="Oda 2024：日本 real-world 資料的兩室模型，族群特性較接近台灣病人">模型 B（東亞族群・Oda 2024）</button>
           <details class="pop-model-refs"><summary aria-label="文獻"></summary><div class="pop-model-refs-body">
           模型 A：Matzke GR, McGory RW, Halstenson CE, Keane WF. Pharmacokinetics of vancomycin in patients with various degrees of renal function. <i>Antimicrob Agents Chemother.</i> 1984;25(4):433-437.<br>
           模型 B：Oda K, Matsumoto K, Shoji K, et al. Validation and development of population pharmacokinetic model of vancomycin using a real-world database from a nationwide free web application. <i>J Infect Chemother.</i> 2024;30(6):1244-1251.
           </div></details>
         </div>
+        <div class="pop-model-note">切換會改判讀板、劑量調整建議與 AI Prompt 的數字；曲線仍是模型 A。有濃度後改用個體擬合，這列就不顯示。</div>
       </div>
       <div class="param-grid" id="paramGrid"></div>
 
@@ -2787,6 +2788,14 @@
   <footer class="disclaimer" id="footerDisclaimer">
     <strong>定位聲明：</strong>本工具為臨床決策輔助，所有 PK 參數與劑量建議均由輸入資料與明列之族群假設推導，絕不杜撰未由資料支持的數值。族群先驗、殘餘誤差與目標值反映一般院內慣例與 2020 ASHP/IDSA/PIDS/SIDP 共識，可能與特定院內 protocol 有出入；血液透析／CRRT／極端腎功能病人之清除率由本工具之族群方程估算不適用，請個別化評估。最終劑量處方判斷屬使用者之專業責任。所有計算皆在本機瀏覽器完成，病人存檔資料也只存在這台電腦這個瀏覽器裡（localStorage），不會上傳任何病人資料。
   </footer>
+  <div class="page-prefs"><span>介面強調色</span>
+    <div class="accent-picker" id="accentPicker" role="group" aria-label="撞色（介面強調色）">
+      <button type="button" data-accent-pick="magenta" aria-pressed="true" aria-label="洋紅" title="洋紅"></button>
+      <button type="button" data-accent-pick="vermilion" aria-pressed="false" aria-label="朱紅" title="朱紅"></button>
+      <button type="button" data-accent-pick="mustard" aria-pressed="false" aria-label="芥末黃" title="芥末黃"></button>
+      <button type="button" data-accent-pick="none" aria-pressed="false" aria-label="不用撞色" title="不用撞色"></button>
+    </div>
+  </div>
 
 </div>
 <script>
@@ -11192,10 +11201,10 @@ ${flagText||'（無）'}
       if(!mod || !table) return;
       const head = mod.querySelector('.panel > .results-head'), live = head && head.querySelector('.rp-live');
       if(!head || !live) return;
-      const stale = document.createElement('button');
-      stale.type = 'button'; stale.className = 'rp-stale'; stale.hidden = true;
-      stale.innerHTML = '<b>尚未更新</b><span>處方已改，給藥紀錄還沒重新展開</span><em>展開給藥紀錄並更新</em>';
-      live.after(stale);
+      const stale = document.createElement('div');   // 判讀標題下方整列的橫幅（右欄捲到哪都黏在上緣）
+      stale.className = 'rp-stale'; stale.hidden = true; stale.setAttribute('role', 'status');
+      stale.innerHTML = '<span><b>尚未更新</b>　處方已改，下面的數字還是舊的</span><button type="button" class="btn small">展開給藥紀錄並更新</button>';
+      head.after(stale);
       const ids = ()=>f.hd() ? f.hdIds : f.ids;
       const btnId = ()=>f.hd() ? f.hdBtn : f.btn;
       const sig = ()=>ids().map(id=>{ const el = document.getElementById(id); return el ? (el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value) : ''; }).join('|') + '#' + (f.hd() ? 'hd' : 'std');
@@ -11209,7 +11218,7 @@ ${flagText||'（無）'}
         mod.classList.toggle('is-stale', on);
         STALE_SETS.forEach(g=>{ if(g === f) [g.btn, g.hdBtn].forEach(id=>{ const b = id && document.getElementById(id); if(b) b.classList.toggle('needs-run', on && id === btnId()); }); });
       }
-      stale.addEventListener('click', ()=>{ const b = document.getElementById(btnId()); if(b) b.click(); });
+      stale.querySelector('button').addEventListener('click', ()=>{ const b = document.getElementById(btnId()); if(b) b.click(); });
       const realRows = muts=>muts.some(m=>[...m.addedNodes, ...m.removedNodes].some(n=>n.nodeType === 1 && n.classList.contains('entry-row')));   // 分隔線進出不算
       new MutationObserver(muts=>{ if(realRows(muts)){ base = sig(); } check(); }).observe(table, {childList:true});
       ['input','change'].forEach(ev=>mod.addEventListener(ev, check));
