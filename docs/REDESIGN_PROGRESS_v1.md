@@ -139,6 +139,13 @@
 - 測試：新增 `tests/test_param_dense.js`（11 項）；golden 124/124。`tools/review_frame.html` 新增 `nodoses=1`。
 - **文獻收成「ⓘ 文獻」**：模型 A／B 的兩篇文獻放進模型切換鈕那一列的 `<details>`，點了在下方浮出小卡（不推動版面），點外面或 Esc 收起；「ⓘ 文獻」用 CSS 畫、螢幕閱讀器讀 aria-label，golden 比對的文字不變。1440×900 曲線再往上約 80 px。`test_param_dense.js` 增為 15 項。
 
+### 插播：右欄兩個卡位＋注意事項收成一行（2026-10-23，Brandon 提出）
+- **劑量調整建議一律在曲線下方、佔滿右欄寬度**：拿掉 F3 的 ≥1600 px 左右並排（並排時自訂列擠成一團）。
+- **右欄兩個卡位**（像號碼鎖）：右欄捲動加 `scroll-snap-type:y proximity`，卡位在判讀頂端（判讀板＋曲線）與曲線頂端（曲線＋劑量調整建議）；靠近才吸附，往下看監測建議、AI Prompt 仍可自由捲（Brandon 選「靠近才吸附」）。
+- **注意事項收成一行**（Vancomycin、AMG；Brandon 選）：2 則以上時，紅色（危險）永遠顯示；沒有紅色就只顯示最嚴重的一則（一行、超出省略）；其餘收起，下方「還有 N 則 ▾」展開、「收起 ▴」收回，重算後維持。只加 class 與一顆在 #flagList 外面的按鈕，golden 文字不變。
+- 1920／1440：兩個卡位畫面都完整；1024：候選處方表仍橫向捲動（既有限制）。
+- **測試**：新增 `tests/test_snap_layout.js`（18 項）；`test_f3_candidates.js` 的並排斷言改成「沒有並排區塊」。`tools/review_frame.html` 新增 `rsnap=curve`。
+
 ## 工作包狀態
 
 | 包 | 狀態 | commit | golden 基準更新與核可 | 備註 |

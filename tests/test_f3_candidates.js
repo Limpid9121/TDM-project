@@ -3,7 +3,7 @@
 //   · 表格格線：方案、劑量／輸注、AUC₂₄、Cmin、Cmax、判讀；「間隔」併進方案欄（一般列隱藏、自訂列留在劑量旁）
 //   · 判讀只顯示狀態字（目標內／留意／超標）加 8 px 小方塊，完整評語放 title
 //   · 自訂列：mg、min、q…h 在同一條格線上，三個框對齊上面各列
-//   · ≥1600 px：曲線與候選方案並排（約 1.15 : 1），「未來監測建議」接在候選方案下面
+//   · （≥1600 px 並排已於 2026-10-23 拿掉：候選方案一律在曲線下方）
 //   · HD 的 3 欄表不受影響
 //
 // Run: node test_f3_candidates.js
@@ -78,16 +78,8 @@ async function main() {
   assert(/td\.reason\s*\{[^}]*font-size:\s*0/.test(css) && /td\.reason \.tag\.ok::after\s*\{[^}]*content:\s*"目標內"/.test(css) && /td\.reason \.tag\.warn::after\s*\{[^}]*content:\s*"留意"/.test(css) && /td\.reason \.tag\.danger::after\s*\{[^}]*content:\s*"超標"/.test(css), '判讀：長評語隱藏、狀態字顯示目標內／留意／超標');
   assert(/td\.reason\[data-ph\]:not\(\[colspan\]\)::after\s*\{[^}]*content:\s*"輸入即算"/.test(css), '自訂列沒輸入：顯示「輸入即算」');
   assert(/\.rg-note\s*\{[^}]*display:\s*none/.test(css), '「輸注」二字隱藏（title 與 DOM 仍有）');
-  const mq = css.match(/@media \(min-width:\s*1600px\)\s*\{\s*\/\* F3 side-by-side \*\/(.*?)\/\* F3 side-by-side end \*\//);
-  assert(!!mq, '有 ≥1600 px 並排區塊（/* F3 side-by-side … end */）');
-  if (mq) {
-    const m = mq[1];
-    assert(/grid-template-columns:\s*minmax\(0,\s*1\.15fr\) minmax\(0,\s*1fr\)/.test(m), '並排：右區兩欄約 1.15 : 1');
-    assert(/#resultsPanel > \.curve-wrap[^{]*\{[^}]*grid-column:\s*1[^}]*grid-row:\s*6 \/ span 2/.test(m), '並排：曲線在左欄、跨兩列');
-    assert(/has\(#regimenTable\)[^{]*\{[^}]*grid-column:\s*2[^}]*grid-row:\s*6/.test(m), '並排：候選方案在右欄第一列');
-    assert(/has\(#monitorGrid\)[^{]*\{[^}]*grid-column:\s*2[^}]*grid-row:\s*7/.test(m), '並排：監測與下次抽血接在候選方案下面');
-    assert(/has\(#amgRegimenTable\)/.test(m) && /has\(#amgMonitorGrid\)/.test(m), '並排：AMG 也一樣');
-  }
+  // ≥1600 px 左右並排已拿掉（Brandon 2026-10-23：劑量調整建議一律在曲線下方，右欄兩個卡位，見 test_snap_layout.js）
+  assert(!/F3 side-by-side \*\//.test(css), '沒有 ≥1600 px 並排區塊');
 
   assert(errCount === 0, '沒有 JS 錯誤（' + errCount + '）');
   console.log(`\n${pass} passed, ${fail} failed`);

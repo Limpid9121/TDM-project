@@ -507,7 +507,10 @@
   .drug-module{display:none;}
   .drug-module.active{display:block;}
   @media (min-width:981px){
-    .drug-module.active > main.grid > .panel{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;}
+    .drug-module.active > main.grid > .panel{position:sticky;top:12px;max-height:calc(100vh - 24px);overflow-y:auto;overscroll-behavior:contain;scroll-snap-type:y proximity;}
+    /* 右欄兩個卡位（Brandon 2026-10-23，像號碼鎖）：第一格＝判讀頂端（判讀板＋曲線），第二格＝曲線頂端（曲線＋劑量調整建議）；靠近才吸附，往下仍可自由捲 */
+    #resultsPanel > .results-head, #amgResultsPanel > .results-head{scroll-snap-align:start;}
+    #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{scroll-snap-align:start;}
   }
   @media print{ .panel{position:static !important;max-height:none !important;overflow:visible !important;} }
   @media (max-width:980px){
@@ -1051,30 +1054,7 @@
     #regimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(166px,1fr) 58px 52px 46px 46px 64px;min-width:544px;}
     #amgRegimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(180px,1fr) 58px 64px 46px 68px 64px;min-width:594px;}
   }
-  @media (min-width:1600px){
-    /* F3 side-by-side */
-    #resultsPanel, #amgResultsPanel{grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr);}
-    #resultsPanel > .results-head, #amgResultsPanel > .results-head{grid-row:1;}
-    #resultsPanel > .demo-banner, #amgResultsPanel > .demo-banner{grid-row:2;}
-    #resultsPanel > .pop-model-toggle, #amgResultsPanel > .pop-model-toggle{grid-row:3;}
-    #resultsPanel > .param-grid, #amgResultsPanel > .param-grid{grid-row:4;}
-    .section-block:has(#flagList), .section-block:has(#amgFlagList){grid-row:5;}
-    #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{grid-column:1;grid-row:6 / span 2;align-self:start;}
-    .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable){grid-column:2;grid-row:6;border-left:1px solid var(--line);}
-    .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){grid-column:2;grid-row:7;border-left:1px solid var(--line);}
-    #resultsPanel > [id$="TrendBlock"], #amgResultsPanel > [id$="TrendBlock"]{grid-row:8;}
-    .section-block:has(textarea[id$="iPromptOut"]){grid-row:9;}
-    #regimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(0,1fr) 62px 52px 46px 46px 66px;}
-    #amgRegimenTable[data-rg="cand"]{--rg-cols:24px 84px minmax(0,1fr) 60px 64px 46px 66px 66px;}
-    .regimen-table[data-rg="cand"] th:nth-child(n+5), .regimen-table[data-rg="cand"] td:nth-child(n+5){padding-left:4px;padding-right:4px;}
-    .regimen-table[data-rg="cand"] .custom-input.dose{width:46px;}
-    .regimen-table[data-rg="cand"] .custom-input.inf{width:36px;}
-    .regimen-table[data-rg="cand"] .custom-row td:nth-child(4){padding-left:2px;padding-right:2px;}
-    .regimen-table[data-rg="cand"] td:nth-child(2) .tag{display:block;width:fit-content;margin:2px 0 0;}   /* 「現行間隔」「建議」標籤另起一行，不把方案欄撐出去 */
-    .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable), .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){padding-left:16px;padding-right:16px;}
-    .regimen-table[data-rg="cand"] .custom-row td:nth-child(3){padding-left:4px;padding-right:0;}
-    /* F3 side-by-side end */
-  }
+  /* ≥1600 px 的曲線／候選方案左右並排已拿掉（Brandon 2026-10-23）：劑量調整建議一律在曲線下方、佔滿右欄寬度，搭配右欄兩個卡位 */
   /* F3 end */
 
   /* F4 begin：注意事項一行化、AI Prompt 收合（DESIGN.md「減法規則」） */
@@ -1216,6 +1196,13 @@
   .param-grid.pg-dense .param-cell .sub{font-size:11.5px;-webkit-line-clamp:2;line-clamp:2;}
   .param-grid.pg-dense .param-cell:not(.pc-key) .ln-model{display:none;}
   .param-grid.pg-dense > .param-cell .lbl-main{min-height:0;}
+  /* 注意事項收成一行（Vancomycin、AMG，2 則以上）：紅色永遠顯示；沒有紅色只顯示最嚴重的一則（一行）；其餘收起 */
+  .fl-collapsed .flag-item:not(.fl-show){display:none;}
+  .fl-collapsed .flag-item.fl-clamp > span:last-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;}
+  .fl-collapsed .flag-item.fl-clamp{min-width:0;}
+  .fl-toggle{grid-column:2;justify-self:start;margin:2px 0 0 10px;padding:0;border:0;background:transparent;font:inherit;font-size:12px;color:var(--trace);cursor:pointer;}
+  .fl-toggle:hover{text-decoration:underline;}
+  .fl-toggle[hidden]{display:none;}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -11158,6 +11145,36 @@ ${flagText||'（無）'}
     // 「ⓘ 文獻」小卡：點外面或按 Esc 收起
     document.addEventListener('click', e=>{ document.querySelectorAll('details.pop-model-refs[open]').forEach(d=>{ if(!d.contains(e.target)) d.open = false; }); });
     document.addEventListener('keydown', e=>{ if(e.key === 'Escape') document.querySelectorAll('details.pop-model-refs[open]').forEach(d=>{ d.open = false; }); });
+
+    // ---------------- 注意事項收成一行（Brandon 2026-10-23） ----------------
+    // 每次 render 重寫 #flagList 後重新標記（.fl-show／.fl-clamp 只是 class，文字不動，golden 不受影響）。
+    // 展開或收起的選擇記在區塊上（dataset.flOpen），重算後維持。
+    ['flagList','amgFlagList'].forEach(id=>{
+      const list = document.getElementById(id); if(!list) return;
+      const sec = list.closest('.section-block'); if(!sec) return;
+      const btn = document.createElement('button'); btn.type = 'button'; btn.className = 'fl-toggle'; btn.hidden = true;
+      list.after(btn);
+      const rank = it=>it.classList.contains('danger') ? 2 : it.classList.contains('warn') ? 1 : 0;
+      function refresh(){
+        const items = Array.from(list.querySelectorAll(':scope > .flag-item'));
+        items.forEach(it=>it.classList.remove('fl-show', 'fl-clamp'));
+        if(items.length < 2){ sec.classList.remove('fl-collapsed'); btn.hidden = true; return; }
+        const dangers = items.filter(it=>rank(it) === 2);
+        const show = dangers.length ? dangers : [items.reduce((a, b)=>rank(b) > rank(a) ? b : a)];
+        show.forEach(it=>it.classList.add('fl-show'));
+        if(!dangers.length) show[0].classList.add('fl-clamp');
+        const hidden = items.length - show.length;
+        if(!hidden){ sec.classList.remove('fl-collapsed'); btn.hidden = true; return; }
+        const open = sec.dataset.flOpen === '1';
+        sec.classList.toggle('fl-collapsed', !open);
+        btn.hidden = false;
+        btn.textContent = open ? '收起 ▴' : `還有 ${hidden} 則 ▾`;
+        btn.setAttribute('aria-expanded', String(open));
+      }
+      btn.addEventListener('click', ()=>{ sec.dataset.flOpen = sec.dataset.flOpen === '1' ? '0' : '1'; refresh(); });
+      new MutationObserver(refresh).observe(list, {childList:true});
+      refresh();
+    });
 
     // ---------------- 右邊「尚未更新」：處方改了、給藥紀錄還沒重新展開（Brandon 2026-10-23） ----------------
     // 計算只採用給藥紀錄表；左邊的 loading／維持處方／產生範圍改了之後，要按「展開」才會進到給藥紀錄。在那之前右邊只有一半是新的

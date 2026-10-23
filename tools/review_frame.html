@@ -60,7 +60,7 @@ f.onload = ()=>{
     if(q.get('nodoses')) await step(()=>{ d.querySelectorAll('.drug-module.active [id$="evelTable"] .row-del, .drug-module.active [id$="oseTable"] .row-del').forEach(b=>b.click()); }, 300);   // 起始劑量預測：刪掉給藥與濃度
     if(q.get('setv')) for(const kv of q.get('setv').split(',')) await step(()=>{ const i = kv.indexOf(':'); const e = d.getElementById(kv.slice(0,i)); e.value = kv.slice(i+1); e.dispatchEvent(new w.Event('input',{bubbles:true})); e.dispatchEvent(new w.Event('change',{bubbles:true})); }, 250);   // 填值：setv=maintDose:1250,maintInterval:8
     if(q.get('click')) for(const id of q.get('click').split(',')) await step(()=>{ d.getElementById(id).click(); }, 250);   // 依序點這些 id（例：vancoRxMenuBtn、vancoSaveMain）
-    await step(()=>{ w.scrollTo(0, +(q.get('scroll')||0)); const rp = d.querySelector('.drug-module.active main.grid > .panel'); if(rp && q.get('rscroll')) rp.scrollTop = +q.get('rscroll'); }, 1200);
+    await step(()=>{ w.scrollTo(0, +(q.get('scroll')||0)); const rp = d.querySelector('.drug-module.active main.grid > .panel'); if(rp && q.get('rscroll')) rp.scrollTop = +q.get('rscroll'); if(rp && q.get('rsnap')==='curve'){ const cw = rp.querySelector(':scope > .curve-wrap'); if(cw) rp.scrollTop = cw.offsetTop - rp.offsetTop; } }, 1200);
     if(q.get('measure')==='params'){
       const out = [];
       d.querySelectorAll('.drug-module.active .param-grid').forEach(g=>{
