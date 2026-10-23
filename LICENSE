@@ -1,21 +1,115 @@
-MIT License
+TDM 工作台（TDM-project）授權條款　v1.0
+TDM Workbench License, version 1.0
 
-Copyright (c) 2026 Limpid9121
+Copyright (c) 2026 Limpid9121（以下稱「作者」）。保留所有未明示授與的權利。
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+本條款以中文為準；英文摘要僅供參考。
+This license is written in Chinese; the English summary at the end is for reference only.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+第 1 條　本專案包含三種內容
+------------------------------------------------------------
+(a)「程式碼」：本專案中由作者撰寫的程式、樣式、測試、工具腳本與文件，
+    但不包含下列 (b)、(c) 的內容。
+
+(b)「院內規定內容」：取自作者所屬醫療機構（以下稱「該機構」）內部規定或資料的內容，
+    包括但不限於：
+      - 院內 TDM 目標值、警戒值與判讀規則；
+      - 院內藥品品項、劑型、規格、最小可用單位與安瓿換算；
+      - 醫令代碼、檢驗項目、採樣窗、報告時效（TAT）與排班提示；
+      - 院內給藥慣例（例如輸注時間規則、固定給藥時刻、透析後給藥慣例）；
+      - 程式或畫面中標示為「院內」「本院」或引用該機構資料來源者。
+
+(c)「文獻內容」：引用自已發表文獻、指引或共識的數值、模型參數與公式。
+    其權利屬原作者或原出版者，本專案僅為臨床計算之目的摘錄並註明出處。
+
+
+第 2 條　程式碼的授權
+------------------------------------------------------------
+在遵守本條款的前提下，作者授予你非專屬、免費、全球性的權利，得為下列「非商業目的」
+使用、複製、修改及散布程式碼及其修改版本：
+  - 個人使用、教學、學術研究；
+  - 醫療機構或醫療人員為臨床決策輔助之非營利使用，且不向病人或第三人另行收費。
+
+散布時應：
+  (1) 保留本授權條款全文與上述著作權聲明；
+  (2) 標明原始出處（https://github.com/Limpid9121/TDM-project）；
+  (3) 若有修改，標明修改之處；
+  (4) 依第 3 條移除或替換院內規定內容。
+
+「商業目的」包括但不限於：販售本專案或其修改版本、將其整合進收費產品或服務
+（含醫療資訊系統、HIS／EMR 外掛、SaaS）、或以之為主要功能提供收費服務。
+商業目的之使用須事先取得作者書面同意。
+
+
+第 3 條　院內規定內容不在授權範圍內
+------------------------------------------------------------
+(a) 院內規定內容的權利屬該機構，作者不就其授予任何權利。
+    其收錄於本專案，僅為呈現本工具在一個實際院內環境中的運作方式。
+
+(b) 你不得：
+    (1) 將院內規定內容作為你所屬機構的院內規定使用；
+    (2) 宣稱或暗示本專案、其修改版本或院內規定內容為該機構的官方指引、官方工具，
+        或經該機構審核、背書；
+    (3) 使用該機構的名稱、標章或可辨識的識別資訊推廣本專案或其修改版本；
+    (4) 在未經該機構同意的情況下，將院內規定內容單獨抽出、彙整或轉載。
+
+(c) 其他機構使用本專案前，應將院內規定內容替換為自己機構的規定，
+    並由該機構的合格人員確認。
+
+(d) 院內規定內容反映收錄當時的規定，可能已經變更；作者不保證其為最新或正確。
+
+
+第 4 條　臨床使用聲明
+------------------------------------------------------------
+(a) 本專案為臨床決策輔助工具，不是醫療器材，未經任何主管機關審查或核准。
+(b) 本專案的計算結果、劑量建議與提示，不能取代合格醫療人員的專業判斷。
+    任何用藥決定由使用者自行負責。
+(c) 使用者應自行確認輸入資料、族群假設與目標值適用於個別病人與所屬機構。
+
+
+第 5 條　病人資料
+------------------------------------------------------------
+本專案不蒐集、不上傳任何資料；病人資料只存在使用者自己瀏覽器的本機儲存空間。
+使用者應自行遵守個人資料保護與病人隱私相關法令及所屬機構規定，
+並於共用電腦使用後清除資料。不得將含有可識別病人資訊的資料提交至本專案的公開儲存庫。
+
+
+第 6 條　不提供擔保、責任限制
+------------------------------------------------------------
+本專案依「現狀」提供，不提供任何明示或默示之擔保，包括但不限於適售性、特定目的適用性、
+正確性及不侵權。在法律允許的最大範圍內，作者及該機構對於因使用或無法使用本專案
+所生的任何損害（包括病人照護結果）不負賠償責任。
+
+
+第 7 條　終止
+------------------------------------------------------------
+違反本條款者，依第 2 條取得的權利自動終止。於收到作者通知後 30 日內改正者，權利回復。
+
+
+第 8 條　其他
+------------------------------------------------------------
+(a) 本條款適用中華民國法律。
+(b) 作者得修訂本條款；修訂僅適用於修訂後發布的版本。
+(c) 本專案過去以 MIT 授權發布的版本，已取得者仍依 MIT 授權使用該版本；
+    自本條款發布起的版本適用本條款。
+
+
+------------------------------------------------------------
+English summary (for reference only; the Chinese text governs)
+------------------------------------------------------------
+- Code: free for personal, educational, research and non-profit clinical-support use;
+  modification and redistribution allowed with attribution and this license.
+  Commercial use (selling, bundling into paid products/services, HIS/EMR plug-ins, SaaS)
+  requires the author's prior written permission.
+- Institution-specific content (in-house TDM targets, formulary items and strengths,
+  order codes, sampling windows, in-house dosing conventions, anything marked
+  "院內" or "本院") belongs to the author's institution and is NOT licensed.
+  Do not use it as your own institution's rules, do not present it as the institution's
+  official guidance, do not use the institution's name or marks, and replace it with
+  your own institution's rules before use.
+- Literature-derived values belong to their original authors and publishers.
+- Not a medical device; no regulatory review; not a substitute for professional judgment.
+- No patient data is collected; users are responsible for privacy compliance.
+- No warranty; no liability to the extent permitted by law.
+- Versions released earlier under the MIT License remain under MIT for those versions.
