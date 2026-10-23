@@ -131,16 +131,16 @@
   .card h2.card-head:focus-visible{outline:2px solid var(--trace);outline-offset:4px;border-radius:4px;}
   .card-chev{
     margin-left:auto;flex:0 0 auto;width:11px;height:7px;color:var(--ink-faint);
-    transition:transform 200ms ease;
+    transition:transform 200ms cubic-bezier(.23,1,.32,1);
   }
   .card.collapsed .card-chev{transform:rotate(-90deg);}
-  .card-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows 200ms ease;}
+  .card-body{display:grid;grid-template-rows:1fr;transition:grid-template-rows 200ms cubic-bezier(.23,1,.32,1);}
   .card-body > .card-body-inner{overflow:hidden;min-height:0;}
   .card.collapsed > .card-body{grid-template-rows:0fr;}
   /* hide only after the collapse finishes, so collapsed fields can't be reached by Tab
      while still animating (and can't be focus-scrolled into an invisible area) */
   .card.collapsed > .card-body > .card-body-inner{visibility:hidden;transition:visibility 0s linear 200ms;}
-  .card{transition:padding-bottom 200ms ease;}
+  .card{transition:padding-bottom 200ms cubic-bezier(.23,1,.32,1);}
   .card.collapsed{padding-bottom:14px;}
   .panel-tools{display:flex;justify-content:flex-end;margin-bottom:-8px;}
   @media (prefers-reduced-motion:reduce){
@@ -1154,13 +1154,12 @@
   /* F5 左欄：標籤貼著自己的輸入框（下方 4 px），欄位組之間 14 px；卡片 03 的次標題有層級 */
   .field label{min-height:0;}
   .field-row{margin-bottom:14px;}
-  .field-row > .field:has(> :nth-child(3)) > label{min-height:2.6em;}
-  @supports (grid-template-rows:subgrid){
-    .field-row{grid-template-rows:auto auto;row-gap:0;}
-    .field-row > .field:not(:has(> :nth-child(3))){display:grid;grid-row:1 / span 2;grid-template-rows:subgrid;gap:0;}
-    .field-row > .field:not(:has(> :nth-child(3))) > label{align-self:end;margin-bottom:4px;}
-    .field-row > .field:not(:has(> :nth-child(3))) > :not(label){align-self:start;}
-    .field-row > .field:has(> :nth-child(3)){grid-row:1 / span 2;}
+  @supports not (grid-template-rows:subgrid){ .field-row > .field:has(> :nth-child(3)) > label{min-height:2.6em;} }
+  @supports (grid-template-rows:subgrid){   /* F6：三行（標籤／輸入／提示）都進 subgrid，日期時間欄與帶提示的欄位也和同列的欄對齊 */
+    .field-row{grid-template-rows:auto auto auto;row-gap:0;}
+    .field-row > .field{display:grid;grid-row:1 / span 3;grid-template-rows:subgrid;gap:0;}
+    .field-row > .field > label{align-self:end;margin-bottom:4px;}
+    .field-row > .field > :not(label){align-self:start;}
   }
   .card h3{font-size:12px;font-weight:700;letter-spacing:0;text-transform:none;color:var(--ink);margin:18px 0 8px;}
   .card h3:first-of-type{margin-top:8px;}
@@ -1173,6 +1172,14 @@
   .param-cell.pc-empty .value::before{content:attr(data-empty);font-family:var(--sans);font-size:13px;font-weight:400;color:var(--ink-soft);}
   .panel > .param-grid.pg .param-cell.pc-empty .value::before{color:var(--navy-soft);}
   /* F5 end */
+
+  /* F6 begin：最糟資料複驗後的修正 */
+  .drug-module .field:has(> .checkline) + .field-row, .drug-module p.hint + .field-row{margin-top:12px;}   /* 勾選群組／說明段落後面接輸入列時留一個欄位組的間距 */
+  .drug-module input[type="text"]{text-overflow:ellipsis;}   /* 太長的文字結尾顯示「…」，不再無聲被切掉 */
+  .btn{transition:transform 160ms cubic-bezier(.23,1,.32,1);}   /* 按下去縮一點點，確認有按到（按鈕本來沒有任何按下回饋） */
+  .btn:active:not(:disabled){transform:scale(.97);}
+  @media (prefers-reduced-motion:reduce){ .btn{transition:none;} .btn:active:not(:disabled){transform:none;} }
+  /* F6 end */
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
   .dt24-src{display:none;}
@@ -1238,7 +1245,7 @@
           </div>
         </div>
         <div class="pm-engine" hidden>
-          <input type="text" id="patientLabel" placeholder="" aria-label="病歷號">
+          <input type="text" id="patientLabel" placeholder="" maxlength="20" aria-label="病歷號">
           <select id="patientVisitSelect" aria-label="收案版本"><option value="">（選病人後顯示收案版本）</option></select>
           <button class="btn small" id="loadPatientBtn" type="button">載入</button>
           <button class="btn primary small" id="savePatientBtn" type="button">存為新收案</button>
@@ -1278,7 +1285,7 @@
           </div>
         </div>
         <div class="pm-engine" hidden>
-          <input type="text" id="amgPatientLabel" placeholder="" aria-label="病歷號">
+          <input type="text" id="amgPatientLabel" placeholder="" maxlength="20" aria-label="病歷號">
           <select id="amgPatientVisitSelect" aria-label="收案版本"><option value="">（選病人後顯示收案版本）</option></select>
           <button class="btn small" id="amgLoadPatientBtn" type="button">載入</button>
           <button class="btn primary small" id="amgSavePatientBtn" type="button">存為新收案</button>
@@ -1318,7 +1325,7 @@
           </div>
         </div>
         <div class="pm-engine" hidden>
-          <input type="text" id="azlPatientLabel" placeholder="" aria-label="病歷號">
+          <input type="text" id="azlPatientLabel" placeholder="" maxlength="20" aria-label="病歷號">
           <select id="azlPatientVisitSelect" aria-label="收案版本"><option value="">（選病人後顯示收案版本）</option></select>
           <button class="btn small" id="azlLoadPatientBtn" type="button">載入</button>
           <button class="btn primary small" id="azlSavePatientBtn" type="button">存為新收案</button>
@@ -1358,7 +1365,7 @@
           </div>
         </div>
         <div class="pm-engine" hidden>
-          <input type="text" id="aedPatientLabel" placeholder="" aria-label="病歷號">
+          <input type="text" id="aedPatientLabel" placeholder="" maxlength="20" aria-label="病歷號">
           <select id="aedPatientVisitSelect" aria-label="收案版本"><option value="">（選病人後顯示收案版本）</option></select>
           <button class="btn small" id="aedLoadPatientBtn" type="button">載入</button>
           <button class="btn primary small" id="aedSavePatientBtn" type="button">存為新收案</button>
@@ -4406,10 +4413,12 @@
       svgParts.push(`<line x1="${ML}" y1="${y}" x2="${W-MR}" y2="${y}" stroke="var(--line)" stroke-width="1"/>`);
       svgParts.push(`<text x="${ML-8}" y="${y+4}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="end">${c}</text>`);
     }
-    svgParts.push(`<text x="${ML-8}" y="${MT-4}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="end">µg/mL</text>`);
+    svgParts.push(`<text x="${ML-8}" y="${MT-8}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="end">µg/mL</text>`);
 
     // x gridlines: aligned to calendar midnight when an absolute anchor (t0Ms) is
     // available; otherwise fall back to plain relative-hour marks every 24h.
+    const dayPx = 24/(tDomainMax-tMin)*plotW, labStride = Math.max(1, Math.ceil(46/dayPx));   // F6：每個日期標籤至少留 46 px，太擠就隔幾天標一個
+    let labIdx = 0;
     if(t0Ms!==null){
       let cursorMs = localMidnightMs(t0Ms + tMin*3600000);
       const endMs = t0Ms + tDomainMax*3600000;
@@ -4419,7 +4428,7 @@
         if(tb >= tMin-0.01 && tb <= tDomainMax+0.01){
           const x = xScale(tb);
           svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
-          svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">${fmtAxisDate(cursorMs)}</text>`);
+          if(labIdx++ % labStride === 0) svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">${fmtAxisDate(cursorMs)}</text>`);
         }
         cursorMs += 24*3600000;
         guard++;
@@ -4428,7 +4437,7 @@
       for(let t=0; t<=tDomainMax; t+=24){
         const x = xScale(t);
         svgParts.push(`<line x1="${x}" y1="${MT}" x2="${x}" y2="${MT+plotH}" stroke="var(--line)" stroke-width="1"/>`);
-        svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">+${t}h</text>`);
+        if(labIdx++ % labStride === 0) svgParts.push(`<text x="${x}" y="${H-10}" font-family="var(--mono)" font-size="12" fill="var(--ink-soft)" text-anchor="middle">+${t}h</text>`);
       }
     }
 

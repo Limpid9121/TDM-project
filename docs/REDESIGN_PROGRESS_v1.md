@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-23（v3 的 F1、F2、F7、F3、F4、F5 完成；下一包 F6 全面複驗，之後 F8 標籤減法審計待核可）
+最後更新：2026-10-23（v3 的 F1、F2、F7、F3、F4、F5、F6 完成；F8 標籤減法審計待核可；整體驗收與合併等 Brandon 決定）
 
 ## 現況
 
@@ -25,7 +25,8 @@
 | F3 候選方案表 | 完成，等 Brandon 說「繼續」 | 見下方 F3 備註；**golden 0 差異**（不需要核可） |
 | F4 注意事項一行化、AI Prompt 收合 | 完成，等 Brandon 說「繼續」 | 見下方 F4 備註；golden 0 差異 |
 | F5 頂列與左欄 | 完成，等 Brandon 說「繼續」 | 見下方 F5 備註；golden 0 差異 |
-| F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩）；F8 標籤減法審計未核可 |
+| F6 全面複驗 | 完成，等 Brandon 說「繼續」或決定下一步 | 見 `docs/REDESIGN_ACCEPTANCE_v2.md`；golden 0 差異 |
+| F8 | 未核可 | 標籤減法審計，Brandon 尚未核可 |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
@@ -113,6 +114,13 @@
 - **測試改動**：`test_d4_header.js`（面板開關改成檢查新結構）、`test_patient_manager_flow.js`（下拉預設文字）、`test_inline_notes.js`（提示改在分頁列）；新測試 `tests/test_f5_header.js`（95 項）。`tools/review_frame.html` 的 `pm=1` 參數換成 `click=id1,id2`（依序點這些 id，用來拍選單與另存視窗）。
 - **沒做／限制**：手機的頂列照指示沒動（選單在手機上沒調整過）；「從其他模組帶入」沒有搬進選單（仍在左欄 01 卡片，選單項目只是帶你過去），因為它需要選來源模組與顯示結果訊息，搬過去要重做；展開狀態、選單開合沒有記住。
 - 用到的 skill：`impeccable` layout、craft-floor，`emil-design-eng`（選單、焦點、鍵盤、Esc）、減法規則。
+
+### F6 全面複驗（2026-10-23，只看桌機 1920／1440／1024）
+- 完整報告在 `docs/REDESIGN_ACCEPTANCE_v2.md`（最糟資料測試、動態審查、audit、critique 29/40、C3 比對）。
+- **修了**：日期軸標籤太擠（每個至少 46 px，隔幾天標一個）；AMG 軸單位字壓在最上面刻度；左欄同列欄位標籤／輸入框對不齊（日期時間欄、帶提示的欄，改成三行都進 subgrid）；勾選群組與說明段落後面的間距；單行文字框結尾「…」；病歷號 maxlength=20；收合動畫改強 ease-out；按鈕按下縮放回饋。
+- **工具**：`tools/review_frame.html` 新增 `worst=1|2`（最糟資料，開發用）、`measure=rowalign`（同列欄位對齊量測）。
+- **測試**：新增 `tests/test_f6_polish.js`（17 項）；`test_f5_header.js` 更新 subgrid 斷言。全部通過、golden 124/124、偵測 3 項。
+- **待 Brandon 決定**：見驗收報告「需要你決定的」四項；F8；整體驗收與合併。
 
 ## 工作包狀態
 

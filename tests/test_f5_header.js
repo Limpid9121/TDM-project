@@ -193,7 +193,7 @@ async function main() {
   assert(/\.mod-tabs \.hdr-identity\s*\{[^}]*color:\s*var\(--ink\)/.test(css), '分頁列上的身分條改用深色字（在淺底上）');
 
   // ---------- 10. 左欄：標籤貼近輸入框、次標題、AED 尚無濃度 ----------
-  assert(/\.field-row > \.field:not\(:has\(> :nth-child\(3\)\)\) > label\s*\{[^}]*align-self:\s*end[^}]*margin-bottom:\s*4px/.test(css), '標籤貼在自己輸入框的正上方（下方 4 px），同一列的輸入框仍對齊（subgrid）');
+  assert(/\.field-row > \.field > label\s*\{[^}]*align-self:\s*end[^}]*margin-bottom:\s*4px/.test(css), '標籤貼在自己輸入框的正上方（下方 4 px），同一列的輸入框仍對齊（subgrid）');
   assert(/\.field-row\s*\{[^}]*margin-bottom:\s*14px/.test(css), '欄位組之間 14 px');
   assert(/\.card h3\s*\{[^}]*font-weight:\s*700/.test(css) && /\.card h3:not\(:first-of-type\)\s*\{[^}]*border-top:\s*1px solid var\(--line\)/.test(css), '卡片裡的次標題（第一筆給藥、維持處方、產生範圍）有粗體與上分隔線');
   const h3 = Array.from($('inputPanel').querySelectorAll('h3')).find(h => /^第一筆給藥/.test(h.textContent));
