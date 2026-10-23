@@ -730,7 +730,6 @@
   #resultsPanel .section-block, #amgResultsPanel .section-block{padding-top:10px;padding-bottom:10px;}
   #resultsPanel .section-block h3, #amgResultsPanel .section-block h3{margin-bottom:6px;}
   #resultsPanel .section-block > .hint, #amgResultsPanel .section-block > .hint{margin-bottom:6px;}
-  .param-grid:has(.pc-key) > .param-cell{padding-top:8px;padding-bottom:8px;}
   .results-head{padding-top:10px;padding-bottom:10px;}
   .curve-wrap{padding-top:8px;}
   /* 判讀標題列 */
@@ -740,46 +739,76 @@
   .rp-live{font-size:12px;color:var(--ink-soft);display:inline-flex;align-items:center;gap:6px;white-space:nowrap;}
   .rp-live i{width:8px;height:8px;border-radius:50%;background:var(--ok);display:inline-block;}
 
-  /* 參數：key 格（vancomycin 的 AUC₂₄,ss、AMG 的 Cmax,ss）放大跨兩列；其餘 9 格排兩列 */
-  .param-grid:has(.pc-key){grid-template-columns:minmax(150px,1.5fr) repeat(5,minmax(0,1fr));}
-  .param-grid:has(.pc-key) > .pc-key{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;justify-content:center;border-right:1px solid var(--line);padding-right:16px;margin-right:16px;}
-  .param-grid:has(.pc-key) > .pc-key .value{font-size:40px;letter-spacing:-.01em;line-height:1.1;}
-  .param-grid:has(.pc-key) > .pc-key .value .unit{font-size:12px;}
-  /* 第一列：暴露量（Cmin、Cmax、AUC/MIC、近 24h AUC、CrCl）；第二列：藥動參數（t½、ke、CL、Vd） */
-  .param-grid:has(.pc-key) > .pc-cmin{order:1;} .param-grid:has(.pc-key) > .pc-cmax{order:2;} .param-grid:has(.pc-key) > .pc-ref{order:3;}
-  .param-grid:has(.pc-key) > .pc-aucmic{order:4;} .param-grid:has(.pc-key) > .pc-auc24a{order:5;} .param-grid:has(.pc-key) > .pc-crcl{order:6;}
-  .param-grid:has(.pc-key) > .pc-thalf{order:7;} .param-grid:has(.pc-key) > .pc-ke{order:8;}
-  .param-grid:has(.pc-key) > .pc-cl{order:9;} .param-grid:has(.pc-key) > .pc-vd{order:10;}
-  .param-grid:has(.pc-key) > .param-cell{margin-right:12px;}
-  .param-grid:has(.pc-key) > .param-cell:nth-last-child(1){margin-right:0;}
+  /* =====================================================================
+     v3 F2：參數區照 C3（key 格大字跨兩列＋旁邊兩列、每列 4 格）
+     JS（planParamGrid）只做顯示整理：標籤拆成短名＋說明、ke 併進 t½、替每格算好 --r／--c／--cs；paramGrid 的文字不變。
+     ===================================================================== */
+  .param-cell{display:flex;flex-direction:column;min-width:0;}
+  .param-cell .label{display:contents;}
+  .param-cell .lbl-main{order:1;display:block;font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .param-cell .value{order:2;white-space:nowrap;font-variant-numeric:tabular-nums;}
+  .param-cell .value.text{white-space:normal;}
+  .param-cell .lbl-note{order:3;font-size:12px;color:var(--ink-soft);margin-top:2px;}
+  .param-cell .sub{order:4;}
+  .param-grid.pg .param-cell .sub{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;}   /* 長說明最多 3 行，全文在 title */
+  .lbl-paren{display:none;}
+  .param-cell .ke-sub{order:5;display:flex;align-items:baseline;gap:6px;margin-top:4px;font-size:12px;color:var(--ink-soft);}
+  .ke-sub .label{display:inline;}
+  .param-cell .ke-sub .lbl-main{display:inline;margin:0;font-size:12px;font-weight:400;overflow:visible;}
+  .param-cell .ke-sub .lbl-note,.param-cell .ke-sub .sub{display:none;}
+  .param-cell .ke-sub .value{font-size:12px;font-weight:400;color:var(--ink-soft);}
+  .param-cell .ke-sub .value .unit{margin-left:2px;}
+  .param-cell .lbl-note.pn-def{display:none;}   /* 「半衰期」「清除率」「分布體積」「Cockcroft-Gault」只是名稱的白話，C3 沒放；完整標籤在 title */
+  /* key 格：標籤與說明同一行（AUC₂₄,ss（現行處方推算）），大字在下面 */
+  .param-cell.pc-key .label{display:block;order:1;margin-bottom:3px;}
+  .param-cell.pc-key .lbl-main,.param-cell.pc-key .lbl-note{display:inline;font-size:12px;margin:0;}
+  .param-cell.pc-key .lbl-main{font-weight:700;color:var(--ink-soft);white-space:normal;overflow:visible;}
+  .param-cell.pc-key .lbl-paren{display:inline;}
+  .param-cell.pc-key .lbl-note{font-weight:400;}
+  .param-cell.pc-key .value{font-size:40px;letter-spacing:-.01em;line-height:1.1;}
+  .param-cell.pc-key .value .unit{font-size:12px;}
+  .param-cell.pc-key::after{order:6;}
   /* key 格的目標與狀態：用 CSS 補在數字下面（不改 render 的文字；golden 不受影響） */
   #paramGrid .pc-auc::after{content:"目標 400–600";font-size:12px;color:var(--ink-soft);margin-top:2px;}
   #paramGrid .pc-auc.flag-ok::after{content:"目標 400–600　■ 目標內";color:var(--ok);font-weight:700;}
   #paramGrid .pc-auc.flag-warn::after{content:"目標 400–600　■ 低於目標";color:var(--amber);font-weight:700;}
   #paramGrid .pc-auc.flag-danger::after{content:"目標 400–600　■ 超過上限";color:var(--crimson);font-weight:700;}
 
-  /* 曲線與候選方案左右並排留給 D6：現在曲線是固定 920×340 的畫布，並排時縮到 70% 以下，圖上文字會低於 12 px；
-     D6 重畫曲線時依可用寬度畫，再並排。 */
-  @media (min-width:1600px){
-    .param-cell .value{font-size:24px;}
-    .param-grid:has(.pc-key) > .pc-key .value{font-size:40px;}
+
+  @media (min-width:981px){
+    .param-grid.pg{grid-template-columns:repeat(var(--pg-cols,4),minmax(0,1fr));}
+    .param-grid.pg > .param-cell{margin:0;padding:10px 14px;border:0;border-top:1px solid var(--line);border-left:1px solid var(--line);grid-row:var(--r);grid-column:var(--c) / span var(--cs);}
+    .param-grid.pg > .param-cell[data-r="1"]{border-top:0;}
+    .param-grid.pg > .param-cell[data-c="1"]{border-left:0;}
+    .param-grid.pg:not(.pg-key) > .param-cell[data-c="1"]{padding-left:0;}
+    .param-grid.pg-key{grid-template-columns:minmax(170px,1.3fr) repeat(4,minmax(0,1fr));}
+    .param-grid.pg-key > .param-cell:not(.pc-key){grid-column:calc(var(--c) + 1) / span var(--cs);}
+    .param-grid.pg-key > .pc-key{grid-column:1;grid-row:1 / span var(--pg-rows,2);margin:0;padding:10px 18px 10px 0;border:0;border-right:1px solid var(--line);justify-content:center;}
+    .param-cell .value{font-size:22px;}
   }
-  @media (max-width:1599px) and (min-width:981px){
-    .param-grid:has(.pc-key){grid-template-columns:minmax(130px,1.3fr) repeat(5,minmax(0,1fr));}
-    .param-grid:has(.pc-key) > .param-cell .label{font-size:12px;}
-  }
-  /* 右欄只剩約 560 px（1024 寬螢幕）：6 欄擠得數字溢出格子，改 key 格＋3 欄（key 格跨 3 列） */
-  @media (max-width:1279px) and (min-width:981px){
-    .param-grid:has(.pc-key){grid-template-columns:minmax(120px,1.2fr) repeat(3,minmax(0,1fr));}
-    .param-grid:has(.pc-key) > .pc-key{grid-row:1 / span 3;}
+  @media (min-width:1600px){ .param-cell .value{font-size:24px;} .param-grid.pg-key > .pc-key .value{font-size:40px;} }
+  /* 右欄只剩約 560 px（1024 寬螢幕）：key 格獨佔最上面一整列，其餘 4 欄 × 2 列；單位換到數字下面，格子窄時數字才不會溢出 */
+  @media (min-width:981px) and (max-width:1279px){
+    .param-grid.pg-key{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .param-grid.pg-key > .pc-key{grid-column:1 / -1;grid-row:1;padding:6px 0 10px;border-right:0;}
+    .param-grid.pg-key > .param-cell:not(.pc-key){grid-row:calc(var(--r) + 1);grid-column:var(--c) / span var(--cs);}
+    .param-grid.pg-key > .param-cell[data-r="1"]{border-top:1px solid var(--line);}
     .param-cell .value{font-size:20px;}
-    .param-grid:has(.pc-key) > .pc-key .value{font-size:32px;}
-    .param-cell .value .unit{font-size:12px;display:block;margin-left:0;}   /* 單位換到數字下面，格子窄時才不會溢出 */
+    .param-grid.pg-key > .pc-key .value{font-size:32px;}
+    .param-grid.pg > .param-cell .lbl-main{white-space:normal;overflow:visible;line-height:1.25;min-height:2.5em;}   /* 格子窄：標籤可折成兩行，每格都留兩行高，數字才對得齊 */
+    .param-grid.pg > .pc-key .lbl-main{min-height:0;}
+    .param-cell .value .unit{display:block;margin-left:0;}
+    .param-cell .ke-sub .value .unit{display:inline;}
   }
+  /* 手機（暫緩，只維持原狀不壞）：key 格整列、其餘 3 欄 */
   @media (max-width:980px){
     .param-grid:has(.pc-key){grid-template-columns:repeat(3,minmax(0,1fr));}
     .param-grid:has(.pc-key) > .pc-key{grid-column:1 / -1;grid-row:auto;border-right:0;margin-right:0;padding-right:0;}
     .param-grid:has(.pc-key) > .param-cell{margin-right:0;border-right:0;}
+    .param-grid:has(.pc-key) > .pc-cmin{order:1;} .param-grid:has(.pc-key) > .pc-cmax{order:2;} .param-grid:has(.pc-key) > .pc-ref{order:3;}
+    .param-grid:has(.pc-key) > .pc-aucmic{order:4;} .param-grid:has(.pc-key) > .pc-auc24a{order:5;} .param-grid:has(.pc-key) > .pc-crcl{order:6;}
+    .param-grid:has(.pc-key) > .pc-thalf{order:7;} .param-grid:has(.pc-key) > .pc-ke{order:8;}
+    .param-grid:has(.pc-key) > .pc-cl{order:9;} .param-grid:has(.pc-key) > .pc-vd{order:10;}
   }
   @media (max-width:640px){
     .param-grid:has(.pc-key){grid-template-columns:repeat(2,minmax(0,1fr));}
@@ -9526,6 +9555,92 @@ ${flagText||'（無）'}
         if(hit[1]===keyClass) cell.classList.add('pc-key');
       });
     }
+    // v3 F2：參數格版面（純顯示）。每次 render 重寫格子後：
+    //  1. 標籤拆成「短名」＋「括號裡的說明」（說明移到數字下面；文字內容一個字都不變，括號用 .lbl-paren 包起來由 CSS 隱藏）
+    //  2. ke 併進緊接在前的 t½ 格（小字）；ke 的內容放在 t½ 格的最前面，所以 paramGrid 的 textContent 順序不變
+    //  3. 依角色排成：key 格（跨列）＋ 第一列暴露量（Cmin、Cmax、參考 Cmax、AUC/MIC、近 24h AUC）＋ 第二列藥動（t½、CL、Vd、CrCl），
+    //     每列 4 欄、最後一格拉寬補滿；沒有 key 格（HD、Azole、AED）就一列最多 3 欄依序排。算好的 --r／--c／--cs 由桌機 CSS 使用
+    const escH = t=>String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    function splitParamLabel(cell){
+      const lab = cell.querySelector(':scope > .label');
+      if(!lab || lab.querySelector('.lbl-main')) return;
+      const t = lab.textContent;
+      const m = t.match(/^(.*?)([（(])(.*)([）)])$/);
+      cell.title = t.trim();
+      const plainDef = m && /^(半衰期|清除率|分布體積|消除速率常數|Cockcroft-Gault)$/.test(m[3]);
+      lab.innerHTML = m
+        ? `<span class="lbl-main">${escH(m[1])}</span><span class="lbl-note${plainDef?' pn-def':''}"><span class="lbl-paren">${m[2]}</span>${escH(m[3])}<span class="lbl-paren">${m[4]}</span></span>`
+        : `<span class="lbl-main">${escH(t)}</span>`;
+    }
+    const PARAM_ROLES = [[/^AUC₂₄,ss/,'aucss'],[/^AUC\/MIC/,'aucmic'],[/^近 24h/,'auc24a'],[/^Cmax\/MIC/,'cmaxmic'],[/^Cmax,ss/,'cmax'],[/^Cmin,ss/,'cmin'],
+      [/^參考/,'ref'],[/^CrCl/,'crcl'],[/^t½$/,'thalf'],[/^ke$/,'ke'],[/^Vd$/,'vd'],[/^CL$/,'cl']];
+    function paramRole(cell){
+      const main = ((cell.querySelector(':scope > .label .lbl-main') || {}).textContent || '').trim().replace(/^預測\s*/, '');
+      if(/模型 B/.test(cell.title || '') && /^(CL|Vd)$/.test(main)) return 'other';   // 模型 B 專屬的 CL／V，不佔「族群 CL／Vd」的位置
+      const hit = PARAM_ROLES.find(([re])=>re.test(main));
+      return hit ? hit[1] : 'other';
+    }
+    function planParamGrid(gridId){
+      const grid = document.getElementById(gridId);
+      if(!grid) return;
+      const kids = Array.from(grid.children);
+      const reset = ()=>{ grid.classList.remove('pg','pg-key'); grid.style.removeProperty('--pg-rows'); grid.style.removeProperty('--pg-cols'); };
+      if(!kids.length || !kids.every(k=>k.classList.contains('param-cell'))){ reset(); return; }   // 缺資料的提示等：不排版
+      kids.forEach(splitParamLabel);
+      grid.querySelectorAll('.sub').forEach(sub=>{ if(!sub.title) sub.title = sub.textContent.trim(); });
+      // ke 併進緊接在後的 t½ 格
+      Array.from(grid.children).forEach(ke=>{
+        const th = ke.nextElementSibling;
+        if(paramRole(ke)==='ke' && th && paramRole(th)==='thalf' && !th.querySelector(':scope > .ke-sub')){
+          const wrap = document.createElement('div'); wrap.className = 'ke-sub';
+          while(ke.firstChild) wrap.appendChild(ke.firstChild);
+          th.insertBefore(wrap, th.firstChild);
+          ke.remove();
+        }
+      });
+      const cells = Array.from(grid.children);
+      const keyCell = cells.find(c=>c.classList.contains('pc-key')) || null;
+      const body = cells.filter(c=>c!==keyCell);
+      const place = (list, startRow, cols)=>{   // 一組格子排成每列 cols 欄，最後一格拉寬補滿；回傳下一個可用的列
+        let r = startRow;
+        for(let i=0;i<list.length;i+=cols){
+          const row = list.slice(i, i+cols);
+          row.forEach((c,k)=>{
+            const span = k===row.length-1 ? cols-k : 1;
+            c.dataset.r = String(r); c.dataset.c = String(k+1); c.dataset.cs = String(span);
+            c.style.setProperty('--r', r); c.style.setProperty('--c', k+1); c.style.setProperty('--cs', span);
+          });
+          r++;
+        }
+        return r;
+      };
+      cells.forEach(c=>{ delete c.dataset.r; delete c.dataset.c; delete c.dataset.cs; c.style.removeProperty('--r'); c.style.removeProperty('--c'); c.style.removeProperty('--cs'); });
+      grid.classList.add('pg');
+      if(keyCell){
+        const used = new Set();
+        const pick = roles=>roles.map(role=>body.find(c=>!used.has(c) && paramRole(c)===role)).filter(c=>{ if(c) used.add(c); return !!c; });
+        const A = pick(['cmin','cmax','ref','cmaxmic','aucmic','auc24a']);
+        const B = pick(['thalf','cl','vd','crcl']);
+        const X = body.filter(c=>!used.has(c));
+        let r = place(A, 1, 4);
+        r = place(B, r, 4);
+        r = place(X, r, 4);
+        grid.classList.add('pg-key');
+        grid.style.setProperty('--pg-cols', 4);
+        grid.style.setProperty('--pg-rows', Math.max(1, r-1));
+      } else {
+        const cols = Math.max(1, Math.min(3, body.length));
+        place(body, 1, cols);
+        grid.classList.remove('pg-key');
+        grid.style.removeProperty('--pg-rows');
+        grid.style.setProperty('--pg-cols', cols);
+      }
+    }
+    ['azlParamGrid','aedParamGrid'].forEach(id=>{
+      const g = document.getElementById(id); if(!g) return;
+      new MutationObserver(()=>planParamGrid(id)).observe(g, {childList:true});
+      planParamGrid(id);
+    });
     function conclusionText(cfg){
       const grid = document.getElementById(cfg.gridId);
       if(!grid || grid.querySelector('.empty-state') || !grid.children.length) return '';
@@ -9553,6 +9668,7 @@ ${flagText||'（無）'}
       if(!grid || !out) return;
       const refresh = ()=>{
         decorateParamGrid(cfg.gridId, cfg.keyClass);
+        planParamGrid(cfg.gridId);
         out.innerHTML = cfg.isHD() ? '' : conclusionText(cfg);
       };
       new MutationObserver(refresh).observe(grid, {childList:true});

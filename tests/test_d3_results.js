@@ -23,7 +23,7 @@ async function main() {
   const sw = async (drug, key) => { doc.querySelector('.drug-switch-btn[data-drug="' + drug + '"]').click(); const d = $(key + 'GuardDiscard'); if (d && !$(key + 'GuardModal').classList.contains('hide')) d.click(); await tick(); };
   let errCount = 0;
   win.addEventListener('error', () => { errCount++; });
-  const cls = (gridId, prefix) => { const c = Array.from($(gridId).querySelectorAll('.param-cell')).find(e => e.querySelector('.label').textContent.replace(/^預測 /, '').startsWith(prefix)); return c ? c.className : null; };
+  const cls = (gridId, prefix) => { const c = Array.from($(gridId).querySelectorAll('.param-cell')).find(e => e.querySelector(':scope > .label').textContent.replace(/^預測 /, '').startsWith(prefix)); return c ? c.className : null; };
 
   // ---------- 既有 id ----------
   ['resultsPanel', 'amgResultsPanel', 'paramGrid', 'amgParamGrid', 'flagList', 'amgFlagList', 'regimenTable', 'amgRegimenTable',
@@ -54,7 +54,8 @@ async function main() {
   assert((cls('paramGrid', 'Cmax,ss') || '').includes('pc-cmax'), 'Cmax,ss 格有 pc-cmax');
   assert((cls('paramGrid', 'AUC/MIC') || '').includes('pc-aucmic'), 'AUC/MIC 格有 pc-aucmic');
   assert((cls('paramGrid', '近 24h') || '').includes('pc-auc24a'), '近 24h 實際 AUC 格有 pc-auc24a');
-  ['t½', 'ke', 'Vd', 'CL', 'CrCl'].forEach(k => assert(!!cls('paramGrid', k) && /pc-/.test(cls('paramGrid', k)), k + ' 格有 pc-* class'));
+  ['t½', 'Vd', 'CL', 'CrCl'].forEach(k => assert(!!cls('paramGrid', k) && /pc-/.test(cls('paramGrid', k)), k + ' 格有 pc-* class'));
+  assert(!!$('paramGrid').querySelector('.pc-thalf .ke-sub'), 'ke 併進 t½ 格（F2），不再是獨立格');
   assert((cls('paramGrid', 'CL') || '').includes('pc-cl') && !(cls('paramGrid', 'CrCl') || '').includes('pc-cl '), 'CL 與 CrCl 分得開');
   assert(Array.from($('paramGrid').querySelectorAll('.param-cell')).filter(c => c.classList.contains('pc-key')).length === 1, '只有一個 key 格');
   assert($('paramGrid').textContent === before, '加 class 不改變 paramGrid 的文字');

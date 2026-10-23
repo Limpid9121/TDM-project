@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-23（v3 的 F1 完成；下一包 F2 參數區重排，順序 F1 → F2 → F7 → F3 → F4 → F5 → F6）
+最後更新：2026-10-23（v3 的 F1、F2 完成；下一包 F7 撞色角色與深藍判讀板，順序 F7 → F3 → F4 → F5 → F6）
 
 ## 現況
 
@@ -20,7 +20,8 @@
 | 包 | 狀態 | 備註 |
 |---|---|---|
 | F1 小修 | 完成，等 Brandon 說「繼續」 | 見下方 F1 備註；golden 124/124 0 差異；全部測試過；設計偵測仍是 3 項 |
-| F2、F7、F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md` |
+| F2 參數區重排 | 完成，等 Brandon 說「繼續」 | 見下方 F2 備註；golden 124/124 0 差異 |
+| F7、F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
@@ -34,6 +35,18 @@
 - 新測試：`tests/test_f1_polish.js`（172 項，含 920／760／358／1232 寬的標籤碰撞檢查）。
 - 截圖（未進版控）：`tests/shots/review/f1_*.png`，基準 `b_*.png`。
 - 用到的 skill：`impeccable` craft-floor／typeset、`dataviz`（標籤與圖例規則）、`break-ui`（長標題、窄寬度、標籤互壓）。
+
+### F2 參數區照 C3 重排（2026-10-23）
+- **做法**：不改 render（`paramGrid` 的文字由 golden 把關，0 差異）。新增純顯示 helper `planParamGrid`（接在 `decorateParamGrid` 後面，掛在 `paramGrid`、`amgParamGrid`、`azlParamGrid`、`aedParamGrid` 的 MutationObserver 上），每次 render 之後做三件事：
+  1. 標籤拆成短名（`.lbl-main`）和括號裡的說明（`.lbl-note`，移到數字下面、小字）；括號用 `.lbl-paren` 包起來由 CSS 隱藏，textContent 一個字不變；完整標籤放在格子的 `title`。「半衰期」「清除率」「分布體積」「Cockcroft-Gault」這類只是名稱白話的說明不顯示（C3 也沒有）。
+  2. ke 併進緊接在前的 t½ 格（小字「ke 0.088 hr⁻¹」）。ke 的內容放在 t½ 格的最前面，所以整個 `paramGrid` 的 textContent 順序不變。
+  3. 依角色排位：key 格（AUC₂₄,ss；AMG 是 Cmax,ss）跨兩列；第一列 Cmin、Cmax（AMG 是參考 Cmax）、AUC/MIC、近 24h AUC；第二列 t½、CL、Vd、CrCl；每列 4 欄，最後一格拉寬補滿（AMG 第一列只有 3 格也沒有空格）；沒有 key 格的（HD、Azole、AED）一列最多 3 欄依序排。算好的位置寫成 `--r／--c／--cs`，只有桌機 CSS（≥981 px）使用，手機規則沒動。
+- **三種寬度**：≥1280：key 格在左、4 欄 × 2 列；981–1279（1024 寬）：key 格獨佔最上面一列，下面 4 欄 × 2 列，單位換到數字下面、標籤可折兩行且每格都留兩行高（數字才對得齊）。
+- **驗收（用瀏覽器量，不是只看圖）**：`tools/review_frame.html` 加 `measure=params`，在畫面左上疊出每格位置與檢查結果。Vancomycin（示範、HD）、AMG 在 1920／1440／1024：同一列數字上緣差 0、數字沒被切、標籤沒被切、格內沒溢出、格線沒有橫向溢出。
+- **既有測試改動**：`test_d3_results.js` 的 ke 不再是獨立格（改查 t½ 格裡的 `.ke-sub`）；其餘沒動。
+- 新測試：`tests/test_f2_params.js`（36 項）。
+- 看圖時留下的小問題：1024 寬的格子每格預留兩行標籤高度，數字上方會有一點空；AMG 第一列「參考：Cmax」的長說明最多顯示 3 行（全文在 title）。
+- 用到的 skill：`impeccable` layout、typeset、craft-floor，`emil-design-eng`（數字對齊、tabular-nums、單位位置），`dataviz`（stat tile：標籤短、單位小、說明在數字下面）。
 
 ## 工作包狀態
 
