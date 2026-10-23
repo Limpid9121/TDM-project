@@ -57,6 +57,7 @@ f.onload = ()=>{
     if(c && c.startsWith('only:') && bar){ await step(()=>{ bar.querySelector('[data-sec="'+(+c.slice(5)-1)+'"]').click(); }, 300); }
     if(q.get('pick')) await step(()=>{ const r = d.querySelectorAll('.drug-module.active input.regimen-pick')[+q.get('pick')]; if(r){ r.checked = true; r.dispatchEvent(new w.Event('change',{bubbles:true})); } }, 400);
     if(q.get('view')) await step(()=>{ const b = d.querySelector('#mSwitch [data-mview="'+q.get('view')+'"]'); if(b) b.click(); }, 200);
+    if(q.get('setv')) for(const kv of q.get('setv').split(',')) await step(()=>{ const i = kv.indexOf(':'); const e = d.getElementById(kv.slice(0,i)); e.value = kv.slice(i+1); e.dispatchEvent(new w.Event('input',{bubbles:true})); e.dispatchEvent(new w.Event('change',{bubbles:true})); }, 250);   // 填值：setv=maintDose:1250,maintInterval:8
     if(q.get('click')) for(const id of q.get('click').split(',')) await step(()=>{ d.getElementById(id).click(); }, 250);   // 依序點這些 id（例：vancoRxMenuBtn、vancoSaveMain）
     await step(()=>{ w.scrollTo(0, +(q.get('scroll')||0)); const rp = d.querySelector('.drug-module.active main.grid > .panel'); if(rp && q.get('rscroll')) rp.scrollTop = +q.get('rscroll'); }, 1200);
     if(q.get('measure')==='params'){
@@ -140,6 +141,7 @@ f.onload = ()=>{
       pre.textContent = '對比不足 '+bad.length+' 項（<4.5:1，大字 <3:1）\n'+bad.slice(0,30).join('\n');
       document.body.appendChild(pre);
     }
+    if(q.get('clicksel')) await step(()=>{ const e = d.querySelector(q.get('clicksel')); if(e){ e.focus(); e.click(); } const pk = d.querySelector('.dt-pick'); const pre = document.createElement('pre'); pre.style.cssText = 'position:fixed;right:0;bottom:0;z-index:99999;background:#000;color:#7f7;font:12px monospace;margin:0;padding:4px'; pre.textContent = 'clicksel '+(!!e)+' pick hidden='+(pk&&pk.hidden)+' top='+(pk&&pk.style.top); document.body.appendChild(pre); }, 400);   // 例：clicksel=%23doseTable .entry-row:last-child .dt24-t
     document.title = 'ready';
   })();
 };

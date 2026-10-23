@@ -1181,6 +1181,31 @@
   @media (prefers-reduced-motion:reduce){ .btn{transition:none;} .btn:active:not(:disabled){transform:none;} }
   /* F6 end */
 
+  /* 時間下拉選單（時｜分兩欄）與給藥紀錄的抽血點標示 */
+  .dt-pick{position:fixed;z-index:80;display:flex;gap:0;background:var(--card);border:1px solid var(--line-strong);border-radius:6px;box-shadow:0 10px 24px rgba(20,23,28,.18);padding:4px;}
+  .dt-pick[hidden]{display:none;}
+  .dt-pick-col{display:flex;flex-direction:column;height:216px;overflow-y:auto;width:52px;scrollbar-width:thin;}
+  .dt-pick-col + .dt-pick-col{border-left:1px solid var(--line);}
+  .dt-pick-col button{flex:0 0 auto;height:28px;border:0;background:transparent;font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;border-radius:4px;margin:0 3px;}
+  .dt-pick-col button:hover{background:var(--navy-tint);}
+  .dt-pick-col button.on{background:var(--navy);color:#fff;font-weight:700;}
+  .dose-nudge{flex:0 0 auto;width:24px;height:28px;padding:0;border:1px solid var(--line-strong);border-radius:6px;background:#fff;color:var(--ink);font:inherit;font-size:14px;line-height:1;cursor:pointer;}
+  .dose-nudge:hover{border-color:var(--navy);background:var(--navy-tint);}
+  .entry-row .dt24 .dose-nudge + .dose-nudge{margin-left:-2px;}
+  .entry-row--dose.near-before, .entry-row--dose.near-after{background:var(--accent-tint);box-shadow:inset 3px 0 0 var(--accent);border-radius:4px;}
+  .draw-sep{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;font-weight:700;color:var(--accent-ink);}
+  .draw-sep::before, .draw-sep::after{content:"";flex:1 1 auto;border-top:1px dashed var(--accent);}
+  .field:has(> input[data-auto]) > label::after, .field:has(> input[data-auto]) > label .auto-tag{content:"自動";display:inline-block;margin-left:6px;padding:0 5px;border-radius:3px;background:var(--navy-tint);color:var(--ink-soft);font-size:11px;font-weight:700;vertical-align:1px;}
+  /* 右邊「尚未更新」：深藍判讀頂端的琥珀色按鈕；參數格、曲線、候選處方變淡，避免把舊數字當成新的 */
+  .rp-stale{display:inline-flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid #FFD9A0;border-radius:6px;background:rgba(255,217,160,.14);color:#FFD9A0;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap;}
+  .rp-stale b{font-weight:700;}
+  .rp-stale em{font-style:normal;font-weight:700;background:#FFD9A0;color:var(--navy);padding:2px 8px;border-radius:4px;}
+  .rp-stale:hover em{background:#fff;}
+  .rp-stale[hidden], .rp-live[hidden]{display:none;}
+  .drug-module.is-stale .panel > .param-grid, .drug-module.is-stale .panel .curve-wrap, .drug-module.is-stale .panel .regimen-table{opacity:.35;filter:grayscale(.6);transition:opacity 160ms ease;}
+  .btn.needs-run{box-shadow:0 0 0 3px #FFD9A0, 0 0 0 4px var(--navy);}
+  .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
   .dt24-src{display:none;}
   .dt24{display:flex;align-items:center;gap:6px;min-width:0;}
@@ -1528,10 +1553,14 @@
         <div id="vancoLoadingBlock">
         <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
         <div class="loading-rec" id="vancoLoadingRecBox" hidden><span id="vancoLoadingRec"></span> <button class="btn small" id="vancoLoadingRecApply" type="button">採用建議</button></div>
-        <div class="field-row" id="loadingFields" style="display:none;">
-          <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
-          <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="240" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分（500 mg＝60 分、2000 mg＝240 分）；可自行修改"></div>
-          <div class="field"><label>第一劑維持劑量時間</label><input type="datetime-local" id="firstMaintDoseTime"></div>
+        <div id="loadingFields" style="display:none;">
+          <div class="field-row">
+            <div class="field"><label for="loadingTime">Loading 給藥時間</label><input type="datetime-local" id="loadingTime"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Loading 劑量（mg）</label><input type="number" id="loadingDose" value="2000" step="50"></div>
+            <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="240" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分（500 mg＝60 分、2000 mg＝240 分）；可自行修改"></div>
+          </div>
         </div>
           <p class="hint" style="margin-top:-2px;">第一筆紀錄是療程第一劑時，多數會先給 loading；這次沒有的話請取消勾選。</p>
         </div>
@@ -1542,6 +1571,9 @@
             <div class="field"><label>維持劑量（mg）</label><input type="number" id="maintDose" value="1000" step="50"></div>
             <div class="field"><label>給藥間隔 τ（小時）</label><input type="number" id="maintInterval" value="12" step="1"></div>
             <div class="field"><label>輸注時間（分鐘）</label><input type="number" id="maintInf" value="120" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分；可自行修改"></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label for="firstMaintDoseTime">第一劑維持劑量時間（選填）</label><input type="datetime-local" id="firstMaintDoseTime"></div>
           </div>
         </div>
 
@@ -1560,7 +1592,7 @@
           <div class="btn-row">
             <button class="btn primary small" id="expandDoses" type="button">依上述處方自動展開給藥紀錄</button>
           </div>
-          <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>未勾選 loading：「分析起點」即第一劑維持劑量的確切時間，之後每一劑固定間隔 τ 小時展開。已勾選 loading：「分析起點」是 loading 的確切時間，「第一劑維持劑量時間」另外獨立填寫，之後同樣每 τ 小時展開——兩者互不相關，不會互相帶入。院內常見固定給藥時段僅供你填寫時參考，不會自動代入或強制對齊：QD 09:00；Q12H 09:00／21:00；Q8H 05:00／13:00／21:00；Q6H 05:00／11:00／17:00／23:00。</details></div>
+          <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>「第一劑維持劑量時間」有填：從這個時間開始，之後每 τ 小時展開；沒填：從「分析起點」開始。已勾選 loading：「分析起點」是 loading 的確切時間，第一劑維持劑量時間必填（勾選時自動帶「分析起點＋τ」，可自行修改），要晚於 loading。院內常見固定給藥時段僅供你填寫時參考，不會自動代入或強制對齊：QD 09:00；Q12H 09:00／21:00；Q8H 05:00／13:00／21:00；Q6H 05:00／11:00／17:00／23:00。</details></div>
         </div>
 
         <div id="hdDoseFields" style="display:none;">
@@ -2775,6 +2807,7 @@
   // The per-module derived snapshots below are populated at the end of each render() and read
   // by the shared store when a visit is saved (so we never recompute PK/rule outputs separately).
   let lastVancoDerived = null;
+  let vancoTHalfHint = null;   // 最近一次算出的 t½（族群或擬合）；產生範圍自動帶「展開至」時估算到穩態要多久
   let lastAmgDerived = null;
   let lastAzoleDerived = null;
   let lastAedDerived = null;
@@ -3348,13 +3381,17 @@
       notify('expandDoses', '請先完整填寫分析起點時間、展開至時間、維持劑量、間隔與輸注時間。');
       return;
     }
+    // 第一劑維持劑量時間有填就從那裡開始展開（有沒有 loading 都一樣）；沒填：沒有 loading → 分析起點，有 loading → 必填
     let firstMaintMs = startMs;
-    if(useLoading){
-      firstMaintMs = parseLocal(document.getElementById('firstMaintDoseTime').value);
-      if(!isFinite(firstMaintMs)){
-        notify('expandDoses', '已勾選獨立 loading 劑量，請另外填寫「第一劑維持劑量時間」。');
-        return;
-      }
+    const fmMs = parseLocal(document.getElementById('firstMaintDoseTime').value);
+    if(isFinite(fmMs)) firstMaintMs = fmMs;
+    else if(useLoading){
+      notify('expandDoses', '已勾選獨立 loading 劑量，請另外填寫「第一劑維持劑量時間」。');
+      return;
+    }
+    if(useLoading ? firstMaintMs <= startMs : firstMaintMs < startMs){
+      notify('expandDoses', useLoading ? '「第一劑維持劑量時間」要晚於 loading（分析起點）。' : '「第一劑維持劑量時間」不能早於分析起點。');
+      return;
     }
     clearTbody('#doseTable');
     if(useLoading){
@@ -3494,7 +3531,8 @@
     document.getElementById('loadingDose').value='2000';
     document.getElementById('loadingInf').value='240';
     delete document.getElementById('loadingDose').dataset.manual;
-    document.getElementById('firstMaintDoseTime').value='';
+    document.getElementById('firstMaintDoseTime').value=''; delete document.getElementById('firstMaintDoseTime').dataset.auto;
+    ['therapyStart','expandTo'].forEach(id=>delete document.getElementById(id).dataset.auto); document.getElementById('loadingTime').value='';
     document.getElementById('assumeSteadyState').checked=false;
     clearFirstDoseRadio('vanco');
     document.getElementById('steadyStateHint').style.display='none';
@@ -3599,8 +3637,10 @@
     setChecked('deepInfection', s.deepInfection); setChecked('sourceControlDone', s.sourceControlDone);
 
     setVal('therapyStart', s.therapyStart); setVal('expandTo', s.expandTo);
+    ['therapyStart','expandTo'].forEach(id=>delete document.getElementById(id).dataset.auto);
+    document.getElementById('loadingTime').value = s.useLoading ? (s.therapyStart||'') : '';
     setChecked('useLoading', s.useLoading);
-    setVal('firstMaintDoseTime', s.firstMaintDoseTime);
+    setVal('firstMaintDoseTime', s.firstMaintDoseTime); delete document.getElementById('firstMaintDoseTime').dataset.auto;
     document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
     { const lbl = document.getElementById('therapyStartLabel'); if(lbl) lbl.textContent = s.useLoading ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）'; }
     setChecked('assumeSteadyState', s.assumeSteadyState);
@@ -4822,6 +4862,7 @@
   function renderProspective(ctx){
     const {crcl, cgMethod, CLpop, Vpop, tbw, dryWeight, useDryWeight, flags, maintDose, tau, maintInfHr} = ctx;
     const ke = CLpop/Vpop, tHalf = 0.693/ke;
+    vancoTHalfHint = tHalf;
 
     // --- optional Model B (Oda 2024 兩室模型) side-by-side comparison ---
     const weightForVdB = useDryWeight ? dryWeight : tbw;
@@ -5852,6 +5893,7 @@ ${flagText || '（無特別旗標）'}
     updateSteadyStateBasis('vanco');
     syncAdvSummary('vanco');
     lastVancoDerived = null; // reset; repopulated at the successful bottom of this render (HD path leaves it null)
+    vancoTHalfHint = null;   // 這次 render 算得出 t½ 才會再設（避免沿用上一位病人的值）
     if(guardRequired('vanco')) return;
 
     const dialysis0 = document.getElementById('dialysis').value;
@@ -6190,6 +6232,7 @@ ${flagText || '（無特別旗標）'}
     setHeaderMeta('drug-vancomycin', `CrCl ${crcl.toFixed(0)} mL/min ・ CL ${dispCL.toFixed(2)} L/hr ・ AUC₂₄ ${dispAUC24.toFixed(0)}${useModelB?'（模型B）':''}`);
 
     // --- capture derived outputs for versioned patient snapshot (loop B) ---
+    vancoTHalfHint = tHalf;
     lastVancoDerived = {
       mode:'standard',
       ke, vd:V, cl:CL, tHalf, auc24ss:AUC24ss, cmaxSs:CmaxSS, cminSs:CminSS,
@@ -9393,10 +9436,53 @@ ${flagText||'（無）'}
       if(el) el.addEventListener('input', render), el.addEventListener('change', render);
     });
 
+    document.getElementById('firstMaintDoseTime').addEventListener('input', function(){ delete this.dataset.auto; });
+    // 產生範圍自動帶（Brandon 2026-10-23）：
+    //  · 分析起點＝loading 給藥時間（有 loading）／第一劑維持劑量時間（沒有 loading）
+    //  · 展開至＝最後一次抽血之後的下一劑；還沒有濃度（第一次評估）＝起點後約 5 個半衰期（到穩態）之後的那一劑
+    //  · 只在欄位是空的、或仍是自動帶的值時才改；使用者自己改過就不再動（dataset.auto）。「Loading 給藥時間」與分析起點同一個值，兩邊改哪邊都同步。
+    (function(){
+      const $ = id=>document.getElementById(id);
+      const ts = $('therapyStart'), et = $('expandTo'), lt = $('loadingTime'), fm = $('firstMaintDoseTime'), cb = $('useLoading');
+      let busy = false;
+      const fire = el=>{ el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); };
+      const setAuto = (el, ms)=>{ const v = isFinite(ms) ? toLocalInputValue(new Date(ms)) : ''; if(el.value === v){ if(v) el.dataset.auto = '1'; return; } busy = true; el.value = v; fire(el); busy = false; if(v) el.dataset.auto = '1'; else delete el.dataset.auto; };
+      [ts, et].forEach(el=>el.addEventListener('input', ()=>{ if(!busy) delete el.dataset.auto; }));
+      function autoRange(){
+        const useL = cb.checked, tau = parseFloat($('maintInterval').value);
+        const lMs = parseLocal(lt.value), fMs = parseLocal(fm.value);
+        const start = useL ? lMs : fMs;
+        if(isFinite(start) && (!ts.value || ts.dataset.auto)) setAuto(ts, start);
+        const first = isFinite(fMs) ? fMs : (useL ? NaN : parseLocal(ts.value));
+        if(!isFinite(first) || !(tau > 0) || (et.value && !et.dataset.auto)) return;
+        const tauMs = tau * 3600000;
+        const levels = Array.from(document.querySelectorAll('#levelTable .level-date')).map(i=>parseLocal(i.value)).filter(isFinite);
+        let end;
+        if(levels.length){ const last = Math.max(...levels); end = first + Math.max(0, Math.floor((last - first)/tauMs) + 1) * tauMs; }
+        else if(isFinite(vancoTHalfHint) && vancoTHalfHint > 0){ const ss = (isFinite(start) ? start : first) + 5 * vancoTHalfHint * 3600000; end = first + Math.max(0, Math.ceil((ss - first)/tauMs)) * tauMs; }
+        else return;
+        setAuto(et, end);
+      }
+      // loading 給藥時間 ⇄ 分析起點
+      lt.addEventListener('input', ()=>{ if(cb.checked && lt.value !== ts.value){ busy = true; ts.value = lt.value; fire(ts); busy = false; if(ts.value) ts.dataset.auto = '1'; } autoRange(); });
+      const pullLt = ()=>{ if(cb.checked && lt.value !== ts.value) lt.value = ts.value; };
+      ts.addEventListener('input', pullLt); ts.addEventListener('change', pullLt);
+      cb.addEventListener('change', ()=>{ if(cb.checked && !lt.value && ts.value) lt.value = ts.value; autoRange(); });
+      fm.addEventListener('input', autoRange);
+      $('maintInterval').addEventListener('input', autoRange);
+      ['input','change'].forEach(ev=>$('levelTable').addEventListener(ev, autoRange));
+      new MutationObserver(autoRange).observe($('levelTable'), {childList:true});
+      window.vancoAutoRange = autoRange;   // 測試與套用存檔後用
+    })();   // 使用者自己改過，就不是自動帶的值
     document.getElementById('useLoading').addEventListener('change', function(){
       document.getElementById('loadingFields').style.display = this.checked ? 'grid' : 'none';
+      const fm = document.getElementById('firstMaintDoseTime');
+      if(this.checked && !fm.value){
+        const st = parseLocal(document.getElementById('therapyStart').value), tau = parseFloat(document.getElementById('maintInterval').value);
+        if(isFinite(st) && tau > 0){ fm.value = toLocalInputValue(new Date(st + tau*3600000)); fm.dispatchEvent(new Event('input', {bubbles:true})); fm.dataset.auto = '1'; }
+      } else if(!this.checked && fm.dataset.auto){ fm.value = ''; delete fm.dataset.auto; fm.dispatchEvent(new Event('input', {bubbles:true})); }
       const lbl = document.getElementById('therapyStartLabel');
-      if(lbl) lbl.textContent = this.checked ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）';
+      if(lbl) lbl.textContent = this.checked ? '分析起點（＝Loading 給藥時間）' : '分析起點（本次採用的第一筆給藥時間）';
     });
     document.querySelectorAll('input[name="vancoFirstDoseKind"]').forEach(r=>r.addEventListener('change', function(){
       const cb = document.getElementById('assumeSteadyState');
@@ -9472,7 +9558,7 @@ ${flagText||'（無）'}
         applyLoadingRec(false);
         const fm = document.getElementById('firstMaintDoseTime');
         const startMs = parseLocal(document.getElementById('therapyStart').value), tau = parseFloat(document.getElementById('maintInterval').value);
-        if(!fm.value && isFinite(startMs) && tau>0){ fm.value = toLocalInputValue(new Date(startMs + tau*3600000)); fireEvent(fm); }
+        if(!fm.value && isFinite(startMs) && tau>0){ fm.value = toLocalInputValue(new Date(startMs + tau*3600000)); fireEvent(fm); fm.dataset.auto = '1'; }
       }));
       function fireEvent(el){ el.dispatchEvent(new Event('input', {bubbles:true})); el.dispatchEvent(new Event('change', {bubbles:true})); }
     })();
@@ -10781,7 +10867,8 @@ ${flagText||'（無）'}
       if(!table || !btn) return;
       const rows = Array.from(table.querySelectorAll('.entry-row'));
       const dated = rows.map(r=>({r, t:parseLocal(r.querySelector('.dose-date').value)})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
-      const older = dated.slice(0, Math.max(0, dated.length-3));
+      const keep = nearDrawRows(f.table);   // 抽血前後的劑次固定顯示
+      const older = dated.slice(0, Math.max(0, dated.length-3)).filter(x=>!keep.has(x.r));
       const open = table.dataset.foldOpen==='1';
       if(!older.length){ delete table.dataset.foldOpen; rows.forEach(r=>r.classList.remove('row-older')); btn.hidden = true; return; }
       const olderSet = new Set(older.map(x=>x.r));
@@ -10789,6 +10876,29 @@ ${flagText||'（無）'}
       btn.hidden = false;
       btn.setAttribute('aria-expanded', String(open));
       btn.textContent = open ? `收起較早 ${older.length} 筆` : `較早 ${older.length} 筆（${fmtDateTimeShort(older[0].t)} – ${fmtDateTimeShort(older[older.length-1].t)}）已收起，點這裡展開`;
+    }
+    // 抽血點前後的劑次（給藥紀錄收合與標色共用）：每筆濃度找開始時間 ≤ 抽血的最後一劑、與之後的下一劑
+    const DRAW_LEVEL_OF = {doseTable:'levelTable', amgDoseTable:'amgLevelTable'};
+    function nearDrawInfo(f){
+      const dt = document.getElementById(f.dose), lt = document.getElementById(f.level);
+      if(!dt || !lt) return {before:new Set(), after:new Set(), seps:[]};
+      const doses = Array.from(dt.querySelectorAll('.entry-row')).map(r=>({r, t:parseLocal(r.querySelector('.dose-date').value)})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
+      const levels = Array.from(lt.querySelectorAll('.entry-row')).map(r=>({t:parseLocal(r.querySelector('.level-date').value), v:r.querySelector('.level-val').value})).filter(x=>isFinite(x.t)).sort((a,b)=>a.t-b.t);
+      const before = new Set(), after = new Set(), seps = [];
+      levels.forEach(L=>{
+        let b = null, a = null;
+        doses.forEach(d=>{ if(d.t <= L.t) b = d; else if(!a) a = d; });
+        if(!b && !a) return;
+        if(b) before.add(b.r); if(a) after.add(a.r);
+        const gap = b ? Math.round((L.t - b.t)/60000) : null;
+        const txt = '抽血 ' + fmtDateTimeShort(L.t) + (L.v !== '' ? '　' + L.v + ' µg/mL' : '') + (gap !== null ? '　上一劑開始後 ' + Math.floor(gap/60) + ' 小時 ' + (gap%60) + ' 分' : '');
+        seps.push({ref: b ? b.r : a.r, pos: b ? 'after' : 'before', txt});
+      });
+      return {before, after, seps};
+    }
+    function nearDrawRows(tableId){
+      if(!DRAW_LEVEL_OF[tableId]) return new Set();
+      const i = nearDrawInfo({dose:tableId, level:DRAW_LEVEL_OF[tableId]}); return new Set([...i.before, ...i.after]);
     }
     DOSE_FOLDS.forEach(f=>{
       const table = document.getElementById(f.table), btn = document.getElementById(f.btn);
@@ -10921,6 +11031,148 @@ ${flagText||'（無）'}
         else n.querySelectorAll(DT_SEL).forEach(enhanceOne);
       }));
     }).observe(document.body, {childList:true, subtree:true});
+
+    // ---------------- 時間下拉選單：時｜分兩欄（24 小時制，分每 5 分一格）（Brandon 2026-10-23） ----------------
+    // 點任何時間格（.dt24-t）就在下方打開；仍可直接打字、↑↓ 調整。點「時」只換小時（分不變；原本空白就補 00），點「分」換分並收起。
+    // 寫回走時間格自己的 input 事件（bindTimeText → 原元素），所以重算、存檔都跟手動打字一樣。Esc／點外面／Tab 離開／捲動就收起。
+    const dtPick = document.createElement('div');
+    dtPick.className = 'dt-pick'; dtPick.hidden = true;
+    dtPick.innerHTML = '<div class="dt-pick-col" role="listbox" aria-label="時"></div><div class="dt-pick-col" role="listbox" aria-label="分"></div>';
+    const [pickH, pickM] = dtPick.querySelectorAll('.dt-pick-col');
+    for(let h = 0; h < 24; h++) pickH.insertAdjacentHTML('beforeend', `<button type="button" role="option" tabindex="-1" data-v="${dtPad(h)}">${dtPad(h)}</button>`);
+    for(let m = 0; m < 60; m += 5) pickM.insertAdjacentHTML('beforeend', `<button type="button" role="option" tabindex="-1" data-v="${dtPad(m)}">${dtPad(m)}</button>`);
+    document.body.appendChild(dtPick);
+    let pickFor = null;
+    function pickMark(){
+      const m = /^(\d{2}):(\d{2})$/.exec(pickFor ? pickFor.value : '');
+      [[pickH, m && m[1], '08'], [pickM, m && m[2], m ? dtPad(Math.floor(+m[2]/5)*5) : '00']].forEach(([col, v, dflt])=>{   // 分不是 5 的倍數：不標選取，捲到最接近的那格
+        col.querySelectorAll('button').forEach(b=>{ const on = b.dataset.v === v; b.classList.toggle('on', on); b.setAttribute('aria-selected', String(on)); });
+        const at = col.querySelector('.on') || col.querySelector(`[data-v="${dflt}"]`);
+        if(at) col.scrollTop = at.offsetTop - col.clientHeight/2 + at.offsetHeight/2;
+      });
+    }
+    function pickOpen(t){
+      if(t.disabled || t.readOnly) return;
+      pickFor = t; dtPick.hidden = false;
+      const r = t.getBoundingClientRect(), ph = dtPick.offsetHeight || 220;
+      const below = r.bottom + 4 + ph <= window.innerHeight;
+      dtPick.style.left = Math.max(4, Math.min(r.left, window.innerWidth - (dtPick.offsetWidth || 120) - 4)) + 'px';
+      dtPick.style.top = (below ? r.bottom + 4 : Math.max(4, r.top - 4 - ph)) + 'px';
+      pickMark();
+    }
+    function pickClose(){ dtPick.hidden = true; pickFor = null; }
+    function pickSet(t, v){ t.value = v; t.dispatchEvent(new Event('input', {bubbles:true})); }
+    dtPick.addEventListener('mousedown', e=>e.preventDefault());   // 點選單時焦點留在時間格
+    dtPick.addEventListener('click', e=>{
+      const b = e.target.closest('button[data-v]'); if(!b || !pickFor) return;
+      const m = /^(\d{2}):(\d{2})$/.exec(pickFor.value);
+      if(b.parentElement === pickH){ pickSet(pickFor, b.dataset.v + ':' + (m ? m[2] : '00')); pickMark(); }
+      else { pickSet(pickFor, (m ? m[1] : '08') + ':' + b.dataset.v); pickClose(); }
+    });
+    document.addEventListener('click', e=>{
+      if(e.target.classList && e.target.classList.contains('dt24-t')){ if(pickFor !== e.target || dtPick.hidden) pickOpen(e.target); return; }
+      if(!dtPick.contains(e.target)) pickClose();
+    });
+    document.addEventListener('input', e=>{ if(e.target === pickFor) pickMark(); }, true);
+    document.addEventListener('focusout', e=>{ if(e.target === pickFor) pickClose(); });
+    document.addEventListener('keydown', e=>{
+      if(dtPick.hidden) return;
+      if(e.key === 'Escape'){ pickClose(); e.stopPropagation(); }
+      else if(e.key === 'Enter' && e.target === pickFor) pickClose();
+    }, true);
+    window.addEventListener('scroll', e=>{   // 捲動時跟著時間格移動；時間格捲出畫面才收起
+      if(dtPick.hidden || dtPick.contains(e.target) || !pickFor) return;
+      const r = pickFor.getBoundingClientRect();
+      if(r.bottom < 0 || r.top > window.innerHeight) pickClose(); else pickOpen(pickFor);
+    }, true);
+    window.addEventListener('resize', pickClose);
+
+    // ---------------- 給藥紀錄：抽血點前後的劑次（Brandon 2026-10-23：給藥紀錄表內標示） ----------------
+    // 每筆有時間的濃度：找「抽血前最後一劑」（開始時間 ≤ 抽血）與「抽血後下一劑」，兩列標色、不被「只顯示最近 3 筆」收起，
+    // 中間插一條分隔線（抽血時間、濃度、離上一劑開始幾小時幾分）。每一列給藥時間旁有 −／+ 鈕（5 分），按了直接改那一列並重算。
+    // 分隔線不是 .entry-row，readDoseRows 等只讀 .entry-row 的程式不受影響。
+    const DRAW_SETS = [{dose:'doseTable', level:'levelTable'}, {dose:'amgDoseTable', level:'amgLevelTable'}];
+    function refreshDrawMarks(f){
+      const dt = document.getElementById(f.dose); if(!dt) return;
+      const info = nearDrawInfo(f);
+      dt.querySelectorAll('.entry-row').forEach(r=>{
+        r.classList.toggle('near-before', info.before.has(r));
+        r.classList.toggle('near-after', info.after.has(r));
+        const tip = [info.before.has(r) && '抽血前最後一劑', info.after.has(r) && '抽血後下一劑'].filter(Boolean).join('、');
+        if(tip) r.setAttribute('aria-description', tip); else r.removeAttribute('aria-description');
+        addNudge(r);
+      });
+      // 分隔線：跟現有的一樣就不動（避免 MutationObserver 互相觸發）
+      const want = info.seps.map(s=>s.pos + '|' + s.txt);
+      const have = Array.from(dt.querySelectorAll(':scope > .draw-sep'));
+      const refOf = el=>{ let n = el; while(n && n.classList.contains('draw-sep')) n = n.previousElementSibling; return n; };
+      const same = have.length === want.length && have.every((el, i)=>el.dataset.k === want[i] && (info.seps[i].pos === 'after' ? refOf(el) === info.seps[i].ref : true));
+      if(same) return;
+      have.forEach(el=>el.remove());
+      const lastAfter = new Map();   // 同一劑後面有好幾次抽血：依時間順序往下排
+      info.seps.forEach((s, i)=>{
+        const el = document.createElement('div'); el.className = 'draw-sep'; el.dataset.k = want[i]; el.setAttribute('role', 'separator');
+        el.innerHTML = `<span>${s.txt}</span>`;
+        if(s.pos === 'after'){ (lastAfter.get(s.ref) || s.ref).after(el); lastAfter.set(s.ref, el); } else s.ref.before(el);
+      });
+    }
+    function addNudge(r){
+      if(r.querySelector('.dose-nudge')) return;
+      const wrap = r.querySelector('.dt24'); if(!wrap) return;
+      const src = r.querySelector('.dose-date');
+      const mk = (dir, txt, lab)=>{ const b = document.createElement('button'); b.type = 'button'; b.className = 'dose-nudge'; b.textContent = txt; b.title = lab; b.setAttribute('aria-label', lab); b.dataset.dir = dir; return b; };
+      wrap.append(mk(-1, '−', '給藥時間提早 5 分'), mk(1, '+', '給藥時間延後 5 分'));
+      wrap.addEventListener('click', e=>{
+        const b = e.target.closest('.dose-nudge'); if(!b) return;
+        const t = parseLocal(src.value); if(!isFinite(t)) return;
+        src.value = toLocalInputValue(new Date(t + (+b.dataset.dir) * 5 * 60000));
+        src.dispatchEvent(new Event('input', {bubbles:true})); src.dispatchEvent(new Event('change', {bubbles:true}));
+      });
+    }
+    let drawRaf = 0;
+    const scheduleDraw = ()=>{ if(drawRaf) return; drawRaf = (window.requestAnimationFrame || setTimeout)(()=>{ drawRaf = 0; DRAW_SETS.forEach(refreshDrawMarks); }); };
+    DRAW_SETS.forEach(f=>[f.dose, f.level].forEach(id=>{ const el = document.getElementById(id); if(el) new MutationObserver(scheduleDraw).observe(el, {childList:true}); }));
+    ['input','change'].forEach(ev=>document.addEventListener(ev, e=>{ if(e.target.closest && e.target.closest('#doseTable,#levelTable,#amgDoseTable,#amgLevelTable')) scheduleDraw(); }));
+    DRAW_SETS.forEach(refreshDrawMarks);
+
+    // ---------------- 右邊「尚未更新」：處方改了、給藥紀錄還沒重新展開（Brandon 2026-10-23） ----------------
+    // 計算只採用給藥紀錄表；左邊的 loading／維持處方／產生範圍改了之後，要按「展開」才會進到給藥紀錄。在那之前右邊只有一半是新的
+    // （現行處方推算跟著改、擬合仍是舊紀錄），所以：給藥紀錄有資料、且處方欄位跟上次產生（或載入）給藥紀錄時不一樣 → 右邊標「尚未更新」、
+    // 參數格與曲線變淡、頂端出現「展開給藥紀錄並更新」按鈕；左邊的展開鈕也加框提醒。給藥紀錄表一有整批變動（展開、載入、手動加刪列）就重設比對基準。
+    const STALE_SETS = [
+      {mod:'drug-vancomycin', table:'doseTable', hd:()=>document.getElementById('dialysis').value === 'HD',
+       ids:['useLoading','loadingTime','loadingDose','loadingInf','firstMaintDoseTime','maintDose','maintInterval','maintInf','therapyStart','expandTo'],
+       hdIds:['hdMaintDose','hdFixedTime','hdMaintInf','therapyStart','expandTo'], btn:'expandDoses', hdBtn:'expandDosesHD'},
+      {mod:'drug-aminoglycoside', table:'amgDoseTable', hd:()=>false,
+       ids:['amgScheduleType','amgTherapyStart','amgExpandTo','amgMaintDose','amgMaintInf','amgMaintInterval','amgTiwDay1','amgTiwDay2','amgTiwDay3','amgTiwDay4','amgTiwDay5','amgTiwDay6','amgTiwDay0','amgTiwTime'],
+       btn:'amgExpandDoses'}
+    ];
+    STALE_SETS.forEach(f=>{
+      const mod = document.getElementById(f.mod), table = document.getElementById(f.table);
+      if(!mod || !table) return;
+      const head = mod.querySelector('.panel > .results-head'), live = head && head.querySelector('.rp-live');
+      if(!head || !live) return;
+      const stale = document.createElement('button');
+      stale.type = 'button'; stale.className = 'rp-stale'; stale.hidden = true;
+      stale.innerHTML = '<b>尚未更新</b><span>處方已改，給藥紀錄還沒重新展開</span><em>展開給藥紀錄並更新</em>';
+      live.after(stale);
+      const ids = ()=>f.hd() ? f.hdIds : f.ids;
+      const btnId = ()=>f.hd() ? f.hdBtn : f.btn;
+      const sig = ()=>ids().map(id=>{ const el = document.getElementById(id); return el ? (el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value) : ''; }).join('|') + '#' + (f.hd() ? 'hd' : 'std');
+      let base = sig();
+      function check(){
+        const on = table.querySelector('.entry-row') !== null && sig() !== base;
+        stale.hidden = !on; live.hidden = on;
+        mod.classList.toggle('is-stale', on);
+        STALE_SETS.forEach(g=>{ if(g === f) [g.btn, g.hdBtn].forEach(id=>{ const b = id && document.getElementById(id); if(b) b.classList.toggle('needs-run', on && id === btnId()); }); });
+      }
+      stale.addEventListener('click', ()=>{ const b = document.getElementById(btnId()); if(b) b.click(); });
+      const realRows = muts=>muts.some(m=>[...m.addedNodes, ...m.removedNodes].some(n=>n.nodeType === 1 && n.classList.contains('entry-row')));   // 分隔線進出不算
+      new MutationObserver(muts=>{ if(realRows(muts)){ base = sig(); } check(); }).observe(table, {childList:true});
+      ['input','change'].forEach(ev=>mod.addEventListener(ev, check));
+      f.reset = ()=>{ base = sig(); check(); };
+      check();
+    });
 
     // ---------------- 點一下輸入格就全選，直接鍵入取代（照 TPN 調配試算.html） ----------------
     // number 的 select() 在部分瀏覽器會被緊接著的 click 定位游標蓋掉，所以 focusin 先全選一次、第一個 click 再選一次；

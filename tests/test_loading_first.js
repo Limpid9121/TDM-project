@@ -32,7 +32,7 @@ async function main() {
   // ---------- 1. 版面順序 ----------
   assert(before($('vancoFirstDoseKindGroup'), $('useLoading')), '第一筆給藥的選項在 loading 之前');
   assert(before($('useLoading'), $('loadingDose')) && before($('loadingDose'), $('maintDose')), 'loading 劑量在維持劑量之前（先 loading，再維持）');
-  assert(before($('loadingInf'), $('maintDose')) && before($('firstMaintDoseTime'), $('maintDose')), 'loading 輸注時間、第一劑維持劑量時間也在維持劑量之前');
+  assert(before($('loadingInf'), $('maintDose')) && before($('maintDose'), $('firstMaintDoseTime')) && before($('firstMaintDoseTime'), $('therapyStart')), 'loading 輸注時間在維持劑量之前；第一劑維持劑量時間在維持處方區（2026-10-23 改成一直顯示）');
   assert(before($('maintDose'), $('therapyStart')) && before($('therapyStart'), $('expandDoses')), '維持處方之後才是產生範圍與展開按鈕');
   assert(!!$('vancoLoadingBlock') && $('vancoLoadingBlock').contains($('useLoading')) && $('vancoLoadingBlock').contains($('loadingFields')), 'loading 區塊 #vancoLoadingBlock 包住勾選框與欄位');
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
