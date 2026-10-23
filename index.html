@@ -1101,6 +1101,21 @@
   .ai-fold > h3 .ai-toggle{font-size:12px;font-weight:400;color:var(--ink-soft);min-width:2.2em;text-align:right;}
   .ai-fold > h3:hover .ai-toggle{color:var(--ink);}
   /* F4 end */
+
+  /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
+  .dt24-src{display:none;}
+  .dt24{display:flex;align-items:center;gap:6px;min-width:0;}
+  .dt24 .dt24-d.dt24-d{flex:1 1 0;min-width:0;max-width:none;width:auto;}
+  .dt24 .dt24-t{flex:0 0 auto;width:62px;min-width:0;text-align:center;font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .entry-row .dt24 input{font-family:var(--mono);font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line-strong);border-radius:6px;padding:5px 6px;}
+  .entry-row .dt24 .dt24-t.dt24-t{width:56px;}
+  .dt24 .dt24-t.dt24-bad{border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson);}
+  .dt24.is-missing input{border-color:var(--crimson);box-shadow:inset 0 0 0 1px var(--crimson);}
+  .dt24[hidden]{display:none;}
+  .dt24.dt24-time{display:block;}
+  .dt24.dt24-time .dt24-t{width:100%;text-align:left;}
+  .prune-tool .dt24{flex:1 1 auto;}
+  .pick-start-field .dt24{display:inline-flex;}
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -10435,6 +10450,123 @@ ${flagText||'（無）'}
         if(table && table.contains(row) && row.classList.contains('row-older')){ table.dataset.foldOpen = '1'; refreshDoseFold(f); }
       });
     }
+
+    // ---------------- 日期時間：日期（原生日期選擇器）＋時間（24 小時制 HH:mm 直接鍵入） ----------------
+    // 原生 datetime-local／time 的上午／下午順序由瀏覽器決定、網頁改不了（Brandon 2026-10-23 選 24 小時制）。
+    // 每個 input[type=datetime-local]（含動態新增的列）保留原元素——id、class、.value 的 "YYYY-MM-DDTHH:mm" 格式與事件都不變，只是隱藏——
+    // 旁邊多一組日期＋時間輸入，雙向同步：輸入組改了就寫回原元素並發出 input／change；程式設原元素的 .value（套用存檔、展開給藥、「現在」鈕）
+    // 輸入組跟著變。輸入組自己的 input／change 不外洩，既有的重算邏輯只會收到原元素的事件。type=time 的欄位（透析開始時刻等）同樣處理，只有時間那一格。
+    const DT_VALUE = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    const dtParse = v=>{ const m = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})/.exec(v||''); return m ? {d:m[1], t:m[2]+':'+m[3]} : null; };
+    const dtTime = txt=>{   // "21:07"、"9:05" → "HH:mm"；不合法回 null
+      const m = /^(\d{1,2}):(\d{2})$/.exec(txt); if(!m) return null;
+      const h = +m[1], mi = +m[2]; if(h > 23 || mi > 59) return null;
+      return String(h).padStart(2,'0') + ':' + m[2];
+    };
+    const dtPad = n=>String(n).padStart(2,'0');
+    // 時間文字欄的共同行為：只收數字與冒號、打 3 碼自動補冒號、合法才提交、離開時還原或補零、↑↓ 調整（Shift 10 分）
+    function bindTimeText(t, h){
+      t.addEventListener('input', ()=>{
+        let v = t.value.replace(/[^\d:]/g, '');
+        if(!v.includes(':')){ v = v.slice(0,4); if(v.length > 2) v = v.slice(0,2) + ':' + v.slice(2); }
+        else v = v.slice(0,5);
+        t.value = v;
+        if(v === ''){ t.classList.remove('dt24-bad'); h.onEmpty(); return; }
+        const tt = dtTime(v);
+        t.classList.toggle('dt24-bad', v.length >= 4 && !tt);
+        if(tt) h.onValid(tt);
+      });
+      t.addEventListener('blur', ()=>{
+        const tt = dtTime(t.value);
+        if(t.value && !tt){ h.restore(); t.classList.remove('dt24-bad'); return; }   // 不合法：還原成原元素目前的值
+        if(tt && t.value !== tt) t.value = tt;                                        // 9:05 → 09:05
+        t.classList.remove('dt24-bad');
+      });
+      t.addEventListener('keydown', e=>{
+        if(e.key !== 'ArrowUp' && e.key !== 'ArrowDown') return;
+        if(h.step(e.key === 'ArrowUp' ? 1 : -1, e.shiftKey ? 10 : 1)) e.preventDefault();
+      });
+    }
+    function dtShell(src, withDate){
+      const wrap = document.createElement('span'); wrap.className = 'dt24' + (withDate ? '' : ' dt24-time');
+      const t = document.createElement('input'); t.type = 'text'; t.className = 'dt24-t'; t.maxLength = 5; t.placeholder = 'HH:mm'; t.autocomplete = 'off'; t.setAttribute('inputmode', 'numeric');
+      const lab = src.getAttribute('aria-label') || ((src.id && document.querySelector('label[for="'+src.id+'"]')) || (src.closest('.field') && src.closest('.field').querySelector('label')) || {}).textContent || '';
+      t.setAttribute('aria-label', (lab.trim() + ' 時間（24 小時制，例如 21:30）').trim());
+      let d = null;
+      if(withDate){
+        d = document.createElement('input'); d.type = 'date'; d.className = 'dt24-d';
+        d.setAttribute('aria-label', (lab.trim() + ' 日期').trim());
+        wrap.append(d, t);
+      } else wrap.append(t);
+      src.after(wrap);
+      src.classList.add('dt24-src');
+      ['input','change'].forEach(ev=>wrap.addEventListener(ev, e=>e.stopPropagation()));
+      const emit = ()=>{ src.dispatchEvent(new Event('input', {bubbles:true})); src.dispatchEvent(new Event('change', {bubbles:true})); };
+      const raw = ()=>DT_VALUE.get.call(src);
+      const setSrc = nv=>{ if(raw() !== nv){ DT_VALUE.set.call(src, nv); emit(); } };
+      src.focus = ()=>(d || t).focus();
+      return {wrap, d, t, emit, raw, setSrc};
+    }
+    function dtMirror(src, s){   // 必填缺漏的紅框（加在原元素上的 is-missing）、停用、隱藏狀態跟著輸入組
+      const mirror = ()=>{ s.wrap.classList.toggle('is-missing', src.classList.contains('is-missing')); if(s.d) s.d.disabled = src.disabled; s.t.disabled = src.disabled; s.wrap.hidden = src.hidden; };
+      new MutationObserver(mirror).observe(src, {attributes:true, attributeFilter:['class','disabled','hidden']});
+      mirror();
+    }
+    function enhanceDt24(src){
+      if(src.dataset.dt24) return;
+      src.dataset.dt24 = '1';
+      const s = dtShell(src, true), d = s.d, t = s.t;
+      const pull = ()=>{ const p = dtParse(s.raw()); d.value = p ? p.d : ''; t.value = p ? p.t : ''; t.classList.remove('dt24-bad'); };
+      const commit = ()=>{
+        if(!d.value){ s.setSrc(''); return; }
+        const tt = dtTime(t.value);
+        if(tt) s.setSrc(d.value + 'T' + tt);
+      };
+      Object.defineProperty(src, 'value', {configurable:true, get(){ return DT_VALUE.get.call(this); }, set(v){ DT_VALUE.set.call(this, v); pull(); }});
+      d.addEventListener('input', commit); d.addEventListener('change', commit);
+      bindTimeText(t, {
+        onValid: commit,
+        onEmpty: ()=>s.setSrc(''),
+        restore: pull,
+        step: (dir, n)=>{
+          const p = dtParse(s.raw()); if(!p) return false;
+          const dt = new Date(p.d + 'T' + p.t + ':00');
+          dt.setMinutes(dt.getMinutes() + dir * n);
+          DT_VALUE.set.call(src, `${dt.getFullYear()}-${dtPad(dt.getMonth()+1)}-${dtPad(dt.getDate())}T${dtPad(dt.getHours())}:${dtPad(dt.getMinutes())}`);
+          pull(); s.emit(); return true;
+        }
+      });
+      dtMirror(src, s); pull();
+    }
+    function enhanceTime24(src){   // <input type="time">：只有時間一格
+      if(src.dataset.dt24) return;
+      src.dataset.dt24 = '1';
+      const s = dtShell(src, false), t = s.t;
+      const pull = ()=>{ const m = /^(\d{2}:\d{2})/.exec(s.raw()); t.value = m ? m[1] : ''; t.classList.remove('dt24-bad'); };
+      Object.defineProperty(src, 'value', {configurable:true, get(){ return DT_VALUE.get.call(this); }, set(v){ DT_VALUE.set.call(this, v); pull(); }});
+      bindTimeText(t, {
+        onValid: tt=>s.setSrc(tt),
+        onEmpty: ()=>s.setSrc(''),
+        restore: pull,
+        step: (dir, n)=>{
+          const m = /^(\d{2}):(\d{2})$/.exec(s.raw()); if(!m) return false;
+          const mins = ((+m[1]) * 60 + (+m[2]) + dir * n + 1440) % 1440;
+          DT_VALUE.set.call(src, dtPad(Math.floor(mins / 60)) + ':' + dtPad(mins % 60));
+          pull(); s.emit(); return true;
+        }
+      });
+      dtMirror(src, s); pull();
+    }
+    const DT_SEL = 'input[type="datetime-local"]:not([data-dt24]), input[type="time"]:not([data-dt24])';
+    const enhanceOne = el=>{ if(el.type === 'time') enhanceTime24(el); else enhanceDt24(el); };
+    document.querySelectorAll(DT_SEL).forEach(enhanceOne);
+    new MutationObserver(muts=>{
+      muts.forEach(m=>m.addedNodes.forEach(n=>{
+        if(n.nodeType !== 1) return;
+        if(n.matches && n.matches(DT_SEL)) enhanceOne(n);
+        else n.querySelectorAll(DT_SEL).forEach(enhanceOne);
+      }));
+    }).observe(document.body, {childList:true, subtree:true});
 
     // ---------------- 點一下輸入格就全選，直接鍵入取代（照 TPN 調配試算.html） ----------------
     // number 的 select() 在部分瀏覽器會被緊接著的 click 定位游標蓋掉，所以 focusin 先全選一次、第一個 click 再選一次；
