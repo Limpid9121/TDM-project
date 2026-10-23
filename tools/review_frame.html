@@ -83,6 +83,22 @@ f.onload = ()=>{
       document.body.appendChild(pre);
     }
     if(q.get('forcebad')) await step(()=>{ const st = d.createElement('style'); st.textContent = '.panel > .param-grid .param-cell .sub{color:#1C7A43 !important}'; d.head.appendChild(st); }, 50);   // 量測器自我檢查：故意弄一個低對比，應被抓到
+    if(q.get('measure')==='chars'){   // F8：首屏（iframe 視窗內）看得到的文字數，分左欄／右欄
+      const cnt = {L:0, R:0, H:0};
+      const walker = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT);
+      let n;
+      while((n = walker.nextNode())){
+        const t = n.textContent.replace(/\s+/g, ''); if(!t) continue;
+        const el = n.parentElement; if(!el || el.closest('script,style,.dt-pick')) continue;
+        const cs = w.getComputedStyle(el); if(cs.display === 'none' || cs.visibility === 'hidden' || +cs.opacity === 0) continue;
+        const rg = d.createRange(); rg.selectNodeContents(n); const r = rg.getBoundingClientRect();
+        if(!r.width || !r.height || r.bottom <= 0 || r.top >= H || r.right <= 0 || r.left >= W) continue;
+        const side = el.closest('header') ? 'H' : (el.closest('.drug-module.active main.grid > .panel:last-child') ? 'R' : 'L');
+        cnt[side] += t.length;
+      }
+      document.title = 'CHARS L=' + cnt.L + ' R=' + cnt.R + ' H=' + cnt.H;
+      const pre = document.createElement('pre'); pre.style.cssText = 'position:fixed;right:0;bottom:0;z-index:99999;background:#000;color:#7f7;font:14px monospace;margin:0;padding:4px 8px'; pre.textContent = document.title; document.body.appendChild(pre);
+    }
     if(q.get('measure')==='rowalign'){   // F6：左欄每個 .field-row 裡，各欄標籤上緣／輸入框上緣是否對齊（差 >2 px 列出）
       const out = [];
       d.querySelectorAll('.drug-module.active .field-row').forEach((row,i)=>{
