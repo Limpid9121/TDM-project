@@ -9213,9 +9213,23 @@ ${flagText||'（無）'}
   }
 
   // ---------------- overwrite confirmation (WP1.3, S3) ----------------
+  // 只在真的會蓋掉手動修改時才問（Brandon 2026-10-24）：每次重建後記下表格內容的指紋（dataset.genFp），
+  // 下次要重建時表格還跟指紋一樣（＝上次自動產生後沒人動過）就直接重建；不一樣（打字、−／+、手動新增）或沒有指紋（剛載入存檔／示範病例）才問。
+  function entryFingerprint(container){
+    return Array.from(container.querySelectorAll('.entry-row')).map(r=>Array.from(r.querySelectorAll('input:not(.dt24-d):not(.dt24-t), select'))
+      .map(i=>i.type==='checkbox' ? String(i.checked) : i.value).join('|')).join('#');
+  }
   function confirmOverwrite(containerId, what){
-    const n = document.querySelectorAll('#'+containerId+' .entry-row').length;
-    return n===0 || confirm(`這會清空並重建目前 ${n} 筆${what}（包含你手動修改過的內容），確定嗎？`);
+    const box = document.getElementById(containerId);
+    const n = box.querySelectorAll('.entry-row').length;
+    const before = entryFingerprint(box);
+    const untouched = !!box.dataset.genFp && box.dataset.genFp === before;
+    const ok = n===0 || untouched || confirm(`這會清空並重建目前 ${n} 筆${what}（包含你手動修改過的內容），確定嗎？`);
+    // 重建是緊接著同步執行的：之後（microtask）舊的列被換掉了（＝真的重建）才記新指紋；
+    // 驗證沒過、沒重建時保留舊指紋，不會讓手動修改變成「不用問」
+    const oldFirst = box.querySelector('.entry-row');
+    if(ok) Promise.resolve().then(()=>{ const nowFirst = box.querySelector('.entry-row'); if(!oldFirst || !oldFirst.isConnected || nowFirst !== oldFirst) box.dataset.genFp = entryFingerprint(box); });
+    return ok;
   }
 
   // ---------------- unsaved-changes guard (WP3.3, D4) ----------------
