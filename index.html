@@ -1204,6 +1204,13 @@
   .rp-stale[hidden], .rp-live[hidden]{display:none;}
   .drug-module.is-stale .panel > .param-grid, .drug-module.is-stale .panel .curve-wrap, .drug-module.is-stale .panel .regimen-table{opacity:.35;filter:grayscale(.6);transition:opacity 160ms ease;}
   .btn.needs-run{box-shadow:0 0 0 3px #FFD9A0, 0 0 0 4px var(--navy);}
+  /* 判讀板緊湊版（格子 9 格以上，例如模型 B）：字小、間距小、重複的「模型 B」不顯示 */
+  .param-grid.pg-dense > .param-cell{padding:6px 12px;}
+  .param-grid.pg-dense .param-cell .value{font-size:18px;}
+  .param-grid.pg-dense.pg-key > .pc-key .value{font-size:32px;}
+  .param-grid.pg-dense .param-cell .sub{font-size:11.5px;-webkit-line-clamp:2;line-clamp:2;}
+  .param-grid.pg-dense .param-cell:not(.pc-key) .ln-model{display:none;}
+  .param-grid.pg-dense > .param-cell .lbl-main{min-height:0;}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -10018,7 +10025,7 @@ ${flagText||'（無）'}
       const grid = document.getElementById(gridId);
       if(!grid) return;
       const kids = Array.from(grid.children);
-      const reset = ()=>{ grid.classList.remove('pg','pg-key','pg-key2'); grid.style.removeProperty('--pg-rows'); grid.style.removeProperty('--pg-ko'); };
+      const reset = ()=>{ grid.classList.remove('pg','pg-key','pg-key2','pg-dense'); grid.style.removeProperty('--pg-rows'); grid.style.removeProperty('--pg-ko'); };
       if(!kids.length || !kids.every(k=>k.classList.contains('param-cell'))){ reset(); return; }   // 缺資料的提示等：不排版
       kids.forEach(splitParamLabel);
       grid.querySelectorAll('.sub').forEach(sub=>{ if(!sub.title) sub.title = sub.textContent.trim(); });
@@ -10053,6 +10060,10 @@ ${flagText||'（無）'}
       });
       const keyCells = cells.filter(c=>c.classList.contains('pc-key'));
       const body = cells.filter(c=>!c.classList.contains('pc-key') && !c.classList.contains('pc-dup'));
+      // 格子多（模型 B 起始劑量預測有 10 格）：緊湊版——字小、間距小、藥動參數接著排，不捲動也看得到曲線（Brandon 2026-10-23）
+      const dense = body.length >= 9;
+      grid.classList.toggle('pg-dense', dense);
+      grid.querySelectorAll('.lbl-note').forEach(n=>n.classList.toggle('ln-model', /^[（(]?模型\s*[AB][）)]?$/.test(n.textContent.trim())));   // 每格都寫的「模型 B」
       // 內容區是 12 欄：一列有 n 格（最多 4）就各佔 12/n 欄，所以短的一列也補得滿，沒有空格、沒有孤兒格
       const place = (list, startRow, per)=>{
         let r = startRow;
@@ -10075,9 +10086,13 @@ ${flagText||'（無）'}
         const B = pick(['thalf','cl','vd','crcl']);                         // 藥動參數
         const X = body.filter(c=>!used.has(c));
         // 兩個大字格（AMG：Cmax 與 Cmin 同等重要）時，暴露量已經是大字，下面先放藥動參數、再放輔助的暴露量
-        let r = keyCells.length > 1 ? place(B, 1, 4) : place(A, 1, 4);
-        r = keyCells.length > 1 ? place(A, r, 4) : place(B, r, 4);
-        r = place(X, r, 4);
+        let r;
+        if(dense && keyCells.length === 1){ r = place(A, 1, 4); r = place(B.concat(X), r, 4); }   // 緊湊版：CrCl 不自己佔一列
+        else {
+          r = keyCells.length > 1 ? place(B, 1, 4) : place(A, 1, 4);
+          r = keyCells.length > 1 ? place(A, r, 4) : place(B, r, 4);
+          r = place(X, r, 4);
+        }
         keyCells.forEach((c,i)=>c.style.setProperty('--kc', i+1));
         grid.classList.add('pg-key');
         grid.classList.toggle('pg-key2', keyCells.length > 1);
