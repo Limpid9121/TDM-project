@@ -4,7 +4,7 @@
 <style>html,body{margin:0;padding:0;background:#ddd;overflow:hidden}iframe{border:0;display:block}</style>
 <iframe id="f"></iframe>
 <script>
-// 驗收截圖用（tools/shoot_review.py 會開這頁）：?exp=accent_a&accent=mustard&pick=1&mod=vancomycin&w=1920&h=940&demo=1&collapse=all|none|only:3&view=result&scroll=0&hd=1&blank=1&pm=1&measure=params
+// 驗收截圖用（tools/shoot_review.py 會開這頁）：?exp=accent_a&accent=mustard&pick=1&mod=vancomycin&w=1920&h=940&demo=1&collapse=all|none|only:3&view=result&scroll=0&hd=1&blank=1&pm=1&measure=params|contrast
 const q = new URLSearchParams(location.search);
 const W = +(q.get('w')||innerWidth), H = +(q.get('h')||innerHeight);
 const f = document.getElementById('f');
@@ -53,6 +53,33 @@ f.onload = ()=>{
       const pre = document.createElement('pre');
       pre.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#000;color:#7f7;font:13px/1.35 monospace;padding:6px 10px;margin:0;white-space:pre-wrap;max-width:100%;';
       pre.textContent = out.map(g=>g.grid+' 寬'+g.w+' 溢出'+g.scrollOver+' 同列數字上緣差['+g.rowSpread.join(' ')+'] 數字被切['+g.cutVals.join(',')+'] 標籤被切['+g.cutLabels.join(',')+'] 格內溢出['+g.cellOver.join(',')+']\n  '+g.info.join('\n  ')).join('\n');
+      document.body.appendChild(pre);
+    }
+    if(q.get('forcebad')) await step(()=>{ const st = d.createElement('style'); st.textContent = '.panel > .param-grid .param-cell .sub{color:#1C7A43 !important}'; d.head.appendChild(st); }, 50);   // 量測器自我檢查：故意弄一個低對比，應被抓到
+    if(q.get('measure')==='contrast'){
+      const parse = c=>{ const m = c.match(/rgba?\(([^)]+)\)/); if(!m) return [0,0,0,1]; const a = m[1].split(',').map(x=>parseFloat(x)); return [a[0],a[1],a[2],a.length>3?a[3]:1]; };
+      const blend = (f,b)=>[0,1,2].map(i=>f[i]*f[3]+b[i]*(1-f[3])).concat([1]);
+      const L = c=>{ const v = c.slice(0,3).map(x=>{ x/=255; return x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4); }); return 0.2126*v[0]+0.7152*v[1]+0.0722*v[2]; };
+      const bgOf = el=>{ const chain = []; for(let e = el; e && e.nodeType===1; e = e.parentElement){ chain.push(parse(w.getComputedStyle(e).backgroundColor)); } let bg = [255,255,255,1]; for(let i = chain.length-1; i>=0; i--){ if(chain[i][3]>0) bg = chain[i][3]>=1 ? chain[i] : blend(chain[i], bg); } return bg; };
+      const bad = [];
+      const roots = d.querySelectorAll('.drug-module.active .panel:not(#inputPanel) > .results-head, .drug-module.active .panel > .param-grid, header.top, .drug-module.active .regimen-table, .drug-module.active .regimen-pick-bar.active, .drug-module.active .mod-tabs');
+      roots.forEach(root=>{
+        const walker = d.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        let n; const seen = new Set();
+        while((n = walker.nextNode())){
+          const el = n.parentElement; if(!n.textContent.trim() || seen.has(el)) continue; seen.add(el);
+          const cs = w.getComputedStyle(el); if(cs.display==='none' || cs.visibility==='hidden') continue;
+          const r = el.getBoundingClientRect(); if(!r.width || !r.height) continue;
+          const fg = blend(parse(cs.color), bgOf(el)), bg = bgOf(el);
+          const ratio = (Math.max(L(fg),L(bg))+0.05)/(Math.min(L(fg),L(bg))+0.05);
+          const px = parseFloat(cs.fontSize), bold = parseInt(cs.fontWeight)>=700;
+          const need = (px>=24 || (px>=18.66 && bold)) ? 3 : 4.5;
+          if(ratio < need) bad.push(ratio.toFixed(2)+' '+(el.className||el.tagName)+' "'+n.textContent.trim().slice(0,18)+'" '+cs.color+' on rgb('+bg.slice(0,3).map(Math.round)+')');
+        }
+      });
+      const pre = document.createElement('pre');
+      pre.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#000;color:#7f7;font:13px/1.35 monospace;padding:6px 10px;margin:0;white-space:pre-wrap;max-width:100%;';
+      pre.textContent = '對比不足 '+bad.length+' 項（<4.5:1，大字 <3:1）\n'+bad.slice(0,30).join('\n');
       document.body.appendChild(pre);
     }
     document.title = 'ready';

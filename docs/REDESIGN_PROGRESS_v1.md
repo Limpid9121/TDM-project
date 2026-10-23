@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-23（v3 的 F1、F2 完成；下一包 F7 撞色角色與深藍判讀板，順序 F7 → F3 → F4 → F5 → F6）
+最後更新：2026-10-23（v3 的 F1、F2、F7 完成；下一包 F3 候選方案表，順序 F3 → F4 → F5 → F6）
 
 ## 現況
 
@@ -21,7 +21,8 @@
 |---|---|---|
 | F1 小修 | 完成，等 Brandon 說「繼續」 | 見下方 F1 備註；golden 124/124 0 差異；全部測試過；設計偵測仍是 3 項 |
 | F2 參數區重排 | 完成，等 Brandon 說「繼續」 | 見下方 F2 備註；golden 124/124 0 差異 |
-| F7、F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
+| F7 撞色角色＋深藍判讀板 | 完成，等 Brandon 說「繼續」 | 見下方 F7 備註；golden 124/124 0 差異 |
+| F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
@@ -47,6 +48,24 @@
 - 新測試：`tests/test_f2_params.js`（36 項）。
 - 看圖時留下的小問題：1024 寬的格子每格預留兩行標籤高度，數字上方會有一點空；AMG 第一列「參考：Cmax」的長說明最多顯示 3 行（全文在 title）。
 - 用到的 skill：`impeccable` layout、typeset、craft-floor，`emil-design-eng`（數字對齊、tabular-nums、單位位置），`dataviz`（stat tile：標籤短、單位小、說明在數字下面）。
+
+### F7 撞色角色＋深藍判讀板（2026-10-23）
+- **token**：`--accent-ink`、`--accent-tint`（四個撞色各一組，數值照 DESIGN.md）、`--ok-on-dark`／`--caution-on-dark`／`--danger-on-dark`。
+- **正式樣式**：併進 `index.html` 樣式表最後的 `/* F7 begin … F7 end */` 區塊，沒有 `!important`、沒有引用 `tools/exp_accent_*.css`（那兩個試做檔留著當參考，不載入）。
+- **判讀板**：四個模組的判讀標題列＋參數區是同一塊深藍（`.panel > .results-head`、`.panel > .param-grid`），上下緣各一條 3 px 撞色線。數字白字、標籤與說明 navy-soft；有狀態的數字與「目標 400–600 ■ 目標內」改用深底版綠／琥珀／紅。缺資料時板上的提示（缺項清單、示範按鈕）也調成深底可讀。
+- **六個角色**：
+  1. 主要動作：卡片 03 的「依上述處方自動展開給藥紀錄」（vanco、HD、AMG）是實心撞色；頂列的主按鈕等 F5 一起做。
+  2. 目前所在：目前的藥物分頁＝深藍頂列上的實心撞色塊、「計算／病人資料」底線、展開中段落的編號框（填撞色深版）。
+  3. 你的選擇：勾選的候選方案列與提示列用撞色淡底、what-if 讀數撞色深版；曲線上 what-if 線、輸注條、起始線與字、圖例、十字游標的標籤與點都從琥珀色改成撞色（只改顏色屬性，座標沒動，golden 0 差異）。
+  4. 現在：曲線上的「現在」標籤本來就是撞色。
+  5. 判讀板的邊：見上。
+  6. 瀏覽器表面：選取底、游標、焦點外框、勾選框與單選鈕（`accent-color`）、捲軸顏色。
+- **拿掉的寬彩色左邊框**：`.flag-item`、`.demo-banner`、`.regimen-pick-bar` 的 3 px 左線（試做檔裡勾選列的 3 px 左線沒做）。注意事項現在只靠小方塊與文字分辨層級。
+- **跟 DESIGN.md 不同的一處**：深藍底（頂列、手機底部摘要）上的焦點外框維持**白色**，不用撞色——洋紅在深藍上只有 2.4:1，達不到焦點外框要求的 3:1。DESIGN.md 已照改。
+- **驗收**：`tools/review_frame.html` 加 `measure=contrast`（逐個文字元素算對比，<4.5:1、大字 <3:1 的列出來）。四個撞色（洋紅、朱紅、芥末黃、不用撞色）× Vancomycin（示範、HD、空白）、AMG（勾選方案）、Azole、AED × 1920／1440／1024 抽樣：頂列、判讀板、候選方案表、勾選提示列、分頁，**對比不足 0 項**；量測器自己用故意的低對比（綠字在深藍上 2.65:1）驗過會抓得到。
+- **沒動、記錄**：`.entry-row.row-invalid`（缺漏欄位的 3 px 紅左線）不在 v3 清單內，保留；`.regimen-table td .tag[style]`（「現行」標籤）本來就是撞色，沒動。
+- 新測試：`tests/test_f7_accent.js`（67 項，含 token 對比計算、曲線 SVG 的 what-if 顏色、F7 區塊沒有 `!important`）。
+- 用到的 skill：`impeccable` colorize、bolder（把系統已有的深藍與撞色線用到滿，沒發明新元素）、audit（對比）、craft-floor（瀏覽器表面、禁寬左邊框），`emil-design-eng`，`dataviz`（what-if 線與圖例）。
 
 ## 工作包狀態
 
