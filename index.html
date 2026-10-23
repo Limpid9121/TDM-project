@@ -11200,8 +11200,11 @@ ${flagText||'（無）'}
       const btnId = ()=>f.hd() ? f.hdBtn : f.btn;
       const sig = ()=>ids().map(id=>{ const el = document.getElementById(id); return el ? (el.type === 'checkbox' ? (el.checked ? '1' : '0') : el.value) : ''; }).join('|') + '#' + (f.hd() ? 'hd' : 'std');
       let base = sig();
+      const modeOf = v=>v.slice(v.lastIndexOf('#'));
       function check(){
-        const on = table.querySelector('.entry-row') !== null && sig() !== base;
+        const now = sig();
+        if(modeOf(now) !== modeOf(base)) base = now;   // 切換透析模式只是換一組處方欄位，給藥紀錄沒變：重設比對基準
+        const on = table.querySelector('.entry-row') !== null && now !== base;
         stale.hidden = !on; live.hidden = on;
         mod.classList.toggle('is-stale', on);
         STALE_SETS.forEach(g=>{ if(g === f) [g.btn, g.hdBtn].forEach(id=>{ const b = id && document.getElementById(id); if(b) b.classList.toggle('needs-run', on && id === btnId()); }); });

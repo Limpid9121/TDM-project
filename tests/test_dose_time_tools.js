@@ -117,6 +117,12 @@ async function main() {
   assert(stale.hidden && !$('drug-vancomycin').classList.contains('is-stale') && !$('expandDoses').classList.contains('needs-run'), '按「展開給藥紀錄並更新」後恢復');
   assert(doc.querySelector('#doseTable .entry-row:last-of-type .dose-mg').value === '1250', '重新展開用新劑量');
 
+  // 切換透析（HD）只是換模式，給藥紀錄沒變：不該標尚未更新
+  $('dialysis').value = 'HD'; fire($('dialysis')); await tick(300);
+  assert(stale.hidden && !$('drug-vancomycin').classList.contains('is-stale'), '切到 HD：不標尚未更新');
+  $('dialysis').value = 'none'; fire($('dialysis')); await tick(300);
+  assert(stale.hidden, '切回非透析：不標尚未更新');
+
   // ---------- 7. 還沒有濃度（第一次評估）：展開至＝約 5 個半衰期後的那一劑 ----------
   $('clearAllBtn').click(); await tick(200);
   await set('expandTo', '');
