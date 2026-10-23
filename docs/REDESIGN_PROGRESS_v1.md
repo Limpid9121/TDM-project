@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-23（v3 的 F1、F2、F7、F3 完成；下一包 F4 注意事項一行化與 AI Prompt 收合，順序 F4 → F5 → F6）
+最後更新：2026-10-23（v3 的 F1、F2、F7、F3、F4 完成；下一包 F5 頂列與左欄，順序 F5 → F6，之後 F8 標籤減法審計待核可）
 
 ## 現況
 
@@ -23,7 +23,8 @@
 | F2 參數區重排 | 完成，等 Brandon 說「繼續」 | 見下方 F2 備註；golden 124/124 0 差異 |
 | F7 撞色角色＋深藍判讀板 | 完成，等 Brandon 說「繼續」 | 見下方 F7 備註；golden 124/124 0 差異 |
 | F3 候選方案表 | 完成，等 Brandon 說「繼續」 | 見下方 F3 備註；**golden 0 差異**（不需要核可） |
-| F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
+| F4 注意事項一行化、AI Prompt 收合 | 完成，等 Brandon 說「繼續」 | 見下方 F4 備註；golden 0 差異 |
+| F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩）；F8 標籤減法審計未核可 |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
@@ -80,6 +81,16 @@
 - **沒做**：AED 的候選劑量表（3 欄的小表，只有「選取／每日總劑量／預估穩態濃度」）沒有重排，沿用共用表格樣式；規格寫的手機候選方案卡片（暫緩）。
 - 新測試：`tests/test_f3_candidates.js`（36 項）；全部測試過。
 - 用到的 skill：`impeccable` layout、craft-floor，`emil-design-eng`（數字靠右、tabular-nums、輸入框與單位位置），`break-ui`（長評語縮成狀態字、窄欄位溢出——完整流程留給 F6）。
+
+### F4 注意事項一行化、AI Prompt 收合（2026-10-23）
+- **注意事項**：四個模組各一塊（`#flagList`／`#amgFlagList`／`#azlFlagList`／`#aedFlagList`）改成「左邊小標『注意事項』＋右邊就是旗標」的兩欄格線；沒有大標題。只有一則旗標（C3 那種「無明顯健全性疑慮」）就是一行，有警示就逐條往下列。小標是靜態 HTML 的字（原本「健全性檢查與假設／與情境提示」），旗標內容是 render 的輸出，沒動（golden 0 差異）。
+- **E3**：空白頁沒有任何旗標時，整個區塊不顯示；順手把空白頁只剩標題的「未來監測建議」也一起隱藏。
+- **編號框 A–D 隱藏**：右區區塊標題的字母框順序沒有帶資訊（DESIGN.md 減法規則、craft-floor），用 CSS 隱藏，DOM 與 id 不動。這比規格多做一步，因為只拿掉 A 會讓 B–D 的字母框變得不一致。
+- **AI 諮詢 Prompt**：四個模組預設收合成一行「AI 諮詢 Prompt　一句副標　[複製 Prompt]　展開」；點標題或 Enter／空白鍵展開、再點收合（`role="button"`、`aria-expanded`）。prompt 內容照樣即時產生（只是收起來）；收合列上的複製鈕直接複製整份，結果（「已複製到剪貼簿」）顯示在收合列上（`aria-live`），不會展開。副標：Vanco、AMG、Azole 沿用原本括號裡那句，AED 原本沒有，改寫成「整合目前輸入與 PK 估算後的第二意見」（取自它自己的說明句）。
+- **抓到並修的坑**：第一版把規則寫成「任何含 `.flag-list` 的區塊」，Azole 的「劑量調整建議」、AED 的「濃度校正判讀」也被縮成灰色小標（它們也用 flag-list）；改成只套在那四個 id。
+- 新測試：`tests/test_f4_notes.js`（62 項；先紅 16 項再綠）。
+- 沒做：展開狀態不記住（每次重新整理都是收合）；真要記可以用 `tdm_ui_` 開頭的 key，等 Brandon 說要再加。
+- 用到的 skill：`impeccable` distill、clarify（減法規則：先版面、再 title、再收合、最後才刪）。
 
 ## 工作包狀態
 

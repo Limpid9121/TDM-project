@@ -1082,6 +1082,25 @@
     /* F3 side-by-side end */
   }
   /* F3 end */
+
+  /* F4 begin：注意事項一行化、AI Prompt 收合（DESIGN.md「減法規則」） */
+  /* 注意事項：左邊一個小標、右邊就是旗標；沒有任何旗標（空白頁）就整區不顯示 */
+  .panel > .section-block:has(> :is(#flagList,#amgFlagList,#azlFlagList,#aedFlagList)){display:grid;grid-template-columns:auto minmax(0,1fr);gap:0 14px;align-items:baseline;}
+  .panel > .section-block:has(> :is(#flagList,#amgFlagList,#azlFlagList,#aedFlagList)) > h3{margin:0;font-size:13px;font-weight:700;color:var(--ink-soft);white-space:nowrap;}
+  .panel > .section-block:has(> :is(#flagList,#amgFlagList,#azlFlagList,#aedFlagList)):not(:has(.flag-item)){display:none;}
+  .panel > .section-block:has(> .monitor-grid:empty){display:none;}   /* 空白頁：監測區沒有內容就不顯示標題 */
+  /* 右區區塊標題的 A–D 編號框：順序沒有帶資訊，隱藏（DOM 與 id 不動） */
+  .panel > .section-block h3 .idx{display:none;}
+  /* AI Prompt：收合時只剩標題列 */
+  .ai-fold > h3{cursor:pointer;margin:0;display:flex;align-items:baseline;gap:8px;}
+  .ai-fold:not(.open) > :not(h3){display:none;}
+  .ai-fold.open > h3{margin-bottom:8px;}
+  .ai-fold > h3 .h3-sub{font-size:13px;font-weight:400;color:var(--ink-soft);}
+  .ai-fold > h3 .ai-copy-note{margin-left:auto;font-size:12px;font-weight:400;color:var(--ok);}
+  .ai-fold > h3 button{margin-left:8px;}
+  .ai-fold > h3 .ai-toggle{font-size:12px;font-weight:400;color:var(--ink-soft);min-width:2.2em;text-align:right;}
+  .ai-fold > h3:hover .ai-toggle{color:var(--ink);}
+  /* F4 end */
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -1520,7 +1539,7 @@
       <div class="param-grid" id="paramGrid"></div>
 
       <div class="section-block">
-        <h3><span class="idx">A</span>健全性檢查與假設</h3>
+        <h3><span class="idx">A</span>注意事項</h3>
         <div class="flag-list" id="flagList"></div>
       </div>
 
@@ -1562,7 +1581,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="vancoCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="vancoCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="aiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
@@ -1870,7 +1889,7 @@
       <div class="param-grid" id="amgParamGrid"></div>
 
       <div class="section-block">
-        <h3><span class="idx">A</span>健全性檢查與假設</h3>
+        <h3><span class="idx">A</span>注意事項</h3>
         <div class="flag-list" id="amgFlagList"></div>
       </div>
 
@@ -1904,7 +1923,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="amgCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="amgCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="amgAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
@@ -2204,7 +2223,7 @@
       <div class="param-grid" id="azlParamGrid"></div>
 
       <div class="section-block">
-        <h3><span class="idx">A</span>健全性檢查與情境提示</h3>
+        <h3><span class="idx">A</span>注意事項</h3>
         <div class="flag-list" id="azlFlagList"></div>
       </div>
 
@@ -2219,7 +2238,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">D</span>AI 諮詢 Prompt（整合 lab 趨勢與病程後的第二意見）<button class="btn small" id="azlCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
+        <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="azlCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
         <textarea id="azlAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
@@ -2507,7 +2526,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">C</span>健全性檢查與情境提示</h3>
+        <h3><span class="idx">C</span>注意事項</h3>
         <div class="flag-list" id="aedFlagList"></div>
       </div>
 
@@ -2517,7 +2536,7 @@
       </div>
 
       <div class="section-block">
-        <h3><span class="idx">E</span>AI 諮詢 Prompt<button class="btn small" id="aedCopyPromptBtnTop" type="button" style="margin-left:auto;">複製 Prompt</button></h3>
+        <h3><span class="idx">E</span>AI 諮詢 Prompt<span class="h3-sub">整合目前輸入與 PK 估算後的第二意見</span><button class="btn small" id="aedCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
         <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</p>
         <textarea id="aedAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
@@ -9812,6 +9831,23 @@ ${flagText||'（無）'}
       const t = document.getElementById(id); if(!t) return;
       new MutationObserver(()=>decorateRegimenTable(id)).observe(t, {childList:true, subtree:true});
       decorateRegimenTable(id);
+    });
+    // v3 F4：AI 諮詢 Prompt 預設收合成一行（標題＋副標＋複製鈕＋展開）；點標題或 Enter／空白鍵展開。純顯示：
+    // prompt 內容照樣即時產生（textarea 只是被收起來）；複製鈕在收合列上也能用，結果顯示在收合列上。
+    document.querySelectorAll('textarea[id$="iPromptOut"]').forEach(ta=>{
+      const sec = ta.closest('.section-block'), h3 = sec && sec.querySelector(':scope > h3');
+      if(!sec || !h3 || sec.classList.contains('ai-fold')) return;
+      sec.classList.add('ai-fold');
+      h3.setAttribute('role', 'button'); h3.setAttribute('tabindex', '0'); h3.setAttribute('aria-expanded', 'false');
+      const note = document.createElement('span'); note.className = 'ai-copy-note'; note.setAttribute('aria-live', 'polite');
+      const toggleTxt = document.createElement('span'); toggleTxt.className = 'ai-toggle'; toggleTxt.setAttribute('aria-hidden', 'true'); toggleTxt.textContent = '展開';
+      const btn = h3.querySelector('button');
+      h3.insertBefore(note, btn); h3.appendChild(toggleTxt);
+      const toggle = ()=>{ const open = sec.classList.toggle('open'); h3.setAttribute('aria-expanded', String(open)); toggleTxt.textContent = open ? '收合' : '展開'; };
+      h3.addEventListener('click', e=>{ if(e.target.closest('button')) return; toggle(); });
+      h3.addEventListener('keydown', e=>{ if(e.target !== h3) return; if(e.key === 'Enter' || e.key === ' '){ e.preventDefault(); toggle(); } });
+      const st = sec.querySelector('.copy-status');
+      if(st) new MutationObserver(()=>{ note.textContent = st.textContent; }).observe(st, {childList:true, characterData:true, subtree:true});
     });
     function conclusionText(cfg){
       const grid = document.getElementById(cfg.gridId);
