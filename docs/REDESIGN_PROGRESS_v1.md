@@ -3,7 +3,7 @@
 > 施工規格：`docs/REDESIGN_PLAN_v2.md`（專案文件 `claude/REDESIGN_PLAN_v2.md`）。每包完成後更新本檔。
 > 舊翻修（Phase 0 到 5）的紀錄在 `claude/UIUX_PROGRESS_v1.md`；那份寫的「下一步 Phase 6」已作廢，Phase 6、7 併入本計畫 D4、D8。
 
-最後更新：2026-10-23（v3 的 F1、F2、F7 完成；下一包 F3 候選方案表，順序 F3 → F4 → F5 → F6）
+最後更新：2026-10-23（v3 的 F1、F2、F7、F3 完成；下一包 F4 注意事項一行化與 AI Prompt 收合，順序 F4 → F5 → F6）
 
 ## 現況
 
@@ -22,7 +22,8 @@
 | F1 小修 | 完成，等 Brandon 說「繼續」 | 見下方 F1 備註；golden 124/124 0 差異；全部測試過；設計偵測仍是 3 項 |
 | F2 參數區重排 | 完成，等 Brandon 說「繼續」 | 見下方 F2 備註；golden 124/124 0 差異 |
 | F7 撞色角色＋深藍判讀板 | 完成，等 Brandon 說「繼續」 | 見下方 F7 備註；golden 124/124 0 差異 |
-| F3、F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
+| F3 候選方案表 | 完成，等 Brandon 說「繼續」 | 見下方 F3 備註；**golden 0 差異**（不需要核可） |
+| F4、F5、F6 | 未開始 | 照 `docs/REDESIGN_PLAN_v3.md`（手機部分暫緩） |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
@@ -66,6 +67,19 @@
 - **沒動、記錄**：`.entry-row.row-invalid`（缺漏欄位的 3 px 紅左線）不在 v3 清單內，保留；`.regimen-table td .tag[style]`（「現行」標籤）本來就是撞色，沒動。
 - 新測試：`tests/test_f7_accent.js`（67 項，含 token 對比計算、曲線 SVG 的 what-if 顏色、F7 區塊沒有 `!important`）。
 - 用到的 skill：`impeccable` colorize、bolder（把系統已有的深藍與撞色線用到滿，沒發明新元素）、audit（對比）、craft-floor（瀏覽器表面、禁寬左邊框），`emil-design-eng`，`dataviz`（what-if 線與圖例）。
+
+### F3 候選方案表照 C3，≥1600 與曲線並排（2026-10-23）
+- **評估結果（規格要求先評估再回報）**：不改 render 的文字也做得到——表格的 DOM 與 textContent 一個字不動，用「tr 改格線（`display:grid`）＋`grid-column` 換欄位順序＋長評語縮成狀態字（全文放 title）」達成，所以 `regimenTable`／`amgRegimenTable` 的 golden **0 差異**，沒有需要 Brandon 核可的輸出變更。
+- **純顯示 helper `decorateRegimenTable`**（掛在兩張表的 MutationObserver，idempotent）：標記 `data-rg="cand"`（8 欄候選表）或 `"other"`（HD 的 3 欄表不套格線）；補 `role`（改格線排版後保留表格語意）；表頭「Cmax(peak，輸注結束後 30 分)」拆成短名＋說明、「Cmax,ss」只留「Cmax」（全文在 title）；劑量格拆出 `.rg-slash`、`.rg-note`（CSS 隱藏「輸注」二字）；判讀格 title＝完整評語、沒有狀態字的標 `data-ph`。
+- **欄位**：方案（q12h，「現行間隔」標籤另起一行）、劑量／輸注、AUC₂₄、Cmin、Cmax、判讀（vanco 資料順序是 Cmax、Cmin、AUC，畫面用 `grid-column` 換成 AUC、Cmin、Cmax；AMG 是 Cmax、Cmin、Cmax/MIC）。「間隔」欄一般列隱藏（方案欄已寫 q12h），自訂列留著放 q…h，緊貼在劑量輸入框右邊，三個框對齊上面各列。數字欄靠右、tabular-nums。
+- **判讀**：只顯示 8 px 小方塊＋狀態字（目標內／留意／超標），完整評語滑過看；自訂列還沒輸入時顯示「輸入即算」。AMG 候選格裡的「參考 T1」說明畫面上隱藏、title 看得到。
+- **並排**：≥1600 px 右區改兩欄（1.15 : 1）：曲線（含時間軸與勾選提示列）在左、候選方案在右、「未來監測建議」接在候選方案下面；判讀板、注意事項整列、趨勢、AI Prompt 仍整列。曲線寬度由既有的 ResizeObserver 重畫。1920×940 第一屏同時看得到判讀板、參數、注意事項、曲線、候選方案。
+- **量測**（`tools/review_frame.html` 加 `measure=cand`：每列每格的左右邊、有沒有內容溢出、表寬 vs 容器）：1920 與 1440 的 Vancomycin、AMG：表寬＝容器寬、沒有橫向捲動、各列欄位邊界完全一致、沒有格子內容溢出。
+- **抓到並修的坑**：`#regimenTable` 原本有 `min-width:640px`（為橫向捲動而設），把格線撐成 640 寬、判讀欄被擠出去；格線版改 `min-width:0`。
+- **1024 寬的已知限制**：右欄只剩約 470 px，8 欄放不下，候選方案表用 `min-width`（vanco 544、AMG 594）＋既有的 `.table-scroll` 橫向捲動，欄位不互相壓。手機（≤980）完全沒動（暫緩）。
+- **沒做**：AED 的候選劑量表（3 欄的小表，只有「選取／每日總劑量／預估穩態濃度」）沒有重排，沿用共用表格樣式；規格寫的手機候選方案卡片（暫緩）。
+- 新測試：`tests/test_f3_candidates.js`（36 項）；全部測試過。
+- 用到的 skill：`impeccable` layout、craft-floor，`emil-design-eng`（數字靠右、tabular-nums、輸入框與單位位置），`break-ui`（長評語縮成狀態字、窄欄位溢出——完整流程留給 F6）。
 
 ## 工作包狀態
 

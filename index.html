@@ -1005,6 +1005,83 @@
   input[type="checkbox"], input[type="radio"], input.regimen-pick{accent-color:var(--accent-ink);}
   *{scrollbar-color:var(--line-strong) transparent;}
   /* F7 end */
+
+  /* F3 begin：候選方案表照 C3（方案、劑量／輸注、AUC₂₄、Cmin、Cmax、判讀）；≥1600 px 曲線與候選方案並排。
+     全是顯示：表格的 DOM 與文字不動，tr 改成格線、用 grid-column 換欄位順序、長評語縮成狀態字（全文在 title）。 */
+  @media (min-width:981px){
+    .regimen-table[data-rg="cand"], #regimenTable[data-rg="cand"]{display:block;width:100%;min-width:0;}   /* #regimenTable 原本有 min-width:640px（橫向捲動用），格線版靠 fr 欄寬自己縮 */
+    .regimen-table[data-rg="cand"] thead, .regimen-table[data-rg="cand"] tbody, .regimen-table[data-rg="cand"] tfoot{display:block;}
+    #regimenTable[data-rg="cand"]{--rg-cols:28px 128px 200px 66px 76px 76px 76px minmax(0,1fr);}   /* 寬版：劑量欄固定寬，自訂列的 q…h 才會貼在 mg／min 旁邊；判讀欄吃剩下的 */
+    #amgRegimenTable[data-rg="cand"]{--rg-cols:28px 128px 230px 66px 76px 76px 80px minmax(0,1fr);}
+    .regimen-table[data-rg="cand"] tr{display:grid;grid-template-columns:var(--rg-cols);align-items:center;}
+    .regimen-table[data-rg="cand"] th, .regimen-table[data-rg="cand"] td{min-width:0;padding:7px 8px;grid-row:1;}
+    .regimen-table[data-rg="cand"] th.pick-col, .regimen-table[data-rg="cand"] td.pick-col{width:auto;padding-left:6px;padding-right:2px;}
+    /* 間隔欄：一般列隱藏（方案欄已經寫了 q12h），自訂列留著放 q…h 輸入框，緊貼在劑量輸入框右邊 */
+    .regimen-table[data-rg="cand"] th:nth-child(4), .regimen-table[data-rg="cand"] tbody td:nth-child(4){display:none;}
+    .regimen-table[data-rg="cand"] th:nth-child(3), .regimen-table[data-rg="cand"] td:nth-child(3){grid-column:3 / span 2;}
+    .regimen-table[data-rg="cand"] .custom-row td:nth-child(3){grid-column:3;}
+    .regimen-table[data-rg="cand"] .custom-row td:nth-child(4){grid-column:4;}
+    .regimen-table[data-rg="cand"] th:nth-child(3)::after{content:"／輸注";}
+    /* vanco：資料順序是 Cmax、Cmin、AUC₂₄，畫面上照 C3 排成 AUC₂₄、Cmin、Cmax */
+    #regimenTable[data-rg="cand"] th:nth-child(7), #regimenTable[data-rg="cand"] td:nth-child(7){grid-column:5;}
+    #regimenTable[data-rg="cand"] th:nth-child(6), #regimenTable[data-rg="cand"] td:nth-child(6){grid-column:6;}
+    #regimenTable[data-rg="cand"] th:nth-child(5), #regimenTable[data-rg="cand"] td:nth-child(5){grid-column:7;}
+    /* 數字欄靠右、表頭跟著 */
+    .regimen-table[data-rg="cand"] th:nth-child(n+5):not(.reason), .regimen-table[data-rg="cand"] td:nth-child(n+5):not(.reason){text-align:right;font-variant-numeric:tabular-nums;}
+    .regimen-table[data-rg="cand"] .lbl-note{display:none;}
+    .regimen-table[data-rg="cand"] td:nth-child(2){white-space:normal;}
+    .rg-slash{margin:0 .3em;color:var(--ink-soft);}
+    .rg-note{display:none;}
+    .regimen-table[data-rg="cand"] tbody td:nth-child(5) .hint{display:none;}
+    /* 判讀：只顯示小方塊＋狀態字，完整評語在 title（滑過看） */
+    .regimen-table[data-rg="cand"] th.reason{font-size:0;}
+    .regimen-table[data-rg="cand"] th.reason::after{content:"判讀";font-size:12px;}
+    .regimen-table[data-rg="cand"] td.reason{font-size:0;white-space:nowrap;}
+    .regimen-table[data-rg="cand"] td.reason .tag{font-size:0;margin:0;}
+    .regimen-table[data-rg="cand"] td.reason .tag.ok::after{content:"目標內";font-size:12px;}
+    .regimen-table[data-rg="cand"] td.reason .tag.warn::after{content:"留意";font-size:12px;}
+    .regimen-table[data-rg="cand"] td.reason .tag.danger::after{content:"超標";font-size:12px;}
+    .regimen-table[data-rg="cand"] td.reason[data-ph]:not([colspan])::after{content:"輸入即算";font-size:12px;color:var(--ink-soft);}
+    .regimen-table[data-rg="cand"] td.reason[colspan]{grid-column:1 / -1;font-size:13px;white-space:normal;}
+    /* 自訂列：mg、min、q…h 在同一條格線上，單位緊貼在框右側 */
+    .regimen-table[data-rg="cand"] .custom-input{padding:5px 4px;text-align:right;-moz-appearance:textfield;appearance:textfield;}
+    .regimen-table[data-rg="cand"] .custom-input::-webkit-outer-spin-button, .regimen-table[data-rg="cand"] .custom-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0;}
+    .regimen-table[data-rg="cand"] .custom-input.dose{width:58px;}
+    .regimen-table[data-rg="cand"] .custom-input.inf{width:46px;}
+    .regimen-table[data-rg="cand"] .custom-input.tau{width:40px;}
+    .regimen-table[data-rg="cand"] .custom-row td{padding-top:9px;padding-bottom:9px;}
+    .regimen-table[data-rg="cand"] input[type="radio"]{margin:0;vertical-align:middle;}
+  }
+  /* 右欄只剩約 470 px（1024 寬）：欄寬縮到最小，仍放不下時 .table-scroll 橫向捲動（不讓欄位互相壓） */
+  @media (min-width:981px) and (max-width:1279px){
+    #regimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(166px,1fr) 58px 52px 46px 46px 64px;min-width:544px;}
+    #amgRegimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(180px,1fr) 58px 64px 46px 68px 64px;min-width:594px;}
+  }
+  @media (min-width:1600px){
+    /* F3 side-by-side */
+    #resultsPanel, #amgResultsPanel{grid-template-columns:minmax(0, 1.15fr) minmax(0, 1fr);}
+    #resultsPanel > .results-head, #amgResultsPanel > .results-head{grid-row:1;}
+    #resultsPanel > .demo-banner, #amgResultsPanel > .demo-banner{grid-row:2;}
+    #resultsPanel > .pop-model-toggle, #amgResultsPanel > .pop-model-toggle{grid-row:3;}
+    #resultsPanel > .param-grid, #amgResultsPanel > .param-grid{grid-row:4;}
+    .section-block:has(#flagList), .section-block:has(#amgFlagList){grid-row:5;}
+    #resultsPanel > .curve-wrap, #amgResultsPanel > .curve-wrap{grid-column:1;grid-row:6 / span 2;align-self:start;}
+    .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable){grid-column:2;grid-row:6;border-left:1px solid var(--line);}
+    .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){grid-column:2;grid-row:7;border-left:1px solid var(--line);}
+    #resultsPanel > [id$="TrendBlock"], #amgResultsPanel > [id$="TrendBlock"]{grid-row:8;}
+    .section-block:has(textarea[id$="iPromptOut"]){grid-row:9;}
+    #regimenTable[data-rg="cand"]{--rg-cols:24px 88px minmax(0,1fr) 62px 52px 46px 46px 66px;}
+    #amgRegimenTable[data-rg="cand"]{--rg-cols:24px 84px minmax(0,1fr) 60px 64px 46px 66px 66px;}
+    .regimen-table[data-rg="cand"] th:nth-child(n+5), .regimen-table[data-rg="cand"] td:nth-child(n+5){padding-left:4px;padding-right:4px;}
+    .regimen-table[data-rg="cand"] .custom-input.dose{width:46px;}
+    .regimen-table[data-rg="cand"] .custom-input.inf{width:36px;}
+    .regimen-table[data-rg="cand"] .custom-row td:nth-child(4){padding-left:2px;padding-right:2px;}
+    .regimen-table[data-rg="cand"] td:nth-child(2) .tag{display:block;width:fit-content;margin:2px 0 0;}   /* 「現行間隔」「建議」標籤另起一行，不把方案欄撐出去 */
+    .section-block:has(#regimenTable), .section-block:has(#amgRegimenTable), .section-block:has(#monitorGrid), .section-block:has(#amgMonitorGrid){padding-left:16px;padding-right:16px;}
+    .regimen-table[data-rg="cand"] .custom-row td:nth-child(3){padding-left:4px;padding-right:0;}
+    /* F3 side-by-side end */
+  }
+  /* F3 end */
 </style>
 <script>try{var _a=localStorage.getItem('tdm_ui_accent');if(_a==='vermilion'||_a==='mustard'||_a==='none')document.documentElement.setAttribute('data-accent',_a);}catch(e){}</script>
 </head>
@@ -9691,6 +9768,50 @@ ${flagText||'（無）'}
       const g = document.getElementById(id); if(!g) return;
       new MutationObserver(()=>planParamGrid(id)).observe(g, {childList:true});
       planParamGrid(id);
+    });
+    // v3 F3：候選方案表的顯示整理（純顯示；表格的 textContent 一個字都不變，golden 把關）。每次 render 重寫表格後：
+    //  · 標記 data-rg="cand"（8 欄候選表）或 "other"（HD 的 3 欄表不套格線），並補上 role（改用格線排版後保留表格語意）
+    //  · 表頭「Cmax(peak，輸注結束後 30 分)」拆成短名＋說明（說明隱藏、全文在 title）
+    //  · 劑量格「…／120 min輸注」拆出 .rg-slash 與 .rg-note（CSS 隱藏「輸注」）
+    //  · 判讀格：完整評語放 title；沒有狀態字（自訂列還沒輸入、沒有候選方案）的標 data-ph
+    function decorateRegimenTable(id){
+      const t = document.getElementById(id); if(!t) return;
+      const head = t.querySelector('thead tr');
+      const mode = head && head.querySelector('th.pick-col') ? 'cand' : 'other';
+      if(t.dataset.rg !== mode) t.dataset.rg = mode;
+      const role = (el, r)=>{ if(el.getAttribute('role') !== r) el.setAttribute('role', r); };
+      role(t, 'table');
+      t.querySelectorAll('thead, tbody, tfoot').forEach(g=>role(g, 'rowgroup'));
+      t.querySelectorAll('tr').forEach(r=>role(r, 'row'));
+      t.querySelectorAll('th').forEach(c=>role(c, 'columnheader'));
+      t.querySelectorAll('td').forEach(c=>role(c, 'cell'));
+      if(mode !== 'cand') return;
+      t.querySelectorAll('thead th').forEach(th=>{
+        if(th.dataset.rgDone) return;
+        th.dataset.rgDone = '1';
+        const cc = th.textContent.match(/^(Cm(?:ax|in))(,ss)$/);   // 「Cmax,ss」只留「Cmax」（,ss 隱藏）
+        if(cc){ th.title = th.textContent.trim(); th.innerHTML = `<span class="lbl-main">${cc[1]}</span><span class="lbl-note">${cc[2]}</span>`; return; }
+        const m = th.textContent.match(/^(.*?)([（(])(.*)([）)])$/);
+        if(m){ th.title = th.textContent.trim(); th.innerHTML = `<span class="lbl-main">${escH(m[1])}</span><span class="lbl-note">${m[2]}${escH(m[3])}${m[4]}</span>`; }
+      });
+      t.querySelectorAll('tbody td:nth-child(3)').forEach(td=>{
+        if(td.dataset.rgDone || td.children.length) return;
+        const m = td.textContent.match(/^(.*)／(.*?)輸注$/);
+        if(!m) return;
+        td.dataset.rgDone = '1';
+        td.innerHTML = `${escH(m[1])}<span class="rg-slash">／</span>${escH(m[2])}<span class="rg-note">輸注</span>`;
+      });
+      t.querySelectorAll('tbody td .hint').forEach(h=>{ if(h.parentElement.matches('td:nth-child(5)') && !h.parentElement.title) h.parentElement.title = h.textContent.trim(); });   // AMG 的「參考 T1」說明：畫面上隱藏、title 看得到
+      t.querySelectorAll('td.reason').forEach(td=>{
+        const txt = Array.from(td.childNodes).filter(n=>n.nodeType===3).map(n=>n.textContent).join('').trim();
+        if(txt && td.title !== txt) td.title = txt;
+        td.toggleAttribute('data-ph', !td.querySelector('.tag'));
+      });
+    }
+    ['regimenTable','amgRegimenTable'].forEach(id=>{
+      const t = document.getElementById(id); if(!t) return;
+      new MutationObserver(()=>decorateRegimenTable(id)).observe(t, {childList:true, subtree:true});
+      decorateRegimenTable(id);
     });
     function conclusionText(cfg){
       const grid = document.getElementById(cfg.gridId);
