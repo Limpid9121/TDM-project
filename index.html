@@ -10436,6 +10436,31 @@ ${flagText||'（無）'}
       });
     }
 
+    // ---------------- 點一下輸入格就全選，直接鍵入取代（照 TPN 調配試算.html） ----------------
+    // number 的 select() 在部分瀏覽器會被緊接著的 click 定位游標蓋掉，所以 focusin 先全選一次、第一個 click 再選一次；
+    // 期間按過鍵就不再全選（避免打字到一半又被全選）。只處理 number、text；唯讀、停用、日期時間、select、textarea 不動。
+    // 事件委派在 document 上，動態新增的列（給藥、濃度、SCr）也生效。
+    // 滾輪防呆：Chrome 會讓「聚焦中的 number 欄位」被滑鼠滾輪改值，捲頁時游標停在欄位上會無聲改掉已填好的值，所以攔截並交出焦點。
+    const selectable = t=>t && t.tagName === 'INPUT' && (t.type === 'number' || t.type === 'text') && !t.readOnly && !t.disabled;
+    const selectAll = t=>{ try{ t.select(); }catch(_){} };
+    document.addEventListener('focusin', e=>{
+      if(!selectable(e.target)) return;
+      e.target.dataset.jf = '1';
+      selectAll(e.target);
+    });
+    document.addEventListener('click', e=>{
+      const t = e.target;
+      if(!selectable(t) || !t.dataset.jf) return;
+      delete t.dataset.jf;
+      selectAll(t);
+    });
+    document.addEventListener('keydown', e=>{ if(selectable(e.target) && e.target.dataset.jf) delete e.target.dataset.jf; });
+    document.addEventListener('focusout', e=>{ if(e.target && e.target.dataset) delete e.target.dataset.jf; });
+    document.addEventListener('wheel', e=>{
+      const t = e.target;
+      if(t && t.tagName === 'INPUT' && t.type === 'number' && t === document.activeElement) t.blur();
+    }, {passive:true});
+
     // ---------------- drug switcher wiring ----------------
     document.querySelectorAll('.drug-switch-btn[data-drug]').forEach(btn=>{
       btn.addEventListener('click', ()=>{ if(!btn.disabled) guardSwitchDrugModule(btn.dataset.drug); });
