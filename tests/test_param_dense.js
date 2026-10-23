@@ -43,6 +43,13 @@ async function main() {
   assert(/\.param-grid\.pg-dense \.param-cell:not\(\.pc-key\) \.ln-model\{display:none/.test(html), 'CSS：緊湊版隱藏重複的「模型 B」');
   assert(/\.param-grid\.pg-dense \.param-cell \.value\{font-size:18px/.test(html), 'CSS：緊湊版數字 18 px');
 
+  // 文獻收成「ⓘ 文獻」，點了才展開（放在模型切換鈕同一列，不另佔一列）
+  const refs = doc.querySelector('#vancoPopModelToggle .pop-model-refs');
+  assert(refs && refs.tagName === 'DETAILS' && !refs.open, '文獻是 <details>，預設收起');
+  assert(refs && refs.querySelector('summary').getAttribute('aria-label') === '文獻' && /\.pop-model-refs > summary::before\{content:"ⓘ 文獻"/.test(html), '摘要顯示「ⓘ 文獻」（CSS 畫，螢幕閱讀器讀 aria-label）');
+  assert(refs && refs.closest('.pop-model-toggle-row'), '「ⓘ 文獻」在模型切換鈕那一列');
+  assert(refs && /Matzke/.test(refs.textContent) && /Oda K/.test(refs.textContent), '兩篇文獻內容都還在');
+
   // 回到模型 A
   doc.getElementById('vancoPopModelBtnA') && doc.getElementById('vancoPopModelBtnA').click(); await tick(300);
   assert(!g.classList.contains('pg-dense'), '切回模型 A：不是緊湊版');

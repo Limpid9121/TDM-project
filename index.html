@@ -296,7 +296,12 @@
   .pop-model-toggle{margin:2px 0 14px;}
   .pop-model-toggle-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .pop-model-toggle-label{font-size:12px;color:var(--ink-soft);}
-  .pop-model-refs{font-size:12px;color:var(--ink-faint);margin-top:6px;line-height:1.5;}
+  /* 文獻收成「ⓘ 文獻」：點了在下方浮出小卡，不推動版面（Brandon 2026-10-23） */
+  .pop-model-refs{position:relative;margin-left:4px;font-size:12px;}
+  .pop-model-refs > summary{cursor:pointer;color:var(--trace);list-style:none;white-space:nowrap;}
+  .pop-model-refs > summary::-webkit-details-marker{display:none;}
+  .pop-model-refs > summary::before{content:"ⓘ 文獻";}   /* 用 CSS 畫，golden 比對的文字內容不變 */
+  .pop-model-refs-body{position:absolute;right:0;top:calc(100% + 6px);z-index:30;width:min(640px,80vw);padding:10px 12px;background:var(--card);border:1px solid var(--line-strong);border-radius:6px;box-shadow:0 10px 24px rgba(20,23,28,.16);color:var(--ink-soft);line-height:1.5;}
   .btn-row{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
   .prune-tool{
     display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-soft);
@@ -1747,10 +1752,10 @@
           <span class="pop-model-toggle-label">族群 PK 參數來源（僅用於尚無濃度資料可校正時的族群估算，比較用途）：</span>
           <button type="button" class="btn small primary" id="vancoPopModelBtnA">模型 A（現行・CG-linear）</button>
           <button type="button" class="btn small" id="vancoPopModelBtnB">模型 B（Oda 2024 兩室）</button>
-        </div>
-        <div class="pop-model-refs">
+          <details class="pop-model-refs"><summary aria-label="文獻"></summary><div class="pop-model-refs-body">
           模型 A：Matzke GR, McGory RW, Halstenson CE, Keane WF. Pharmacokinetics of vancomycin in patients with various degrees of renal function. <i>Antimicrob Agents Chemother.</i> 1984;25(4):433-437.<br>
           模型 B：Oda K, Matsumoto K, Shoji K, et al. Validation and development of population pharmacokinetic model of vancomycin using a real-world database from a nationwide free web application. <i>J Infect Chemother.</i> 2024;30(6):1244-1251.
+          </div></details>
         </div>
       </div>
       <div class="param-grid" id="paramGrid"></div>
@@ -11149,6 +11154,10 @@ ${flagText||'（無）'}
     DRAW_SETS.forEach(f=>[f.dose, f.level].forEach(id=>{ const el = document.getElementById(id); if(el) new MutationObserver(scheduleDraw).observe(el, {childList:true}); }));
     ['input','change'].forEach(ev=>document.addEventListener(ev, e=>{ if(e.target.closest && e.target.closest('#doseTable,#levelTable,#amgDoseTable,#amgLevelTable')) scheduleDraw(); }));
     DRAW_SETS.forEach(refreshDrawMarks);
+
+    // 「ⓘ 文獻」小卡：點外面或按 Esc 收起
+    document.addEventListener('click', e=>{ document.querySelectorAll('details.pop-model-refs[open]').forEach(d=>{ if(!d.contains(e.target)) d.open = false; }); });
+    document.addEventListener('keydown', e=>{ if(e.key === 'Escape') document.querySelectorAll('details.pop-model-refs[open]').forEach(d=>{ d.open = false; }); });
 
     // ---------------- 右邊「尚未更新」：處方改了、給藥紀錄還沒重新展開（Brandon 2026-10-23） ----------------
     // 計算只採用給藥紀錄表；左邊的 loading／維持處方／產生範圍改了之後，要按「展開」才會進到給藥紀錄。在那之前右邊只有一半是新的
