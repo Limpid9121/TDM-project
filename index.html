@@ -1226,6 +1226,18 @@
   .field > label[data-tip], .checkline > label[data-tip]{text-decoration:underline dotted var(--ink-soft);text-decoration-thickness:1px;text-underline-offset:3px;cursor:help;}
   .tip-pop{position:fixed;z-index:90;max-width:300px;padding:6px 10px;border-radius:6px;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;box-shadow:0 6px 18px rgba(20,23,28,.2);pointer-events:none;}
   .tip-pop[hidden]{display:none;}
+  /* 帶入基本資料：常駐的那一列收起，改成需要時才出現的小卡（在卡片外面，不會被收合區裁掉上框） */
+  .carry-row.carry-legacy{display:none;}
+  .carry-card{display:flex;align-items:center;gap:12px;margin:10px 0 6px;padding:10px 12px 10px 14px;border:1px solid var(--line-strong);border-left:3px solid var(--accent);border-radius:6px;background:var(--card);font-size:13px;color:var(--ink);box-shadow:0 1px 2px rgba(20,23,28,.04);}
+  .carry-card[hidden]{display:none;}
+  .carry-card .cc-text{flex:1 1 auto;min-width:0;line-height:1.5;}
+  .carry-card .cc-text b{font-weight:700;}
+  .carry-card .cc-sum{color:var(--ink-soft);font-variant-numeric:tabular-nums;}
+  .carry-card .cc-src{width:auto;max-width:160px;padding:3px 6px;font-size:13px;font-weight:700;}
+  .carry-card .cc-actions{display:flex;gap:6px;flex:0 0 auto;}
+  .carry-card .cc-go{background:var(--navy);border-color:var(--navy);color:#fff;font-weight:700;}
+  .carry-card .cc-go:hover{background:var(--navy-2);border-color:var(--navy-2);color:#fff;}
+  .carry-card .cc-done{color:var(--ink-soft);}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -10361,11 +10373,7 @@ ${flagText||'（無）'}
         if(act === 'saveas') openSaveModal(key);
         else if(act === 'demo') $e('loadDemoBtn').click();
         else if(act === 'clear') $e('clearAllBtn').click();
-        else if(act === 'carry'){
-          const cs = $e(c.carry), card = cs && cs.closest('.card');
-          if(card && card.classList.contains('collapsed')){ const h = card.querySelector('h2.card-head'); if(h) h.click(); }
-          if(cs){ cs.scrollIntoView({block:'center'}); cs.focus(); }
-        }
+        else if(act === 'carry') document.dispatchEvent(new CustomEvent('tdm:carry-open', {detail:key}));   // 叫出 01 卡片上方的帶入小卡
         else if(act === 'export') $e(c.exp).click();
         else if(act === 'import') $e(c.imp).click();
         else if(act === 'delete') $e(c.dele).click();
@@ -10612,6 +10620,90 @@ ${flagText||'（無）'}
         msg.textContent = `已帶入（從 ${plan.S.name}）：${labels.join('、')}${tail}`;
       });
     });
+
+    // 帶入基本資料：需要時才出現（Brandon 2026-10-23）。01 卡片裡常駐的「從…帶入」列收起來（元素、id、上面的邏輯都保留），
+    // 改成 01 卡片上方一張小卡：這裡的年齡／身高／體重／SCr 都沒填、而另一個藥物已經填了（示範病例不算）才出現；
+    // 「帶入」＝替原本的來源下拉選好、按原本的按鈕（沿用 carryFrom 的衝突確認）；「不用」＝收起，直到清空此頁。
+    // 「病人 ▾ → 從其他模組帶入基本資料…」會發出 tdm:carry-open，這時就算這裡已有資料也叫出小卡。
+    const CARRY_STACK = {vancomycin:'inputPanel', aminoglycoside:'amgInputPanel', azole:'azlInputPanel', aed:'aedInputPanel'};
+    const CARRY_KEY_OF = {vanco:'vancomycin', amg:'aminoglycoside', azl:'azole', aed:'aed'};
+    const ccState = {};   // 每個模組：{dismissed, forced, doneTimer}
+    const hasBasics = key=>{ const m = CARRY[key]; return ['age','height','tbw'].some(k=>m.f[k] && $v(m.f[k])!=='') || readScrOf(m).length > 0; };
+    const isDemo = key=>{ const b = document.getElementById(CARRY[key].pre + 'DemoBannerTop'); return !!b && !b.hidden; };
+    function basicsSummary(key){
+      const m = CARRY[key], parts = [];
+      const age = $v(m.f.age), sex = $v(m.f.sex), h = $v(m.f.height), w = $v(m.f.tbw);
+      if(age) parts.push(age + ' 歲');
+      if(sex) parts.push(sex === 'M' ? '男' : sex === 'F' ? '女' : sex);
+      if(h) parts.push(h + ' cm');
+      if(w) parts.push(w + ' kg');
+      const scr = readScrOf(m).sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:0).pop();
+      if(scr) parts.push('SCr ' + scr.val + '（' + scr.date.slice(5).replace('-', '/') + '）');
+      return parts.join('・');
+    }
+    function sourcesFor(tgt){ return Object.keys(CARRY).filter(k=>k !== tgt && hasBasics(k) && !isDemo(k)); }
+    function renderCarryCard(tgt){
+      const st = document.getElementById(CARRY_STACK[tgt]); if(!st) return;
+      let c = st.querySelector(':scope > .carry-card');
+      if(!c){
+        c = document.createElement('div'); c.className = 'carry-card'; c.hidden = true; c.setAttribute('role', 'region'); c.setAttribute('aria-label', '帶入其他藥物的基本資料');
+        const first = st.querySelector(':scope > .card'); if(first) first.before(c); else st.appendChild(c);
+        ccState[tgt] = ccState[tgt] || {};
+      }
+      const S = ccState[tgt] || (ccState[tgt] = {});
+      if(S.doneTimer) return;   // 正在顯示「已帶入」結果
+      const srcs = sourcesFor(tgt);
+      const want = S.forced || (!S.dismissed && !hasBasics(tgt) && srcs.length > 0);
+      if(!want){ c.hidden = true; return; }
+      c.hidden = false;
+      if(!srcs.length){
+        c.innerHTML = '<div class="cc-text">其他藥物目前沒有可帶入的基本資料。</div><div class="cc-actions"><button type="button" class="btn small cc-no">關閉</button></div>';
+      } else {
+        const sel = S.src && srcs.includes(S.src) ? S.src : srcs[0];
+        const pick = srcs.length > 1
+          ? '<select class="cc-src" aria-label="來源藥物">' + srcs.map(k=>`<option value="${k}"${k===sel?' selected':''}>${CARRY[k].name}</option>`).join('') + '</select>'
+          : `<b>${CARRY[sel].name}</b>`;
+        c.innerHTML = `<div class="cc-text">${pick} 已有基本資料：<span class="cc-sum">${escH(basicsSummary(sel))}</span></div><div class="cc-actions"><button type="button" class="btn small cc-go">帶入</button><button type="button" class="btn small cc-no">不用</button></div>`;
+      }
+    }
+    function refreshCarryCards(){ Object.keys(CARRY_STACK).forEach(renderCarryCard); }
+    document.addEventListener('click', e=>{
+      const c = e.target.closest && e.target.closest('.carry-card'); if(!c) return;
+      const tgt = Object.keys(CARRY_STACK).find(k=>document.getElementById(CARRY_STACK[k]).contains(c)); if(!tgt) return;
+      const S = ccState[tgt];
+      if(e.target.closest('.cc-no')){ S.dismissed = true; S.forced = false; c.hidden = true; return; }
+      if(e.target.closest('.cc-go')){
+        const sel = c.querySelector('.cc-src'), src = sel ? sel.value : sourcesFor(tgt)[0];
+        const T = CARRY[tgt];
+        document.getElementById(T.pre + 'CarrySrc').value = src;
+        document.getElementById(T.pre + 'CarryBtn').click();
+        const msg = document.getElementById(T.pre + 'CarryMsg').textContent;
+        c.innerHTML = `<div class="cc-text cc-done">${escH(msg || '已帶入')}</div>`;
+        S.forced = false;
+        S.doneTimer = setTimeout(()=>{ S.doneTimer = 0; renderCarryCard(tgt); }, 4000);
+      }
+    });
+    document.addEventListener('change', e=>{
+      if(!e.target.classList || !e.target.classList.contains('cc-src')) return;
+      const c = e.target.closest('.carry-card'), tgt = Object.keys(CARRY_STACK).find(k=>document.getElementById(CARRY_STACK[k]).contains(c));
+      ccState[tgt].src = e.target.value; renderCarryCard(tgt);
+    });
+    document.addEventListener('tdm:carry-open', e=>{
+      const tgt = CARRY_KEY_OF[e.detail]; if(!tgt) return;
+      const S = ccState[tgt] || (ccState[tgt] = {}); S.forced = true; S.dismissed = false;
+      renderCarryCard(tgt);
+      const c = document.getElementById(CARRY_STACK[tgt]).querySelector(':scope > .carry-card');
+      if(c){ if(c.scrollIntoView) c.scrollIntoView({block:'nearest'}); const b = c.querySelector('button, select'); if(b) b.focus(); }
+    });
+    document.getElementById('clearAllBtn').addEventListener('click', ()=>{ Object.values(ccState).forEach(S=>{ S.dismissed = false; S.forced = false; }); setTimeout(refreshCarryCards, 0); });
+    let ccRaf = 0;
+    const ccSchedule = ()=>{ if(ccRaf) return; ccRaf = (window.requestAnimationFrame || setTimeout)(()=>{ ccRaf = 0; refreshCarryCards(); }); };
+    ['input','change'].forEach(ev=>document.addEventListener(ev, e=>{ if(!(e.target.classList && e.target.classList.contains('cc-src'))) ccSchedule(); }));
+    document.querySelectorAll('.drug-switch-btn').forEach(b=>b.addEventListener('click', ()=>setTimeout(refreshCarryCards, 0)));
+    ['scrTable','amgScrTable'].forEach(id=>{ const t = document.getElementById(id); if(t) new MutationObserver(ccSchedule).observe(t, {childList:true}); });
+    Object.keys(CARRY).forEach(k=>{ const b = document.getElementById(CARRY[k].pre + 'DemoBannerTop'); if(b) new MutationObserver(ccSchedule).observe(b, {attributes:true, attributeFilter:['hidden']}); });
+    document.querySelectorAll('.carry-row').forEach(r=>r.classList.add('carry-legacy'));
+    refreshCarryCards();
 
     // ---------------- D5：共用時間軸（純顯示） ----------------
     // 讀左邊工作底稿的給藥／濃度／SCr 列（只讀、不改），畫在曲線正上方；時間範圍與 x 座標用曲線記下的 svg._tl，

@@ -158,6 +158,7 @@ f.onload = ()=>{
       pre.textContent = '對比不足 '+bad.length+' 項（<4.5:1，大字 <3:1）\n'+bad.slice(0,30).join('\n');
       document.body.appendChild(pre);
     }
+    if(q.get('clicks')) for(const sel of q.get('clicks').split('~~')) await step(()=>{ const e = d.querySelector(sel); if(e && !(e.closest('.hide'))) e.click(); }, 500);   // 依序點這些選擇器（例：切換分頁後按不儲存）
     if(q.get('clicksel')) await step(()=>{ const e = d.querySelector(q.get('clicksel')); if(e){ e.focus(); e.click(); } const pk = d.querySelector('.dt-pick'); const pre = document.createElement('pre'); pre.style.cssText = 'position:fixed;right:0;bottom:0;z-index:99999;background:#000;color:#7f7;font:12px monospace;margin:0;padding:4px'; pre.textContent = 'clicksel '+(!!e)+' pick hidden='+(pk&&pk.hidden)+' top='+(pk&&pk.style.top); document.body.appendChild(pre); }, 400);   // 例：clicksel=%23doseTable .entry-row:last-child .dt24-t
     document.title = 'ready';
   })();
