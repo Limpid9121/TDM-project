@@ -753,6 +753,7 @@
   .param-cell .sub{order:4;}
   .param-grid.pg .param-cell .sub{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;line-clamp:3;overflow:hidden;}   /* 長說明最多 3 行，全文在 title */
   .lbl-paren{display:none;}
+  .param-cell.pc-dup{display:none;}
   .param-cell .ke-sub{order:5;display:flex;align-items:baseline;gap:6px;margin-top:4px;font-size:12px;color:var(--ink-soft);}
   .ke-sub .label{display:inline;}
   .param-cell .ke-sub .lbl-main{display:inline;margin:0;font-size:12px;font-weight:400;overflow:visible;}
@@ -777,21 +778,22 @@
 
 
   @media (min-width:981px){
-    .param-grid.pg{grid-template-columns:repeat(var(--pg-cols,4),minmax(0,1fr));}
+    .param-grid.pg{grid-template-columns:repeat(12,minmax(0,1fr));}
     .param-grid.pg > .param-cell{margin:0;padding:10px 14px;border:0;border-top:1px solid var(--line);border-left:1px solid var(--line);grid-row:var(--r);grid-column:var(--c) / span var(--cs);}
     .param-grid.pg > .param-cell[data-r="1"]{border-top:0;}
     .param-grid.pg > .param-cell[data-c="1"]{border-left:0;}
     .param-grid.pg:not(.pg-key) > .param-cell[data-c="1"]{padding-left:0;}
-    .param-grid.pg-key{grid-template-columns:minmax(170px,1.3fr) repeat(4,minmax(0,1fr));}
-    .param-grid.pg-key > .param-cell:not(.pc-key){grid-column:calc(var(--c) + 1) / span var(--cs);}
-    .param-grid.pg-key > .pc-key{grid-column:1;grid-row:1 / span var(--pg-rows,2);margin:0;padding:10px 18px 10px 0;border:0;border-right:1px solid var(--line);justify-content:center;}
+    .param-grid.pg-key{grid-template-columns:repeat(var(--pg-ko,1),minmax(190px,1.2fr)) repeat(12,minmax(0,1fr));}
+    .param-grid.pg-key > .param-cell:not(.pc-key){grid-column:calc(var(--c) + var(--pg-ko,1)) / span var(--cs);}
+    .param-grid.pg-key > .pc-key{grid-column:var(--kc,1);grid-row:1 / span var(--pg-rows,2);margin:0;padding:10px 18px 10px 0;border:0;border-right:1px solid var(--line);justify-content:center;}
     .param-cell .value{font-size:22px;}
   }
   @media (min-width:1600px){ .param-cell .value{font-size:24px;} .param-grid.pg-key > .pc-key .value{font-size:40px;} }
   /* 右欄只剩約 560 px（1024 寬螢幕）：key 格獨佔最上面一整列，其餘 4 欄 × 2 列；單位換到數字下面，格子窄時數字才不會溢出 */
   @media (min-width:981px) and (max-width:1279px){
-    .param-grid.pg-key{grid-template-columns:repeat(4,minmax(0,1fr));}
+    .param-grid.pg-key{grid-template-columns:repeat(12,minmax(0,1fr));}
     .param-grid.pg-key > .pc-key{grid-column:1 / -1;grid-row:1;padding:6px 0 10px;border-right:0;}
+    .param-grid.pg-key2 > .pc-key{grid-column:calc((var(--kc) - 1) * 6 + 1) / span 6;}
     .param-grid.pg-key > .param-cell:not(.pc-key){grid-row:calc(var(--r) + 1);grid-column:var(--c) / span var(--cs);}
     .param-grid.pg-key > .param-cell[data-r="1"]{border-top:1px solid var(--line);}
     .param-cell .value{font-size:20px;}
@@ -9704,7 +9706,7 @@ ${flagText||'（無）'}
     // 標籤在預測模式會多「預測 」前綴（例：預測 Cmax,ss），所以用 includes／^ 的規則比對，不只 startsWith
     const PARAM_CLASS_KEYS = [[/AUC₂₄,ss/,'pc-auc'],[/AUC\/MIC/,'pc-aucmic'],[/近 24h 實際 AUC/,'pc-auc24a'],[/Cmax,ss/,'pc-cmax'],
       [/Cmin,ss/,'pc-cmin'],[/CrCl/,'pc-crcl'],[/^t½/,'pc-thalf'],[/^ke/,'pc-ke'],[/^Vd/,'pc-vd'],[/^CL/,'pc-cl'],[/^參考/,'pc-ref']];
-    function decorateParamGrid(gridId, keyClass){
+    function decorateParamGrid(gridId, keyClass, keyClass2){
       const grid = document.getElementById(gridId);
       if(!grid) return;
       grid.querySelectorAll('.param-cell').forEach(cell=>{
@@ -9714,7 +9716,7 @@ ${flagText||'（無）'}
         const hit = PARAM_CLASS_KEYS.find(([re])=>re.test(text));
         if(!hit) return;
         cell.classList.add(hit[1]);
-        if(hit[1]===keyClass) cell.classList.add('pc-key');
+        if(hit[1]===keyClass || (keyClass2 && hit[1]===keyClass2)) cell.classList.add('pc-key');
       });
     }
     // v3 F2：參數格版面（純顯示）。每次 render 重寫格子後：
@@ -9746,7 +9748,7 @@ ${flagText||'（無）'}
       const grid = document.getElementById(gridId);
       if(!grid) return;
       const kids = Array.from(grid.children);
-      const reset = ()=>{ grid.classList.remove('pg','pg-key'); grid.style.removeProperty('--pg-rows'); grid.style.removeProperty('--pg-cols'); };
+      const reset = ()=>{ grid.classList.remove('pg','pg-key','pg-key2'); grid.style.removeProperty('--pg-rows'); grid.style.removeProperty('--pg-ko'); };
       if(!kids.length || !kids.every(k=>k.classList.contains('param-cell'))){ reset(); return; }   // 缺資料的提示等：不排版
       kids.forEach(splitParamLabel);
       grid.querySelectorAll('.sub').forEach(sub=>{ if(!sub.title) sub.title = sub.textContent.trim(); });
@@ -9761,41 +9763,53 @@ ${flagText||'（無）'}
         }
       });
       const cells = Array.from(grid.children);
-      const keyCell = cells.find(c=>c.classList.contains('pc-key')) || null;
-      const body = cells.filter(c=>c!==keyCell);
-      const place = (list, startRow, cols)=>{   // 一組格子排成每列 cols 欄，最後一格拉寬補滿；回傳下一個可用的列
+      cells.forEach(c=>{ delete c.dataset.r; delete c.dataset.c; delete c.dataset.cs; ['--r','--c','--cs','--kc'].forEach(k=>c.style.removeProperty(k)); });
+      // 「參考 Cmax(T1)」是開始輸注後 1 小時的濃度；輸注 30 分鐘時它就等於 Cmax,ss（輸注結束後 30 分），數字一樣就不重複顯示（DOM 與文字還在）
+      const cmaxCell = cells.find(c=>paramRole(c)==='cmax'), refCell = cells.find(c=>paramRole(c)==='ref');
+      const numOf = c=>{ const v = c && c.querySelector(':scope > .value'); return v ? parseFloat(v.textContent) : NaN; };
+      const dup = !!(cmaxCell && refCell && isFinite(numOf(cmaxCell)) && numOf(cmaxCell) === numOf(refCell));
+      if(refCell) refCell.classList.toggle('pc-dup', dup);
+      if(cmaxCell){
+        const base = (cmaxCell.title || '').replace(/；與 T1.*$/, '');
+        cmaxCell.title = dup ? base + '；與 T1（開始輸注後 1 小時）的濃度相同，所以不另列「參考 Cmax」' : base;
+      }
+      const keyCells = cells.filter(c=>c.classList.contains('pc-key'));
+      const body = cells.filter(c=>!c.classList.contains('pc-key') && !c.classList.contains('pc-dup'));
+      // 內容區是 12 欄：一列有 n 格（最多 4）就各佔 12/n 欄，所以短的一列也補得滿，沒有空格、沒有孤兒格
+      const place = (list, startRow, per)=>{
         let r = startRow;
-        for(let i=0;i<list.length;i+=cols){
-          const row = list.slice(i, i+cols);
+        for(let i=0;i<list.length;i+=per){
+          const row = list.slice(i, i+per), span = 12 / row.length;
           row.forEach((c,k)=>{
-            const span = k===row.length-1 ? cols-k : 1;
-            c.dataset.r = String(r); c.dataset.c = String(k+1); c.dataset.cs = String(span);
-            c.style.setProperty('--r', r); c.style.setProperty('--c', k+1); c.style.setProperty('--cs', span);
+            const col = 1 + k*span;
+            c.dataset.r = String(r); c.dataset.c = String(col); c.dataset.cs = String(span);
+            c.style.setProperty('--r', r); c.style.setProperty('--c', col); c.style.setProperty('--cs', span);
           });
           r++;
         }
         return r;
       };
-      cells.forEach(c=>{ delete c.dataset.r; delete c.dataset.c; delete c.dataset.cs; c.style.removeProperty('--r'); c.style.removeProperty('--c'); c.style.removeProperty('--cs'); });
       grid.classList.add('pg');
-      if(keyCell){
+      if(keyCells.length){
         const used = new Set();
         const pick = roles=>roles.map(role=>body.find(c=>!used.has(c) && paramRole(c)===role)).filter(c=>{ if(c) used.add(c); return !!c; });
-        const A = pick(['cmin','cmax','ref','cmaxmic','aucmic','auc24a']);
-        const B = pick(['thalf','cl','vd','crcl']);
+        const A = pick(['cmin','cmax','ref','cmaxmic','aucmic','auc24a']);   // 暴露量
+        const B = pick(['thalf','cl','vd','crcl']);                         // 藥動參數
         const X = body.filter(c=>!used.has(c));
-        let r = place(A, 1, 4);
-        r = place(B, r, 4);
+        // 兩個大字格（AMG：Cmax 與 Cmin 同等重要）時，暴露量已經是大字，下面先放藥動參數、再放輔助的暴露量
+        let r = keyCells.length > 1 ? place(B, 1, 4) : place(A, 1, 4);
+        r = keyCells.length > 1 ? place(A, r, 4) : place(B, r, 4);
         r = place(X, r, 4);
+        keyCells.forEach((c,i)=>c.style.setProperty('--kc', i+1));
         grid.classList.add('pg-key');
-        grid.style.setProperty('--pg-cols', 4);
+        grid.classList.toggle('pg-key2', keyCells.length > 1);
+        grid.style.setProperty('--pg-ko', keyCells.length);
         grid.style.setProperty('--pg-rows', Math.max(1, r-1));
       } else {
-        const cols = Math.max(1, Math.min(3, body.length));
-        place(body, 1, cols);
-        grid.classList.remove('pg-key');
+        place(body, 1, Math.max(1, Math.min(3, body.length)));
+        grid.classList.remove('pg-key', 'pg-key2');
         grid.style.removeProperty('--pg-rows');
-        grid.style.setProperty('--pg-cols', cols);
+        grid.style.removeProperty('--pg-ko');
       }
     }
     ['azlParamGrid','aedParamGrid'].forEach(id=>{
@@ -9882,7 +9896,7 @@ ${flagText||'（無）'}
     const RESULT_VIEWS = [
       {gridId:'paramGrid', keyClass:'pc-auc', outId:'vancoConclusion', doseId:'maintDose', tauId:'maintInterval', infId:'maintInf', readLevels:()=>readLevelRows(),
         isHD:()=>document.getElementById('dialysis').value==='HD'},
-      {gridId:'amgParamGrid', keyClass:'pc-cmax', outId:'amgConclusion', doseId:'amgMaintDose', tauId:'amgMaintInterval', infId:'amgMaintInf', readLevels:()=>readLevelRowsAmg(),
+      {gridId:'amgParamGrid', keyClass:'pc-cmax', keyClass2:'pc-cmin', outId:'amgConclusion', doseId:'amgMaintDose', tauId:'amgMaintInterval', infId:'amgMaintInf', readLevels:()=>readLevelRowsAmg(),
         isHD:()=>false}
     ];
     RESULT_VIEWS.forEach(cfg=>{
@@ -9890,7 +9904,7 @@ ${flagText||'（無）'}
       const out = document.getElementById(cfg.outId);
       if(!grid || !out) return;
       const refresh = ()=>{
-        decorateParamGrid(cfg.gridId, cfg.keyClass);
+        decorateParamGrid(cfg.gridId, cfg.keyClass, cfg.keyClass2);
         planParamGrid(cfg.gridId);
         out.innerHTML = cfg.isHD() ? '' : conclusionText(cfg);
       };

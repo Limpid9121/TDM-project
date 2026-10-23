@@ -34,13 +34,14 @@ async function main() {
   const mainOf = c => ((c.querySelector(':scope > .label .lbl-main') || {}).textContent || '').trim();
   const rowsOf = id => {
     const rows = {};
-    cellsOf(id).filter(c => !c.classList.contains('pc-key')).forEach(c => { (rows[c.dataset.r] = rows[c.dataset.r] || []).push(c); });
+    cellsOf(id).filter(c => !c.classList.contains('pc-key') && c.dataset.r).forEach(c => { (rows[c.dataset.r] = rows[c.dataset.r] || []).push(c); });
     return Object.keys(rows).sort((a, b) => a - b).map(k => rows[k].sort((a, b) => a.dataset.c - b.dataset.c));
   };
-  const rowFilled = (cells, cols) => {
+  // 右側內容區是 12 欄：一列有 n 格就各佔 12/n 欄（4 格各 3 欄、3 格各 4 欄、1 格佔滿），所以沒有空格也沒有孤兒格
+  const rowFilled = cells => {
     let next = 1;
     for (const c of cells) { if (+c.dataset.c !== next) return false; next += +c.dataset.cs; }
-    return next === cols + 1;
+    return next === 13 && cells.every(c => +c.dataset.cs === 12 / cells.length);
   };
 
   // ---------- 1. Vancomycin 示範病例 ----------
@@ -54,7 +55,7 @@ async function main() {
   const names = rows.map(r => r.map(mainOf).join('｜'));
   assert(names[0] === 'Cmin,ss｜Cmax,ss｜AUC/MIC｜近 24h 實際 AUC', '第一列：' + names[0]);
   assert(names[1] === 't½｜CL｜Vd｜CrCl', '第二列：' + names[1]);
-  assert(rows.every(r => rowFilled(r, 4)), '每列剛好 4 欄，沒有空格也沒有孤兒格');
+  assert(rows.every(r => rowFilled(r)), '每列 4 格各佔 3 欄（12 欄的 1/4），沒有空格也沒有孤兒格');
   assert(g.style.getPropertyValue('--pg-rows') === '2', 'key 格跨 2 列（--pg-rows）');
   // ke 併進 t½
   const thalf = rows[1][0];
@@ -70,14 +71,14 @@ async function main() {
   const snap = g.innerHTML;
   await set('maintDose', '1000'); await tick(100);
   assert(g.innerHTML === snap, '同樣輸入重畫後版面標記一致（沒有累積）');
-  assert(rowsOf('paramGrid').length === 2 && rowsOf('paramGrid').every(r => rowFilled(r, 4)), '改輸入後仍是兩列、每列 4 欄');
+  assert(rowsOf('paramGrid').length === 2 && rowsOf('paramGrid').every(r => rowFilled(r)), '改輸入後仍是兩列、每列補滿');
 
   // 預測模式（沒有濃度）：標籤有「預測 」前綴，格線一樣
   doc.querySelectorAll('#levelTable .entry-row .row-del').forEach(b => b.click()); await tick(120);
   const gp = $('paramGrid');
   if (gp.querySelector('.pc-key')) {
     const rp = rowsOf('paramGrid');
-    assert(rp.length === 2 && rp.every(r => rowFilled(r, 4)), '預測模式：兩列、每列 4 欄（' + rp.map(r => r.map(mainOf).join('｜')).join(' ／ ') + '）');
+    assert(rp.length === 2 && rp.every(r => rowFilled(r)), '預測模式：兩列、每列補滿（' + rp.map(r => r.map(mainOf).join('｜')).join(' ／ ') + '）');
   } else { assert(false, '前提：預測模式仍有 key 格'); }
 
   // ---------- 2. HD：沒有 key 格 ----------
@@ -88,48 +89,55 @@ async function main() {
   const hdCells = cellsOf('paramGrid');
   assert(hdCells.length >= 4 && hdCells.length <= 6, 'HD：格數 ' + hdCells.length + '（ke 併進 t½ 後 5 格上下）');
   const hdRows = {}; hdCells.forEach(c => { (hdRows[c.dataset.r] = hdRows[c.dataset.r] || []).push(c); });
-  const cols = +hd.style.getPropertyValue('--pg-cols');
-  assert(cols >= 2 && cols <= 3, 'HD：欄數 ' + cols);
-  assert(Object.values(hdRows).every(r => rowFilled(r.sort((a, b) => a.dataset.c - b.dataset.c), cols)), 'HD：每列補滿 ' + cols + ' 欄，沒有孤兒格');
+  assert(Object.values(hdRows).every(r => r.length >= 1 && r.length <= 3 && rowFilled(r.sort((a, b) => a.dataset.c - b.dataset.c))), 'HD：每列最多 3 格、補滿 12 欄，沒有孤兒格');
   assert(!!hdCells.find(c => c.querySelector('.ke-sub')), 'HD：ke 也併進 t½');
   await set('dialysis', 'none');
 
-  // ---------- 3. AMG ----------
+  // ---------- 3. AMG：Cmax 與 Cmin 同等重要，兩個都是大字 ----------
   await sw('aminoglycoside', 'vanco');
   $('loadDemoBtn').click(); await tick(250);
   const ag = $('amgParamGrid');
-  assert(ag.classList.contains('pg-key') && /Cmax,ss/.test(mainOf(ag.querySelector('.pc-key'))), 'AMG：key 格是 Cmax,ss');
+  const keys = Array.from(ag.querySelectorAll(':scope > .pc-key'));
+  assert(ag.classList.contains('pg-key') && ag.classList.contains('pg-key2') && ag.style.getPropertyValue('--pg-ko') === '2', 'AMG：兩個大字格（pg-key2，內容區右移 2 欄）');
+  assert(keys.length === 2 && /^Cmax,ss/.test(mainOf(keys[0])) && /^Cmin,ss/.test(mainOf(keys[1])), 'AMG：大字格是 Cmax,ss 與 Cmin,ss（' + keys.map(mainOf).join('｜') + '）');
+  assert(keys[0].style.getPropertyValue('--kc') === '1' && keys[1].style.getPropertyValue('--kc') === '2', '兩個大字格並排（--kc 1、2）');
   const ar = rowsOf('amgParamGrid');
-  assert(ar.length === 2, 'AMG：兩列（' + ar.length + '）：' + ar.map(r => r.map(mainOf).join('｜')).join(' ／ '));
-  assert(ar.every(r => rowFilled(r, 4)), 'AMG：每列補滿 4 欄（第一列只有 3 格時最後一格拉寬）');
-  assert(/^Cmin,ss/.test(mainOf(ar[0][0])) && ar[0].some(c => /^參考/.test(mainOf(c))), 'AMG 第一列有 Cmin 與參考 Cmax');
-  assert(ar[1].map(mainOf).join('｜') === 't½｜CL｜Vd｜CrCl', 'AMG 第二列：' + ar[1].map(mainOf).join('｜'));
-  assert(!!ar[1][0].querySelector('.ke-sub'), 'AMG：ke 併進 t½');
-  // MIC 填了會多一格 Cmax/MIC → 第一列 4 格
+  assert(ar[0].map(mainOf).join('｜') === 't½｜CL｜Vd｜CrCl', 'AMG 第一列是藥動參數：' + ar[0].map(mainOf).join('｜'));
+  assert(ar.every(r => rowFilled(r)), 'AMG：每列補滿 12 欄');
+  assert(!!ar[0][0].querySelector('.ke-sub'), 'AMG：ke 併進 t½');
+  // 參考 Cmax(T1)：輸注 30 分鐘時 T1（開始輸注後 1 小時）就是輸注結束後 30 分＝Cmax,ss，數字一樣，所以不重複顯示
+  const refCell = Array.from(cellsOf('amgParamGrid')).find(c => /^參考/.test(mainOf(c)));
+  assert(!!refCell && refCell.classList.contains('pc-dup') && !refCell.dataset.r, '輸注 30 分：參考 Cmax(T1) 與 Cmax,ss 相同 → 標 pc-dup、不排進格線');
+  assert(/display:\s*none/.test((html.match(/\.param-cell\.pc-dup\s*\{[^}]*\}/) || [''])[0]), '.pc-dup 隱藏（DOM 與文字還在）');
+  await set('amgMaintInf', '60'); await tick(120);
+  const ref2 = Array.from(cellsOf('amgParamGrid')).find(c => /^參考/.test(mainOf(c)));
+  assert(!!ref2 && !ref2.classList.contains('pc-dup') && !!ref2.dataset.r, '輸注 60 分：T1 落在輸注結束時、與 Cmax,ss 不同 → 參考 Cmax 顯示在下面一列');
+  assert(rowsOf('amgParamGrid').every(r => rowFilled(r)), '顯示參考 Cmax 後仍每列補滿');
+  await set('amgMaintInf', '30');
+  // MIC 填了會多一格 Cmax/MIC
   await set('amgMic', '1'); await tick(120);
   const ar2 = rowsOf('amgParamGrid');
-  assert(ar2.every(r => rowFilled(r, 4)), 'AMG 填 MIC：仍每列補滿 4 欄（' + ar2.map(r => r.length).join(',') + '）');
+  assert(ar2.every(r => rowFilled(r)) && ar2.some(r => r.some(c => /^Cmax\/MIC/.test(mainOf(c)))), 'AMG 填 MIC：多一格 Cmax/MIC，仍每列補滿');
 
   // ---------- 4. Azole／AED：2 格 ----------
   await sw('azole', 'amg');
   $('loadDemoBtn').click(); await tick(250);
   const az = $('azlParamGrid');
-  assert(az.classList.contains('pg') && !az.classList.contains('pg-key') && cellsOf('azlParamGrid').length === 2 && az.style.getPropertyValue('--pg-cols') === '2', 'Azole：2 格、2 欄');
+  assert(az.classList.contains('pg') && !az.classList.contains('pg-key') && cellsOf('azlParamGrid').length === 2 && cellsOf('azlParamGrid').every(c => c.dataset.cs === '6'), 'Azole：2 格各佔 6 欄（一半）');
   assert(cellsOf('azlParamGrid').every(c => c.dataset.r === '1'), 'Azole：同一列');
   await sw('aed', 'azl');
   $('loadDemoBtn').click(); await tick(250);
   const ae = $('aedParamGrid');
   const aeCells = cellsOf('aedParamGrid');
   assert(ae.classList.contains('pg') && aeCells.length >= 1, 'AED：有 pg（' + aeCells.length + ' 格）');
-  const aeCols = +ae.style.getPropertyValue('--pg-cols');
   const aeRows = {}; aeCells.forEach(c => { (aeRows[c.dataset.r] = aeRows[c.dataset.r] || []).push(c); });
-  assert(Object.values(aeRows).every(r => rowFilled(r.sort((a, b) => a.dataset.c - b.dataset.c), aeCols)), 'AED：每列補滿，沒有孤兒格');
+  assert(Object.values(aeRows).every(r => rowFilled(r.sort((a, b) => a.dataset.c - b.dataset.c))), 'AED：每列補滿，沒有孤兒格');
 
   // ---------- 5. CSS ----------
   assert(/\.lbl-paren\s*\{\s*display:\s*none/.test(html), '.lbl-paren 隱藏');
   assert(/\.param-cell \.value\s*\{[^}]*white-space:\s*nowrap/.test(html), '數字不換行');
   assert(/\.param-cell \.lbl-main\s*\{[^}]*white-space:\s*nowrap/.test(html), '標籤短名不換行');
-  assert(/grid-row:\s*var\(--r\)/.test(html) && /grid-column:\s*calc\(var\(--c\) \+ 1\) \/ span var\(--cs\)/.test(html), '桌機：格子依 --r／--c／--cs 排進格線');
+  assert(/grid-row:\s*var\(--r\)/.test(html) && /grid-column:\s*calc\(var\(--c\) \+ var\(--pg-ko,1\)\) \/ span var\(--cs\)/.test(html), '桌機：格子依 --r／--c／--cs 排進格線');
 
   assert(errCount === 0, '沒有 JS 錯誤（' + errCount + '）');
   console.log(`\n${pass} passed, ${fail} failed`);
