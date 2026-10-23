@@ -1,7 +1,7 @@
 // test_f8_subtract.js — v3 F8 標籤減法（Brandon 2026-10-23 核可四組，見 docs/F8_LABEL_AUDIT.md）
 //
 //   第一組：長段說明收進「ⓘ 詳細說明」（內容還在，預設收起）
-//   第二組：括號說明搬進滑過提示（標籤只留短名；單位、限制說明保留）
+//   第二組：括號說明搬進滑過提示（標籤只留短名；單位、限制說明保留）。2026-10-23 起 title 換成 data-tip＋快速提示小卡（test_help_affordance.js）
 //   第三組：刪除整句重複
 //   第四組：縮短改寫（常駐一句短話，原文收進 ⓘ）
 //   保留：單位、限制、必填、院內規則
@@ -60,18 +60,18 @@ async function main() {
     [checkLab('aedImNg'), 'IM 給藥或 NG feeding', '吸收可能不穩定'],
   ].forEach(([el, short, tip], i) => {
     assert(el && norm(el.textContent) === short, '第二組 #' + i + ' 標籤只留短名：' + (el && norm(el.textContent)) + ' → ' + short);
-    assert(el && (el.title || '').includes(tip), '第二組 #' + i + ' 原文在滑過提示：' + tip);
+    assert(el && ((el.title || el.dataset.tip) || '').includes(tip), '第二組 #' + i + ' 原文在滑過提示：' + tip);
   });
   const cand = Array.from(doc.querySelectorAll('.field > label')).filter(l => /^候選給藥間隔/.test(norm(l.textContent)));
-  assert(cand.length === 2 && cand.every(l => norm(l.textContent) === '候選給藥間隔' && /劑量調整方案/.test(l.title)), '候選給藥間隔（V／A）');
+  assert(cand.length === 2 && cand.every(l => norm(l.textContent) === '候選給藥間隔' && /劑量調整方案/.test(l.title || l.dataset.tip)), '候選給藥間隔（V／A）');
   const odd = Array.from(doc.querySelectorAll('label')).find(l => /^ODD／HDEI 適用性/.test(norm(l.textContent)));
-  assert(odd && norm(odd.textContent) === 'ODD／HDEI 適用性——是否符合以下任一項' && /院內 protocol/.test(odd.title), 'ODD 標籤短、原文在提示');
+  assert(odd && norm(odd.textContent) === 'ODD／HDEI 適用性——是否符合以下任一項' && /院內 protocol/.test(odd.title || odd.dataset.tip), 'ODD 標籤短、原文在提示');
   ['arcSuspect', 'amgArcSuspect'].forEach(id => {
     const l = checkLab(id);
-    assert(l && /僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算/.test(l.textContent) && !/年輕／創傷/.test(l.textContent) && /年輕／創傷/.test(l.title), id + '：舉例搬進提示、限制說明保留');
+    assert(l && /僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算/.test(l.textContent) && !/年輕／創傷/.test(l.textContent) && /年輕／創傷/.test(l.title || l.dataset.tip), id + '：舉例搬進提示、限制說明保留');
   });
   assert(!allVis.includes('這次沒有的話請取消勾選'), 'loading 那句不再常駐');
-  assert(/這次沒有的話請取消勾選/.test((checkLab('useLoading') || {}).title || ''), 'loading 那句在勾選框的滑過提示');
+  assert(/這次沒有的話請取消勾選/.test((checkLab('useLoading') || {}).title || (checkLab('useLoading') || {dataset:{}}).dataset.tip || ''), 'loading 那句在勾選框的滑過提示');
 
   // ---------- 第三組 ----------
   assert(!visTextAll.includes('三唑類以 trough（下一劑前）為主'), '刪除 Azole 06 重複句');

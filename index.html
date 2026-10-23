@@ -205,6 +205,13 @@
   details.adv > .field-row:not(summary), details.adv > .checkline:not(summary){padding-left:12px;padding-right:12px;}
   .hint-more{display:inline;}
   .hint-more summary{display:inline;cursor:pointer;color:var(--trace);font-size:12px;}
+  /* ⓘ 詳細說明：看得出能點的小膠囊（第一次使用問題第 4 點） */
+  .hint-more > summary{display:inline-flex;align-items:center;gap:3px;list-style:none;padding:1px 8px;margin:1px 0;border-radius:999px;background:var(--navy-tint);color:var(--navy);font-weight:600;line-height:1.6;white-space:nowrap;}
+  .hint-more > summary::-webkit-details-marker{display:none;}
+  .hint-more > summary::after{content:"▸";font-size:10px;}
+  .hint-more[open] > summary::after{content:"▾";}
+  .hint-more > summary:hover{background:var(--navy);color:#fff;}
+  .hint-more > summary:focus-visible{outline:2px solid var(--navy);outline-offset:2px;}
   .hint-more[open]{display:block;margin-top:4px;}
   .weekday-group{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding-top:6px;}
   .weekday-group .checkline{margin:0;justify-content:center;border:1px solid var(--line);border-radius:6px;padding:4px 2px;}
@@ -1211,6 +1218,14 @@
   .page-prefs .accent-picker button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink);}
   .page-prefs .accent-picker button:focus-visible{outline:2px solid var(--ink);}
   .pop-model-note{margin-top:4px;font-size:12px;color:var(--ink-soft);}
+  .first-tip{display:flex;align-items:center;gap:12px;margin:8px 0 4px;padding:8px 12px;border:1px solid var(--line-strong);border-left:3px solid var(--navy);border-radius:6px;background:var(--card);font-size:12.5px;color:var(--ink);}
+  .first-tip[hidden]{display:none;}
+  .first-tip .btn{margin-left:auto;flex:0 0 auto;}
+  .first-tip .tip-pill{display:inline-block;padding:0 7px;border-radius:999px;background:var(--navy-tint);color:var(--navy);font-weight:600;font-size:12px;}
+  .first-tip .tip-dots{text-decoration:underline dotted var(--ink-soft);text-underline-offset:3px;}
+  .field > label[data-tip], .checkline > label[data-tip]{text-decoration:underline dotted var(--ink-soft);text-decoration-thickness:1px;text-underline-offset:3px;cursor:help;}
+  .tip-pop{position:fixed;z-index:90;max-width:300px;padding:6px 10px;border-radius:6px;background:var(--navy);color:#fff;font-size:12px;line-height:1.5;box-shadow:0 6px 18px rgba(20,23,28,.2);pointer-events:none;}
+  .tip-pop[hidden]{display:none;}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -11183,6 +11198,73 @@ ${flagText||'（無）'}
       new MutationObserver(refresh).observe(list, {childList:true});
       refresh();
     });
+
+    // ---------------- 說明入口看得到（第一次使用問題第 4 點，Brandon 2026-10-23） ----------------
+    // ① 第一次使用提示條：左欄最上方（收合列下面）一條，按「知道了」後四個模組都不再出現（tdm_ui_tips_seen）
+    (function(){
+      let seen = false;
+      try{ seen = localStorage.getItem('tdm_ui_tips_seen') === '1'; }catch(e){}
+      const tips = [];
+      ['inputPanel','amgInputPanel','azlInputPanel','aedInputPanel'].forEach(id=>{
+        const st = document.getElementById(id); if(!st) return;
+        const t = document.createElement('div'); t.className = 'first-tip'; t.hidden = seen; t.setAttribute('role', 'note');
+        t.innerHTML = '<span><span class="tip-pill" aria-hidden="true">ⓘ 詳細說明 ▸</span> 點開可看欄位用法；欄位名稱底下有<span class="tip-dots">虛線</span>的，滑過或 Tab 到欄位可看完整意思。</span><button type="button" class="btn small">知道了</button>';
+        const bar = st.querySelector(':scope > .sec-bar');
+        if(bar) bar.after(t); else st.prepend(t);
+        tips.push(t);
+      });
+      tips.forEach(t=>t.querySelector('button').addEventListener('click', ()=>{
+        tips.forEach(x=>{ x.hidden = true; });
+        try{ localStorage.setItem('tdm_ui_tips_seen', '1'); }catch(e){}
+      }));
+    })();
+    // ② 有滑過提示的短標籤：原生 title（等很久才出現、Tab 到欄位不會出現）換成快速提示小卡。
+    //    滑過 0.3 秒出現；剛看過提示（0.6 秒內）滑別的標籤立刻出現；Tab 到該欄位也出現；滑走、離開、Esc、捲動收起。
+    //    title 換成 data-tip＋aria-description（螢幕閱讀器照樣讀得到）；JS 之後若又寫 title（例：分析起點），下次滑過再換。
+    (function(){
+      const SEL = '.field > label[title], .field > label[data-tip], .checkline > label[title], .checkline > label[data-tip]';
+      const take = l=>{ if(l.hasAttribute('title')){ l.dataset.tip = l.getAttribute('title'); l.setAttribute('aria-description', l.dataset.tip); l.removeAttribute('title'); } return l.dataset.tip; };
+      document.querySelectorAll('.field > label[title], .checkline > label[title]').forEach(take);
+      const pop = document.createElement('div'); pop.className = 'tip-pop'; pop.hidden = true; pop.setAttribute('role', 'tooltip');
+      document.body.appendChild(pop);
+      let timer = 0, lastHide = 0, cur = null;
+      function place(){   // 放在標籤上方（不蓋住正在填的輸入框）；上方放不下才放到標籤下方
+        const r = cur.getBoundingClientRect(), h = pop.offsetHeight || 28;
+        pop.style.left = Math.max(4, Math.min(r.left, window.innerWidth - (pop.offsetWidth || 240) - 4)) + 'px';
+        pop.style.top = (r.top - h - 6 >= 4 ? r.top - h - 6 : r.bottom + 6) + 'px';
+      }
+      function show(l){
+        const txt = take(l); if(!txt) return;
+        cur = l; pop.textContent = txt; pop.hidden = false;
+        place();
+      }
+      function hide(){ clearTimeout(timer); if(!pop.hidden) lastHide = Date.now(); pop.hidden = true; cur = null; }
+      document.addEventListener('mouseover', e=>{
+        const l = e.target.closest && e.target.closest(SEL); if(!l || l === cur) return;
+        clearTimeout(timer);
+        if(!pop.hidden || Date.now() - lastHide < 600) show(l);
+        else timer = setTimeout(()=>show(l), 300);
+      });
+      document.addEventListener('mouseout', e=>{
+        const l = e.target.closest && e.target.closest(SEL); if(!l) return;
+        if(e.relatedTarget && l.contains(e.relatedTarget)) return;
+        hide();
+      });
+      const labelFor = el=>{
+        if(!el || !el.closest) return null;
+        const cl = el.closest('.checkline'); if(cl){ const l = cl.querySelector(':scope > label'); return l && l.matches(SEL) ? l : null; }
+        const f = el.closest('.field'); if(!f) return null;
+        const l = f.querySelector(':scope > label'); return l && l.matches(SEL) ? l : null;
+      };
+      document.addEventListener('focusin', e=>{ const l = labelFor(e.target); if(l){ clearTimeout(timer); show(l); } });
+      document.addEventListener('focusout', e=>{ if(labelFor(e.target)) hide(); });
+      document.addEventListener('keydown', e=>{ if(e.key === 'Escape' && !pop.hidden) hide(); });
+      window.addEventListener('scroll', ()=>{   // 捲動時跟著標籤；標籤捲出畫面才收起（Tab 到欄位常會帶動捲動）
+        if(pop.hidden || !cur) return;
+        const r = cur.getBoundingClientRect();
+        if(r.bottom < 0 || r.top > window.innerHeight) hide(); else place();
+      }, true);
+    })();
 
     // ---------------- 右邊「尚未更新」：處方改了、給藥紀錄還沒重新展開（Brandon 2026-10-23） ----------------
     // 計算只採用給藥紀錄表；左邊的 loading／維持處方／產生範圍改了之後，要按「展開」才會進到給藥紀錄。在那之前右邊只有一半是新的
