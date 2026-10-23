@@ -4,7 +4,7 @@
 <style>html,body{margin:0;padding:0;background:#ddd;overflow:hidden}iframe{border:0;display:block}</style>
 <iframe id="f"></iframe>
 <script>
-// 驗收截圖用（tools/shoot_review.py 會開這頁）：?exp=accent_a&accent=mustard&pick=1&mod=vancomycin&w=1920&h=940&demo=1&collapse=all|none|only:3&view=result&scroll=0&hd=1&blank=1&pm=1&measure=params|contrast|cand
+// 驗收截圖用（tools/shoot_review.py 會開這頁）：?exp=accent_a&accent=mustard&pick=1&mod=vancomycin&w=1920&h=940&demo=1&collapse=all|none|only:3&view=result&scroll=0&hd=1&blank=1&click=id1,id2&measure=params|contrast|cand
 const q = new URLSearchParams(location.search);
 const W = +(q.get('w')||innerWidth), H = +(q.get('h')||innerHeight);
 const f = document.getElementById('f');
@@ -32,7 +32,7 @@ f.onload = ()=>{
     if(c && c.startsWith('only:') && bar){ await step(()=>{ bar.querySelector('[data-sec="'+(+c.slice(5)-1)+'"]').click(); }, 300); }
     if(q.get('pick')) await step(()=>{ const r = d.querySelectorAll('.drug-module.active input.regimen-pick')[+q.get('pick')]; if(r){ r.checked = true; r.dispatchEvent(new w.Event('change',{bubbles:true})); } }, 400);
     if(q.get('view')) await step(()=>{ const b = d.querySelector('#mSwitch [data-mview="'+q.get('view')+'"]'); if(b) b.click(); }, 200);
-    if(q.get('pm')) await step(()=>{ d.getElementById('hdrPmToggle').click(); }, 200);
+    if(q.get('click')) for(const id of q.get('click').split(',')) await step(()=>{ d.getElementById(id).click(); }, 250);   // 依序點這些 id（例：vancoRxMenuBtn、vancoSaveMain）
     await step(()=>{ w.scrollTo(0, +(q.get('scroll')||0)); const rp = d.querySelector('.drug-module.active main.grid > .panel'); if(rp && q.get('rscroll')) rp.scrollTop = +q.get('rscroll'); }, 1200);
     if(q.get('measure')==='params'){
       const out = [];

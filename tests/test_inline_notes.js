@@ -61,7 +61,7 @@ async function main() {
 
   // ---------- 病人面板 ----------
   $('patientLabel').value = ''; $('savePatientBtn').click(); await tick();
-  const bar = $('pmBarVanco');
+  const bar = $('drug-vancomycin').querySelector('.mod-tabs');   // F5：病人管理的提示顯示在分頁列的訊息位置
   assert(/請先輸入病歷號/.test(notesIn(bar).map(x => x.textContent).join()), '存檔沒填病歷號：提示在病人面板內：' + notesIn(bar).map(x => x.textContent).join());
   $('patientSelect').value = ''; $('loadPatientBtn').click(); await tick();
   if (!$('vancoGuardModal').classList.contains('hide')) { $('vancoGuardDiscard').click(); await tick(); }   // 有未儲存變更時載入會先問，選「不儲存，繼續」
@@ -71,7 +71,7 @@ async function main() {
   $('updateVisitBtn').disabled = false; $('updateVisitBtn').click(); await tick();
   assert(/沒有載入中的收案版本/.test(notesIn(bar).map(x => x.textContent).join()), '更新 visit 但沒載入：行內提示');
   $('tdmClearAllLocal').click(); await tick();
-  assert(/沒有任何已儲存的病人資料/.test(notesIn(doc.querySelector('header.top')).map(x => x.textContent).join()), '清除全部本機資料但沒有資料：行內提示');
+  assert(/沒有任何已儲存的病人資料/.test(notesIn($('drug-vancomycin')).map(x => x.textContent).join()), '清除全部本機資料但沒有資料：行內提示');
 
   // ---------- AMG ----------
   await sw('aminoglycoside', 'vanco');
@@ -81,7 +81,7 @@ async function main() {
   $('amgPruneBeforeBtn').click(); await tick();
   assert(/選一個時間點/.test(notesIn($('drug-aminoglycoside')).map(x => x.textContent).join()), 'AMG 清除較早紀錄沒選時間：行內提示');
   $('amgPatientLabel').value = ''; $('amgSavePatientBtn').click(); await tick();
-  assert(/請先輸入病歷號/.test(notesIn($('pmBarAmg')).map(x => x.textContent).join()), 'AMG 存檔沒填病歷號：行內提示');
+  assert(/請先輸入病歷號/.test(notesIn($('drug-aminoglycoside').querySelector('.mod-tabs')).map(x => x.textContent).join()), 'AMG 存檔沒填病歷號：行內提示');
 
   // ---------- 程式裡只剩必須打斷的 alert ----------
   const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');

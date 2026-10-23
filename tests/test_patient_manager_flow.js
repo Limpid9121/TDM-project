@@ -71,8 +71,8 @@ async function main() {
   assert(/WP36-VANCO-001/.test(doc.getElementById('vancoExplorerDeleteMsg').innerHTML), 'vanco: confirm modal lists the patient label about to be deleted');
 
   fireClick(win, doc.getElementById('vancoExplorerDeleteConfirm'));
-  assert(doc.querySelectorAll('#patientSelect option').length === 1, 'vanco: after confirming batch delete, patientSelect is back to only "（新病人／未選擇）"');
-  assert(doc.querySelector('#patientSelect option').textContent === '（新病人／未選擇）', 'vanco: the remaining single option is the placeholder');
+  assert(doc.querySelectorAll('#patientSelect option').length === 1, 'vanco: after confirming batch delete, patientSelect is back to only the placeholder "— 選擇病人 —"');
+  assert(doc.querySelector('#patientSelect option').textContent === '— 選擇病人 —', 'vanco: the remaining single option is the placeholder');
 
   // ================= amg／azole／aed：簡化版「存檔→出現在 explorer 列表→刪除」 =================
   const simpleModules = [

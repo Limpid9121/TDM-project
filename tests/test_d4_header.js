@@ -44,16 +44,12 @@ async function main() {
   await sw('aed', 'amg');
   assert(!$('pmBarAed').hidden && $('pmBarAmg').hidden, '切到 AED：顯示 AED 的病人列');
   await sw('vancomycin', 'aed');
-  // 開關
-  const tog = $('hdrPmToggle');
-  assert(!!tog && tog.getAttribute('aria-expanded') === 'false', '有「病人」開關，預設收起');
-  tog.click(); await tick();
-  assert(tog.getAttribute('aria-expanded') === 'true' && hdr.classList.contains('pm-open'), '按開關：展開病人管理（頂列加 pm-open）');
-  tog.click(); await tick();
-  assert(tog.getAttribute('aria-expanded') === 'false' && !hdr.classList.contains('pm-open'), '再按一次收起');
+  // F5：舊的「病人 ▾」面板開關拿掉，改成頂列上的病人下拉、選單與主按鈕（細節見 test_f5_header.js）
+  assert(!$('hdrPmToggle') && !hdr.classList.contains('pm-open'), '「病人 ▾」面板開關已拿掉');
+  assert(!!$('pmBarVanco').querySelector('button.hdr-main') && !!$('pmBarVanco').querySelector('.hdr-menu'), '頂列有主按鈕與選單');
 
   // ---------- 2. 身分條 ----------
-  assert(!!$('hdrIdentity') && hdr.contains($('hdrIdentity')), '頂列裡有身分條 #hdrIdentity');
+  assert(!!$('hdrIdentity') && !hdr.contains($('hdrIdentity')) && $('drug-vancomycin').querySelector('.mod-tabs').contains($('hdrIdentity')), '身分條 #hdrIdentity 在分頁列右側（F5：不在頂列）');
   assert(hdr.contains($('patientLabel')) === true, '病歷號欄位在頂列');
   await set('patientLabel', '1234567');
   await set('age', '55'); await set('sex', 'M'); await set('height', '168'); await set('tbw', '65'); await set('dialysis', 'none');
