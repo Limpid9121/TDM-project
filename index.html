@@ -1203,6 +1203,8 @@
   .fl-toggle{grid-column:2;justify-self:start;margin:2px 0 0 10px;padding:0;border:0;background:transparent;font:inherit;font-size:12px;color:var(--trace);cursor:pointer;}
   .fl-toggle:hover{text-decoration:underline;}
   .fl-toggle[hidden]{display:none;}
+  details.hint-more.f8-block{display:block;margin:0 0 6px;}
+  details.hint-more.f8-block > summary{display:inline;}
   .draw-sep span{flex:0 1 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 
   /* 日期時間 24 小時制輸入組（見 enhanceDt24）：原本的 datetime-local 隱藏，旁邊是「日期（原生）＋時間（HH:mm）」 */
@@ -1468,7 +1470,7 @@
       <div class="card">
         <h2><span class="idx">01</span>病人與腎功能</h2>
         <div class="carry-row"><label for="vancoCarrySrc">從</label><select id="vancoCarrySrc"><option value="aminoglycoside">Aminoglycoside</option><option value="azole">Azole</option><option value="aed">抗癲癇藥物</option></select><button class="btn small" id="vancoCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="vancoCarryMsg" role="status"></span></div>
-        <p class="hint">SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。</details></div>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="age" value="55" min="0" max="120"></div>
           <div class="field"><label>生理性別</label>
@@ -1492,8 +1494,8 @@
           <div class="field"><label>乾／平常體重（kg，選填）</label><input type="number" id="dryWeight" step="0.1" placeholder="與TBW明顯不同才填"></div>
           <div class="field"></div>
         </div>
-        <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
-        <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
+        <div class="hint" style="margin-top:-6px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</details></div>
+        <div class="checkline"><input type="checkbox" id="arcSuspect"><label for="arcSuspect" title="年輕／創傷／燒燙傷／敗血症早期">臨床懷疑 augmented renal clearance<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
 
         <div id="hdInfoBlock" style="display:none;">
           <div class="field-row">
@@ -1532,13 +1534,13 @@
           <div class="field"><label>菌種／MIC</label><input type="text" id="organism" placeholder="如：MRSA, MIC 未知"></div>
         </div>
         <div class="checkline"><input type="checkbox" id="deepInfection"><label for="deepInfection">深部／難清除感染（心內膜炎、骨髓炎、CNS、菌血症）— 目標偏 AUC 上緣，並評估 loading</label></div>
-        <div class="checkline"><input type="checkbox" id="sourceControlDone"><label for="sourceControlDone">感染源已控制（引流／移除導管等）</label></div>
+        <div class="checkline"><input type="checkbox" id="sourceControlDone"><label for="sourceControlDone" title="引流／移除導管等">感染源已控制</label></div>
       </div>
 
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <div class="hint">先填目前處方 → 產生給藥紀錄 → 再手動修正實際延遲／漏給。<details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</details></div>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。<strong>「分析起點」不必是整個療程最早的一劑</strong>：長期療程中若腎功能改變（如 AKI）需重新評估，直接把起點設成你想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度達懷疑的目前半衰期的 4–5 倍（腎功能惡化時半衰期會拉長，回溯窗口也要跟著放寬，寧可抓保守一些），下方「是否達穩態」旗標會依你設的這個起點自動幫你把關。</details></div>
 
         <h3>第一筆給藥<span class="h3-note">有給藥紀錄時必選</span></h3>
         <div class="ui-radio-group"><div id="vancoFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
@@ -1550,7 +1552,7 @@
           <p class="hint" id="steadyStateHint" style="display:none;margin-top:-4px;">已啟用：引擎會在你記錄的第一劑之前，依同劑量／同間隔往回補足約 5 個半衰期的虛擬給藥，使第一劑的起始濃度反映長期累積後的穩態，而非從 0 開始。這只影響底層擬合與 AUC 計算，濃度曲線畫面上不會特別標示（第一劑當下直接呈現墊高後的濃度）。若第一劑真的是療程首劑（濃度確實從 0 起算），請選「第一筆紀錄就是本療程第一劑」。</p>
           <div class="hint" id="vancoSsBasis"></div>
         <div id="vancoLoadingBlock">
-        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading">首劑為獨立 loading 劑量（劑量與維持劑量不同）</label></div>
+        <div class="checkline"><input type="checkbox" id="useLoading"><label for="useLoading" title="劑量與維持劑量不同。第一筆紀錄是療程第一劑時，多數會先給 loading；這次沒有的話請取消勾選。">首劑為獨立 loading 劑量</label></div>
         <div class="loading-rec" id="vancoLoadingRecBox" hidden><span id="vancoLoadingRec"></span> <button class="btn small" id="vancoLoadingRecApply" type="button">採用建議</button></div>
         <div id="loadingFields" style="display:none;">
           <div class="field-row">
@@ -1561,7 +1563,6 @@
             <div class="field"><label>Loading 輸注時間（分鐘）</label><input type="number" id="loadingInf" value="240" step="5" title="依院內規則自動帶入：每 250 mg 加 30 分、至少 60 分（500 mg＝60 分、2000 mg＝240 分）；可自行修改"></div>
           </div>
         </div>
-          <p class="hint" style="margin-top:-2px;">第一筆紀錄是療程第一劑時，多數會先給 loading；這次沒有的話請取消勾選。</p>
         </div>
 
         <h3>維持處方</h3>
@@ -1578,8 +1579,8 @@
 
         <h3>產生範圍</h3>
         <div class="field-row">
-          <div class="field"><label id="therapyStartLabel">分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="therapyStart"></div>
-          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="expandTo"></div>
+          <div class="field"><label id="therapyStartLabel" title="分析起點：本次採用的第一筆給藥時間">分析起點</label><input type="datetime-local" id="therapyStart"></div>
+          <div class="field"><label title="展開至：通常為現在或最後一次抽血">展開至</label><input type="datetime-local" id="expandTo"></div>
         </div>
 
         <!-- 驗收後修正：首劑 loading 已移出，vancoAdv 沒有內容；保留元素與 id（R3）但隱藏 -->
@@ -1670,7 +1671,7 @@
       <!-- 4. 血中濃度量測 -->
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
-        <p class="hint">不限同一給藥區間——給藥前 trough、任一劑後 peak、隔天單點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>不限同一給藥區間——給藥前 trough、任一劑後 peak、隔天單點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算。</details></div>
         <div class="entry-head entry-head--level" aria-hidden="true"><span>抽血時間</span><span>濃度 µg/mL</span><span></span></div>
         <div class="entry-rows" id="levelTable"></div>
         <div class="btn-row"><button class="btn small" id="addLevelRow" type="button">+ 新增一筆濃度</button></div>
@@ -1682,10 +1683,10 @@
           <div class="field"><label>MIC 假設（µg/mL）</label><input type="number" id="mic" value="1" step="0.1"></div>
           <div class="field"><label>目標 AUC₂₄（mg·h/L）</label><input type="number" id="targetAuc" value="500" step="10"><div class="hint" id="targetAucReadout"></div></div>
         </div>
-        <p class="hint">目標建議落在 400–600（嚴重／深部感染取上緣，腎毒性風險高者取下緣）。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>目標建議落在 400–600（嚴重／深部感染取上緣，腎毒性風險高者取下緣）。</details></div>
         <div class="checkline"><input type="checkbox" id="altTroughStrategy"><label for="altTroughStrategy">抽血困難／病情不複雜 → 改採替代 trough 10–15 µg/mL 策略呈現</label></div>
         <div class="field-row">
-          <div class="field"><label>候選給藥間隔（劑量調整方案）</label>
+          <div class="field"><label title="候選給藥間隔（劑量調整方案）">候選給藥間隔</label>
             <div style="display:flex;gap:10px;padding-top:6px;">
               <span class="checkline" style="margin:0;"><input type="checkbox" id="vancoCand6" checked><label for="vancoCand6">q6h</label></span>
               <span class="checkline" style="margin:0;"><input type="checkbox" id="cand8" checked><label for="cand8">q8h</label></span>
@@ -1761,7 +1762,7 @@
 
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
-        <p class="hint" id="regimenSectionHint" style="margin-top:-4px;">勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p>
+        <details class="hint-more f8-block"><summary>ⓘ 詳細說明</summary><p class="hint" id="regimenSectionHint" style="margin-top:-4px;">勾選最左欄可在上方曲線疊加該方案的模擬濃度變化（見「新處方起始時間」)，並作為下方 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</p></details>
         <div id="loadingSuggestion"></div>
         <div class="table-scroll"><table class="regimen-table" id="regimenTable">
           <thead id="regimenTableHead"><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax,ss</th><th>Cmin,ss</th><th>AUC₂₄</th><th class="reason">評語</th></tr></thead>
@@ -1791,7 +1792,7 @@
 
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="vancoCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
-        <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
+        <div class="hint" style="margin-bottom:10px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</details></div>
         <textarea id="aiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="copyPromptBtn" type="button">複製 Prompt</button>
@@ -1846,7 +1847,7 @@
       <div class="card">
         <h2><span class="idx">01</span>病人與腎功能</h2>
         <div class="carry-row"><label for="amgCarrySrc">從</label><select id="amgCarrySrc"><option value="vancomycin">Vancomycin</option><option value="azole">Azole</option><option value="aed">抗癲癇藥物</option></select><button class="btn small" id="amgCarryBtn" type="button" title="只帶來源有填的欄位；目標已有不同的值會先問你">帶入基本資料</button><span class="carry-msg" id="amgCarryMsg" role="status"></span></div>
-        <p class="hint">SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。Aminoglycoside 清除率與腎功能高度相關，CrCl 估算的準確性直接影響起始劑量。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>SCr 建議填最近數筆以判斷趨勢；單點 SCr 在腎功能變化期會誤導清除率估算。Aminoglycoside 清除率與腎功能高度相關，CrCl 估算的準確性直接影響起始劑量。</details></div>
         <div class="field-row three">
           <div class="field"><label>年齡（歲）</label><input type="number" id="amgAge" value="60" min="0" max="120"></div>
           <div class="field"><label>生理性別</label>
@@ -1870,8 +1871,8 @@
           <div class="field"><label>乾／平常體重（kg，選填）</label><input type="number" id="amgDryWeight" step="0.1" placeholder="與TBW明顯不同才填"></div>
           <div class="field"></div>
         </div>
-        <p class="hint" style="margin-top:-6px;">水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</p>
-        <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect">臨床懷疑 augmented renal clearance（年輕／創傷／燒燙傷／敗血症早期）— 清除快，標準劑量常 underdose<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
+        <div class="hint" style="margin-top:-6px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>水腫／腹水／第三腔隙時，TBW 可能高估 Vd；填上面這欄後，Vd 族群先驗改用此體重估算，CrCl 仍照 TBW／IBW／AdjBW 慣例計算，留空則兩者都沿用 TBW。</details></div>
+        <div class="checkline"><input type="checkbox" id="amgArcSuspect"><label for="amgArcSuspect" title="年輕／創傷／燒燙傷／敗血症早期——清除快，標準劑量常 underdose">臨床懷疑 augmented renal clearance<span class="hint-inline">（僅影響 CrCl 130–150 時是否多一則提示，不改變任何計算）</span></label></div>
         <div class="checkline"><input type="checkbox" id="amgVdHigh"><label for="amgVdHigh">臨床懷疑 Vd 偏高（水腫／腹水／重症／敗血症）— 族群 Vd 先驗上修至 0.35 L/kg</label></div>
 
         <div class="entry-head entry-head--scr" aria-hidden="true"><span>日期</span><span>SCr mg/dL</span><span></span></div>
@@ -1882,7 +1883,7 @@
       <!-- 2. 藥物、策略與感染脈絡 -->
       <div class="card">
         <h2><span class="idx">02</span>藥物、給藥策略與感染脈絡</h2>
-        <p class="hint">目標 peak／trough 隨「藥物 × 給藥策略 × 適應症」三維變動，請先鎖定三者，下方會自動帶出對應的院內目標範圍。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>目標 peak／trough 隨「藥物 × 給藥策略 × 適應症」三維變動，請先鎖定三者，下方會自動帶出對應的院內目標範圍。</details></div>
         <div class="field-row stacked">
           <div class="field"><label>目標藥物</label>
             <select id="amgDrug">
@@ -1899,14 +1900,14 @@
           </div>
         </div>
         <div class="field-row stacked">
-          <div class="field"><label>適應症（決定目標值）</label>
+          <div class="field"><label title="適應症（決定目標值）">適應症</label>
             <select id="amgIndication"></select>
           </div>
         </div>
         <div class="hint" id="amgTargetDisplay" style="margin-top:-4px;"></div>
         <p class="hint" id="amgTobraNote" style="display:none;">Tobramycin 未另列院內目標值，本工具假設其目標與 gentamicin 相同（常見臨床慣例）；若貴院有 tobramycin 專屬 protocol，請自行對照調整。</p>
         <div class="field" style="margin-top:8px;">
-          <label>ODD／HDEI 適用性——是否符合以下任一項（符合則多數文獻與院內 protocol 建議改採傳統多次給藥）</label>
+          <label title="符合則多數文獻與院內 protocol 建議改採傳統多次給藥">ODD／HDEI 適用性——是否符合以下任一項</label>
           <div class="checkline"><input type="checkbox" id="amgOddExclPregnancy"><label for="amgOddExclPregnancy">懷孕</label></div>
           <div class="checkline"><input type="checkbox" id="amgOddExclFluid"><label for="amgOddExclFluid">大量體液蓄積或分布容積異常（腹水／燒燙傷 ≥20% 體表面積／anasarca／末期肝病）</label></div>
           <div class="checkline"><input type="checkbox" id="amgOddExclNeutropenia"><label for="amgOddExclNeutropenia">嗜中性球低下或其他顯著免疫抑制</label></div>
@@ -1922,13 +1923,13 @@
           </div>
           <div class="field"><label>MIC 假設（µg/mL，選填）</label><input type="number" id="amgMic" step="0.1" placeholder="用於 Cmax/MIC 顯示"></div>
         </div>
-        <div class="checkline"><input type="checkbox" id="amgSourceControlDone"><label for="amgSourceControlDone">感染源已控制（引流／移除導管等）</label></div>
+        <div class="checkline"><input type="checkbox" id="amgSourceControlDone"><label for="amgSourceControlDone" title="引流／移除導管等">感染源已控制</label></div>
       </div>
 
       <!-- 3. 給藥處方與紀錄 -->
       <div class="card">
         <h2><span class="idx">03</span>給藥處方與紀錄</h2>
-        <div class="hint">先填目前處方 → 產生給藥紀錄 → 再手動修正實際延遲／漏給。<details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。「分析起點」不必是整個療程最早的一劑：長期療程中若腎功能改變需重新評估，直接把起點設成想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度建議達懷疑的目前半衰期的 4–5 倍。</details></div>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>先填目前處方並自動展開給藥紀錄，再手動修正實際的延遲／漏給／額外劑量——下方表格是計算引擎唯一採用的「實際給藥時點」。「分析起點」不必是整個療程最早的一劑：長期療程中若腎功能改變需重新評估，直接把起點設成想重新追蹤的近期時間即可，往前保留的給藥紀錄涵蓋時間長度建議達懷疑的目前半衰期的 4–5 倍。</details></div>
 
         <h3>處方</h3>
         <div class="field-row">
@@ -1990,8 +1991,8 @@
 
         <h3>產生範圍</h3>
         <div class="field-row">
-          <div class="field"><label>分析起點（本次採用的第一筆給藥時間）</label><input type="datetime-local" id="amgTherapyStart"></div>
-          <div class="field"><label>展開至（通常為現在或最後一次抽血）</label><input type="datetime-local" id="amgExpandTo"></div>
+          <div class="field"><label title="分析起點：本次採用的第一筆給藥時間">分析起點</label><input type="datetime-local" id="amgTherapyStart"></div>
+          <div class="field"><label title="展開至：通常為現在或最後一次抽血">展開至</label><input type="datetime-local" id="amgExpandTo"></div>
         </div>
 
         <div class="ui-radio-group" id="amgSteadyStateRow"><div id="amgFirstDoseKindGroup" role="radiogroup" aria-label="第一筆給藥是不是本療程第一劑">
@@ -2032,7 +2033,7 @@
       <!-- 4. 血中濃度量測 -->
       <div class="card">
         <h2><span class="idx">04</span>血中濃度量測（自由時點）</h2>
-        <p class="hint">不限傳統時點慣例——傳統法 peak（輸注結束後 30 分）＋trough（下一劑前）、ODD 兩點法（輸注結束後 2h 與 6h）、或任意其他時點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算，不要求兩點落在同一給藥區間。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>不限傳統時點慣例——傳統法 peak（輸注結束後 30 分）＋trough（下一劑前）、ODD 兩點法（輸注結束後 2h 與 6h）、或任意其他時點皆可直接輸入，引擎以絕對時間比對給藥紀錄計算，不要求兩點落在同一給藥區間。</details></div>
         <div class="entry-head entry-head--level" aria-hidden="true"><span>抽血時間</span><span>濃度 µg/mL</span><span></span></div>
         <div class="entry-rows" id="amgLevelTable"></div>
         <div class="btn-row"><button class="btn small" id="amgAddLevelRow" type="button">+ 新增一筆濃度</button></div>
@@ -2042,7 +2043,7 @@
         <h2><span class="idx">05</span>候選給藥間隔</h2>
         <div id="amgCandFixedBlock">
           <div class="field-row">
-            <div class="field"><label>候選給藥間隔（劑量調整方案）</label>
+            <div class="field"><label title="候選給藥間隔（劑量調整方案）">候選給藥間隔</label>
               <div style="display:flex;gap:10px;padding-top:6px;flex-wrap:wrap;">
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand8"><label for="amgCand8">q8h</label></span>
                 <span class="checkline" style="margin:0;"><input type="checkbox" id="amgCand12"><label for="amgCand12">q12h</label></span>
@@ -2052,8 +2053,8 @@
               </div>
             </div>
           </div>
-          <div class="hint">切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。<details class="hint-more"><summary>ⓘ 詳細說明</summary>ODD／HDEI 策略下，本工具會依估算 CrCl 帶出建議起始間隔（q24/q36/q48，邏輯與 Hartford nomogram 相同的 CrCl 分段依據，見下方「建議」標籤；q12h 因缺乏同等把握的分段依據，維持人工判斷），並在勾選卡片 02 的 ODD 排除因子時停用建議；有濃度資料時則已改用個體化 ke／Vd 直接反解達標劑量，比對單點落於 nomogram 哪一區更精確。</details></div>
-          <div class="hint">PAE（給藥後即使濃度低於 MIC，抑菌效果仍持續一段時間，約 2–8 小時，與峰濃度高度相關）是決定「能不能拉長間隔」的核心機制之一；嗜中性球低下病人 PAE 可能縮短（已反映在上方排除因子），Pseudomonas 則因重複頻繁給藥易生 adaptive resistance，拉長間隔的藥效學理由較強（如菌種欄含 Pseudomonas，下方會出現對應提示）。<details class="hint-more"><summary>ⓘ 詳細說明</summary>最終間隔選擇仍需你綜合臨床判斷，本工具不會自動鎖定單一間隔。</details></div>
+          <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>切換上方「給藥策略」時會自動勾選常見組合（傳統法→q8/q12/q24，ODD→q24/q36/q48），仍可手動調整。ODD／HDEI 策略下，本工具會依估算 CrCl 帶出建議起始間隔（q24/q36/q48，邏輯與 Hartford nomogram 相同的 CrCl 分段依據，見下方「建議」標籤；q12h 因缺乏同等把握的分段依據，維持人工判斷），並在勾選卡片 02 的 ODD 排除因子時停用建議；有濃度資料時則已改用個體化 ke／Vd 直接反解達標劑量，比對單點落於 nomogram 哪一區更精確。</details></div>
+          <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>PAE（給藥後即使濃度低於 MIC，抑菌效果仍持續一段時間，約 2–8 小時，與峰濃度高度相關）是決定「能不能拉長間隔」的核心機制之一；嗜中性球低下病人 PAE 可能縮短（已反映在上方排除因子），Pseudomonas 則因重複頻繁給藥易生 adaptive resistance，拉長間隔的藥效學理由較強（如菌種欄含 Pseudomonas，下方會出現對應提示）。最終間隔選擇仍需你綜合臨床判斷，本工具不會自動鎖定單一間隔。</details></div>
         </div>
         <p class="hint" id="amgCandTiwNote" style="display:none;">目前為「每週固定星期」排程，給藥非等距，候選間隔比較不適用。右側改直接顯示依你目前給藥史推算的「下次排定劑量前預測 trough」與「最近一劑後預測 peak」；如需測試不同劑量，可用結果區的「自訂」列。</p>
       </div>
@@ -2105,7 +2106,7 @@
 
       <div class="section-block">
         <h3><span class="idx">B</span>劑量調整建議</h3>
-        <div class="hint" style="margin-top:-4px;">危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。<details class="hint-more"><summary>ⓘ 詳細說明</summary>勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</details></div>
+        <div class="hint" style="margin-top:-4px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>危險（紅）＝trough 明顯超過目標上限，腎／耳毒性風險高；警示（黃）＝trough 略超標或 peak 偏離目標；OK（綠）＝符合目前鎖定的目標。勾選最左欄可在上方曲線疊加該方案的模擬濃度變化，並作為 AI Prompt 的最終決定處方；未勾選則僅供比較，不代表本工具的推薦。</details></div>
         <div class="table-scroll"><table class="regimen-table" id="amgRegimenTable">
           <thead><tr><th class="pick-col"></th><th>方案</th><th>劑量</th><th>間隔</th><th>Cmax(peak，輸注結束後 30 分)</th><th>Cmin(trough)</th><th>Cmax/MIC</th><th class="reason">評語</th></tr></thead>
           <tbody></tbody>
@@ -2134,7 +2135,7 @@
 
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="amgCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
-        <p class="hint" style="margin-bottom:10px;">本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</p>
+        <div class="hint" style="margin-bottom:10px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>本工具只做得到族群／貝氏 PK 擬合與劑量投影；下方會自動整合你已輸入的資料，並在需要處留白，貼上近期 lab 趨勢與病程後即可丟給任一主流 AI 進行整合評估。</details></div>
         <textarea id="amgAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="amgCopyPromptBtn" type="button">複製 Prompt</button>
@@ -2189,7 +2190,7 @@
       <!-- 1. 目標藥物與適應症 -->
       <div class="card">
         <h2><span class="idx">01</span>目標藥物與適應症</h2>
-        <div class="hint">本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。<details class="hint-more"><summary>ⓘ 詳細說明</summary>三顆藥的目標值以院內 TDM protocol 為主、UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）為輔（UpToDate 數值顯示在目標旁供參考），詳細來源見下方各處提示。</details></div>
+        <div class="hint">只判讀 trough 與情境，不做 PK 擬合。<details class="hint-more"><summary>ⓘ 詳細說明</summary>本模組不做 PK 擬合——不計算 Cpeak／Vd／CL／AUC／ke／t½（例行 azole TDM 不建模），只做 trough 對目標區間判讀＋情境交叉檢查。三顆藥的目標值以院內 TDM protocol 為主、UpToDate（Pharmacology of azoles／Prevention of IFI in hematologic malignancies）為輔（UpToDate 數值顯示在目標旁供參考），詳細來源見下方各處提示。</details></div>
         <div class="field-row">
           <div class="field"><label>目標藥物</label>
             <select id="azlDrug">
@@ -2198,7 +2199,7 @@
               <option value="isavuconazole">Isavuconazole</option>
             </select>
           </div>
-          <div class="field"><label>適應症（決定目標值）</label>
+          <div class="field"><label title="適應症（決定目標值）">適應症</label>
             <select id="azlIndication"></select>
           </div>
         </div>
@@ -2230,7 +2231,6 @@
       <!-- 3. 器官功能與 lab（最新一筆） -->
       <div class="card">
         <h2><span class="idx">03</span>器官功能與相關 lab（最新一筆）</h2>
-        <p class="hint">三唑類受肝功能與發炎狀態（CRP）顯著影響；voriconazole 另受 CYP2C19 影響（見下方藥物專屬子表）。此處填最新一筆數值。</p>
         <div class="field-row three">
           <div class="field"><label>AST／ALT（U/L）</label><input type="text" id="azlAstAlt" placeholder="如：45 / 60"></div>
           <div class="field"><label>Total bilirubin（mg/dL）</label><input type="number" id="azlBilirubin" step="0.1"></div>
@@ -2256,9 +2256,9 @@
         </div>
         <div class="field-row">
           <div class="field"><label>嚴重度</label><select id="azlSeverity"><option>穩定</option><option>sepsis</option><option>septic shock</option></select></div>
-          <div class="field"><label>感染源控制</label><div class="checkline" style="margin-top:8px;"><input type="checkbox" id="azlSourceControl"><label for="azlSourceControl">已控制（引流／移除導管等）</label></div></div>
+          <div class="field"><label>感染源控制</label><div class="checkline" style="margin-top:8px;"><input type="checkbox" id="azlSourceControl"><label for="azlSourceControl" title="引流／移除導管等">已控制</label></div></div>
         </div>
-        <p class="hint" style="margin-top:10px;margin-bottom:4px;"><strong>臨床病程客觀回報</strong>（選填，皆不強迫填滿——工具依 MSG/EORTC 治療反應框架自動推論感染控制趨勢，不要求你自己先下判斷；填得越完整，右側「健全性檢查」的交叉核對越準）：</p>
+        <div class="hint" style="margin-top:10px;margin-bottom:4px;"><strong>臨床病程客觀回報</strong>（選填）<details class="hint-more"><summary>ⓘ 詳細說明</summary>皆不強迫填滿——工具依 MSG/EORTC 治療反應框架自動推論感染控制趨勢，不要求你自己先下判斷；填得越完整，右側「健全性檢查」的交叉核對越準。</details></div>
         <div class="field-row">
           <div class="field"><label>發燒趨勢（過去 24–48 小時）</label>
             <select id="azlFeverTrend"><option value="">未填</option><option value="improving">退燒中</option><option value="persistent">持續發燒</option><option value="worsening">新發燒或惡化</option><option value="na">不適用（本無發燒）</option></select>
@@ -2271,12 +2271,12 @@
           <div class="field"><label>感染部位相關症狀變化</label>
             <select id="azlLocalSymptom"><option value="">未填</option><option value="improving">改善</option><option value="flat">持平</option><option value="worsening">惡化</option><option value="na">不適用</option></select>
           </div>
-          <div class="field"><label>影像學（若有追蹤）</label>
+          <div class="field"><label title="影像學（若有追蹤）">影像學</label>
             <select id="azlImaging"><option value="">未填／未追蹤</option><option value="shrinking">縮小</option><option value="stable">穩定</option><option value="growing">增大</option><option value="new">新病灶</option></select>
           </div>
         </div>
         <div class="field-row">
-          <div class="field"><label>黴菌學／生物標記（若有送驗）</label>
+          <div class="field"><label title="黴菌學／生物標記（若有送驗）">黴菌學／生物標記</label>
             <select id="azlMycology"><option value="">未填／未送驗</option><option value="clearing">轉陰或下降</option><option value="flat">持平</option><option value="rising">上升或未轉陰</option></select>
           </div>
           <div class="field"></div>
@@ -2301,7 +2301,7 @@
         </div>
         <p class="hint" id="azlDoseHint" style="margin-top:-6px;"></p>
         <div class="field-row">
-          <div class="field"><label>本療程起始日期時間（判斷穩態用）</label><input type="datetime-local" id="azlTherapyStart"></div>
+          <div class="field"><label title="本療程起始日期時間（判斷穩態用）">本療程起始日期時間</label><input type="datetime-local" id="azlTherapyStart"></div>
           <div class="field"><label>近期漏給／暫停／延遲劑量（選填）</label><input type="text" id="azlMissedDoses" placeholder=""></div>
         </div>
       </div>
@@ -2309,7 +2309,6 @@
       <!-- 6. 濃度量測 -->
       <div class="card">
         <h2><span class="idx">06</span>濃度量測（trough）</h2>
-        <p class="hint">三唑類以 trough（下一劑前）為主，只報 trough 與是否達穩態，不做 Cpeak 等 PK 參數預測。</p>
         <div class="field-row">
           <div class="field"><label>Trough 結果（µg/mL，即 mg/L）</label><input type="number" id="azlTroughVal" step="0.1"></div>
           <div class="field"><label>抽血日期時間</label><input type="datetime-local" id="azlTroughDate"></div>
@@ -2325,7 +2324,7 @@
           </div>
           <div class="field"></div>
         </div>
-        <p class="hint">15–20% 東亞族裔為 CYP2C19 慢代謝者（PM），血中濃度可能達一般人 2–4 倍（UpToDate）——台灣病人組成下這欄特別容易命中，建議盡量填寫。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>15–20% 東亞族裔為 CYP2C19 慢代謝者（PM），血中濃度可能達一般人 2–4 倍（UpToDate）——台灣病人組成下這欄特別容易命中，建議盡量填寫。</details></div>
       </div>
 
       <div class="card" id="azlIsaSubtable" style="display:none;">
@@ -2341,7 +2340,7 @@
       <!-- 8. 臨床毒性表徵勾選清單（5.0.2） -->
       <div class="card">
         <h2><span class="idx">08</span>臨床毒性表徵</h2>
-        <p class="hint">依 Pharmacology of azoles 逐藥列出的不良反應分三級：良性/預期（只記錄）、警覺（即使濃度正常也優先跳出獨立提示）、長期追蹤（不影響當次判讀，累積提醒）。請勾選目前觀察到的項目，沒有就不用勾。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>依 Pharmacology of azoles 逐藥列出的不良反應分三級：良性/預期（只記錄）、警覺（即使濃度正常也優先跳出獨立提示）、長期追蹤（不影響當次判讀，累積提醒）。請勾選目前觀察到的項目，沒有就不用勾。</details></div>
 
         <p class="hint" style="margin-bottom:2px;"><strong>肝毒性臨床表現</strong>（三藥共通，警覺級）：</p>
         <div class="checkline"><input type="checkbox" id="azlSxJaundice"><label for="azlSxJaundice">黃疸</label></div>
@@ -2351,7 +2350,7 @@
 
         <div id="azlVoriSigns" style="display:none;">
           <p class="hint" style="margin-bottom:2px;margin-top:10px;"><strong>Voriconazole — 良性／預期（僅記錄）</strong>：</p>
-          <div class="checkline"><input type="checkbox" id="azlSxPhotopsia"><label for="azlSxPhotopsia">畏光／閃光感（用藥後 30 分鐘內出現，多在 30–60 分鐘緩解，約 19% 病人）</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxPhotopsia"><label for="azlSxPhotopsia" title="用藥後 30 分鐘內出現，多在 30–60 分鐘緩解，約 19% 病人">畏光／閃光感</label></div>
           <p class="hint" style="margin-bottom:2px;margin-top:8px;"><strong>Voriconazole — 神經毒性（警覺級）</strong>：</p>
           <div class="checkline"><input type="checkbox" id="azlSxHallucination"><label for="azlSxHallucination">視幻覺／聽幻覺</label></div>
           <div class="checkline"><input type="checkbox" id="azlSxConfusion"><label for="azlSxConfusion">意識混亂／躁動</label></div>
@@ -2360,7 +2359,7 @@
           <div class="checkline"><input type="checkbox" id="azlSxPhotosensitivity"><label for="azlSxPhotosensitivity">光敏感皮疹</label></div>
           <div class="checkline"><input type="checkbox" id="azlSxBonePain"><label for="azlSxBonePain">不明原因骨痛（合併 ALP 上升，periostitis）</label></div>
           <div class="checkline"><input type="checkbox" id="azlSxHairNail"><label for="azlSxHairNail">落髮／指甲變化</label></div>
-          <div class="checkline"><input type="checkbox" id="azlSxSkinLesion"><label for="azlSxSkinLesion">皮膚異常病灶（皮膚癌風險）</label></div>
+          <div class="checkline"><input type="checkbox" id="azlSxSkinLesion"><label for="azlSxSkinLesion" title="皮膚癌風險">皮膚異常病灶</label></div>
         </div>
 
         <div id="azlPosaSigns" style="display:none;">
@@ -2388,7 +2387,7 @@
       <!-- 9. 併用藥物 -->
       <div class="card">
         <h2><span class="idx">09</span>併用藥物清單</h2>
-        <p class="hint">特別標明 CYP 誘導／抑制劑、PPI／H2；系統會用關鍵字比對已知高風險類別（不做精確劑量換算資料庫）。</p>
+        <div class="hint">以關鍵字比對高風險類別，不換算劑量。<details class="hint-more"><summary>ⓘ 詳細說明</summary>特別標明 CYP 誘導／抑制劑、PPI／H2；系統會用關鍵字比對已知高風險類別（不做精確劑量換算資料庫）。</details></div>
         <div class="field">
           <label>藥名／劑量／頻次（每行一項）</label>
           <textarea id="azlConcomitant" placeholder="如：tacrolimus 2mg BID, rifampin, warfarin…"></textarea>
@@ -2450,7 +2449,7 @@
 
       <div class="section-block">
         <h3><span class="idx">D</span>AI 諮詢 Prompt<span class="h3-sub">整合 lab 趨勢與病程後的第二意見</span><button class="btn small" id="azlCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
-        <p class="hint" style="margin-bottom:10px;">本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</p>
+        <div class="hint" style="margin-bottom:10px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>本工具只做 trough 對目標值判讀與情境交叉檢查；下方會自動整合你已輸入的資料，貼上近期完整 lab 趨勢後即可丟給任一主流 AI 進行整合評估。</details></div>
         <textarea id="azlAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="azlCopyPromptBtn" type="button">複製 Prompt</button>
@@ -2505,7 +2504,7 @@
       <!-- 01. 藥物與目的 -->
       <div class="card">
         <h2><span class="idx">01</span>目標藥物與目的</h2>
-        <p class="hint">本模組為「濃度校正判讀＋情境檢查」工具，不做時間-濃度曲線擬合（phenytoin 另提供 Michaelis-Menten 劑量推估、VPA 提供比例劑量估算，見右側 B 區；趨勢圖尚未提供）。校正公式與目標值出自院內指引與本院醫令，可能與教科書通則不同，詳細出處見各處提示。</p>
+        <div class="hint">濃度校正判讀＋情境檢查；不做時間-濃度曲線擬合。<details class="hint-more"><summary>ⓘ 詳細說明</summary>本模組為「濃度校正判讀＋情境檢查」工具，不做時間-濃度曲線擬合（phenytoin 另提供 Michaelis-Menten 劑量推估、VPA 提供比例劑量估算，見右側 B 區；趨勢圖尚未提供）。校正公式與目標值出自院內指引與本院醫令，可能與教科書通則不同，詳細出處見各處提示。</details></div>
         <div class="field-row">
           <div class="field"><label>目標藥物</label>
             <select id="aedDrug">
@@ -2591,10 +2590,10 @@
       <!-- 05. 濃度量測 -->
       <div class="card">
         <h2><span class="idx">05</span>濃度量測</h2>
-        <p class="hint">本院 total／free、phenytoin／VPA 皆採同一條「給藥前一小時內」低谷採樣窗（本院醫令，較院內指引通則的寬鬆 trough 更精確）；phenytoin IV 給藥另有給藥後 2–4 小時峰值窗。</p>
+        <div class="hint">本院採樣窗：給藥前一小時內。<details class="hint-more"><summary>ⓘ 詳細說明</summary>本院 total／free、phenytoin／VPA 皆採同一條「給藥前一小時內」低谷採樣窗（本院醫令，較院內指引通則的寬鬆 trough 更精確）；phenytoin IV 給藥另有給藥後 2–4 小時峰值窗。</details></div>
         <div class="field-row">
           <div class="field"><label>濃度類型</label><select id="aedLevelType"><option value="total">Total</option><option value="free">Free</option></select></div>
-          <div class="field"><label>給藥途徑（採樣窗判斷用）</label><select id="aedLevelRoute"><option value="po">PO</option><option value="iv">IV</option></select></div>
+          <div class="field"><label title="給藥途徑（採樣窗判斷用）">給藥途徑</label><select id="aedLevelRoute"><option value="po">PO</option><option value="iv">IV</option></select></div>
         </div>
         <div class="field-row">
           <div class="field"><label>濃度數值</label><input type="number" id="aedLevelValue" step="0.1"></div>
@@ -2618,12 +2617,12 @@
             <select id="aedHlab1502"><option value="">未驗</option><option value="pos">陽性</option><option value="neg">陰性</option></select>
           </div>
         </div>
-        <p class="hint">HLA-B*15:02 陽性且未曾使用者建議避免 phenytoin（SJS/TEN 風險）；台灣族群此等位基因頻率高。本院無 free phenytoin 醫令，如需 free level 須外送。</p>
+        <p class="hint">HLA-B*15:02 陽性且未曾使用者建議避免 phenytoin（SJS/TEN 風險）；台灣族群此等位基因頻率高。</p>
         <div class="field-row">
           <div class="field"><label>併用 VPA 濃度（若有，µg/mL）</label><input type="number" id="aedVpaLevel" step="0.1"></div>
           <div class="field"><label>該 VPA 濃度抽血時間</label><input type="datetime-local" id="aedVpaLevelAt"></div>
         </div>
-        <div class="checkline"><input type="checkbox" id="aedImNg"><label for="aedImNg">IM 給藥或 NG feeding（吸收可能不穩定）</label></div>
+        <div class="checkline"><input type="checkbox" id="aedImNg"><label for="aedImNg" title="吸收可能不穩定">IM 給藥或 NG feeding</label></div>
         <div class="checkline"><input type="checkbox" id="aedCritical"><label for="aedCritical">重症／危重病人</label></div>
       </div>
 
@@ -2642,7 +2641,7 @@
       <!-- 07. 穩態劑量-濃度配對（phenytoin 兩點法用） -->
       <div class="card" id="aedSsPairsCard" style="display:none;">
         <h2><span class="idx">07</span>穩態劑量-濃度配對表（選填，兩點法用）</h2>
-        <p class="hint">只有勾選「已確認達穩態」的列才會用於兩點法解出病人專屬 Vmax／Km；需要至少兩列、且每日劑量不同。不填這張表也能用下方結果面板的單點法估算，但單點法需假設族群 Km（見敏感度帶）。</p>
+        <div class="hint"><details class="hint-more"><summary>ⓘ 詳細說明</summary>只有勾選「已確認達穩態」的列才會用於兩點法解出病人專屬 Vmax／Km；需要至少兩列、且每日劑量不同。不填這張表也能用下方結果面板的單點法估算，但單點法需假設族群 Km（見敏感度帶）。</details></div>
         <div class="entry-list" id="aedSsPairsTable"></div>
         <div class="btn-row">
           <button class="btn small" id="aedAddSsPairBtn" type="button">新增一列</button>
@@ -2677,7 +2676,7 @@
       <!-- 09. 併用藥物 -->
       <div class="card">
         <h2><span class="idx">09</span>併用藥物清單</h2>
-        <p class="hint">系統會用關鍵字比對已知高風險類別（carbapenem／valproate/phenytoin 互相置換／CYP 誘導或抑制劑等），不做精確劑量換算資料庫。</p>
+        <div class="hint">以關鍵字比對高風險類別，不換算劑量。<details class="hint-more"><summary>ⓘ 詳細說明</summary>系統會用關鍵字比對已知高風險類別（carbapenem／valproate/phenytoin 互相置換／CYP 誘導或抑制劑等），不做精確劑量換算資料庫。</details></div>
         <div class="field">
           <label>藥名／劑量／頻次（每行一項）</label>
           <textarea id="aedConcomitant" placeholder="如：meropenem 1g q8h, aspirin 100mg qd…"></textarea>
@@ -2749,7 +2748,7 @@
 
       <div class="section-block">
         <h3><span class="idx">E</span>AI 諮詢 Prompt<span class="h3-sub">整合目前輸入與 PK 估算後的第二意見</span><button class="btn small" id="aedCopyPromptBtnTop" type="button">複製 Prompt</button></h3>
-        <p class="hint" style="margin-bottom:10px;">下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</p>
+        <div class="hint" style="margin-bottom:10px;"><details class="hint-more"><summary>ⓘ 詳細說明</summary>下方會整合目前已輸入的資料與 PK 估算結果，可貼給任一主流 AI 進行整合評估。趨勢圖與劑量-濃度曲線尚未提供。</details></div>
         <textarea id="aedAiPromptOut" aria-label="AI 諮詢 Prompt（唯讀，可複製）" readonly></textarea>
         <div class="btn-row">
           <button class="btn primary small" id="aedCopyPromptBtn" type="button">複製 Prompt</button>
@@ -3522,7 +3521,7 @@
 
     // 03 給藥處方與紀錄
     document.getElementById('therapyStart').value='';
-    document.getElementById('therapyStartLabel').textContent='分析起點（本次採用的第一筆給藥時間）';
+    document.getElementById('therapyStartLabel').textContent='分析起點'; document.getElementById('therapyStartLabel').title='分析起點：本次採用的第一筆給藥時間';
     document.getElementById('expandTo').value='';
     document.getElementById('useLoading').checked=false;
     delete document.getElementById('useLoading').dataset.touched;
@@ -3641,7 +3640,7 @@
     setChecked('useLoading', s.useLoading);
     setVal('firstMaintDoseTime', s.firstMaintDoseTime); delete document.getElementById('firstMaintDoseTime').dataset.auto;
     document.getElementById('loadingFields').style.display = s.useLoading ? 'grid' : 'none';
-    { const lbl = document.getElementById('therapyStartLabel'); if(lbl) lbl.textContent = s.useLoading ? '分析起點（本次採用的 loading 劑量確切時間）' : '分析起點（本次採用的第一筆給藥時間）'; }
+    { const lbl = document.getElementById('therapyStartLabel'); if(lbl){ lbl.textContent = '分析起點'; lbl.title = s.useLoading ? '分析起點＝Loading 給藥時間' : '分析起點：本次採用的第一筆給藥時間'; } }
     setChecked('assumeSteadyState', s.assumeSteadyState);
     syncFirstDoseRadio('vanco', 'assumeSteadyState');
     document.getElementById('steadyStateHint').style.display = s.assumeSteadyState ? 'block' : 'none';
@@ -9481,7 +9480,7 @@ ${flagText||'（無）'}
         if(isFinite(st) && tau > 0){ fm.value = toLocalInputValue(new Date(st + tau*3600000)); fm.dispatchEvent(new Event('input', {bubbles:true})); fm.dataset.auto = '1'; }
       } else if(!this.checked && fm.dataset.auto){ fm.value = ''; delete fm.dataset.auto; fm.dispatchEvent(new Event('input', {bubbles:true})); }
       const lbl = document.getElementById('therapyStartLabel');
-      if(lbl) lbl.textContent = this.checked ? '分析起點（＝Loading 給藥時間）' : '分析起點（本次採用的第一筆給藥時間）';
+      if(lbl) lbl.textContent = '分析起點'; lbl.title = this.checked ? '分析起點＝Loading 給藥時間' : '分析起點：本次採用的第一筆給藥時間';
     });
     document.querySelectorAll('input[name="vancoFirstDoseKind"]').forEach(r=>r.addEventListener('change', function(){
       const cb = document.getElementById('assumeSteadyState');

@@ -26,7 +26,7 @@
 | F4 注意事項一行化、AI Prompt 收合 | 完成，等 Brandon 說「繼續」 | 見下方 F4 備註；golden 0 差異 |
 | F5 頂列與左欄 | 完成，等 Brandon 說「繼續」 | 見下方 F5 備註；golden 0 差異 |
 | F6 全面複驗 | 完成，等 Brandon 說「繼續」或決定下一步 | 見 `docs/REDESIGN_ACCEPTANCE_v2.md`；golden 0 差異 |
-| F8 | 未核可 | 標籤減法審計，Brandon 尚未核可 |
+| F8 標籤減法 | 完成 | 2026-10-23 Brandon 核可四組 40 項；看得到的說明句減約一半；golden 0 差異；見 `docs/F8_LABEL_AUDIT.md` |
 
 ### F1 小修（2026-10-23）
 - **B1**：01–06 段落按鈕拿掉，左欄頂端只剩一顆「全部收合／全部展開」，靠右（`.sec-bar{justify-content:flex-end}`）。`#vancoSecBar` 等 id 留著當容器。連帶拿掉沒人用的 `.sec-btn`、`.card.sec-flash`（後者有 3 px 左邊線，違反 craft-floor）。
